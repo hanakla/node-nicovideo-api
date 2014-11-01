@@ -25,7 +25,7 @@
     "tough-cookie": "^0.12.1"
   },
   "scripts": {
-    "prepublish": "coffee -o lib/ -c src/",
+    "postinstall": "coffee -o lib/ -c src/",
     "test": "echo \"Error: no test specified\" && exit 1"
   }
 }
