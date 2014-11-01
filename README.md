@@ -1,4 +1,4 @@
-node-nicovideo
+node-nicovideo-api
 ==============
 nicovideo API wrapper for node.js
 
