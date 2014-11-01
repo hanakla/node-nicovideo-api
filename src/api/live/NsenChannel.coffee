@@ -59,15 +59,17 @@
 ###
 _               = require "lodash"
 Backbone        = require "backbone"
+cheerio         = require "cheerio"
+request         = require "request"
+sprintf         = require("sprintf").sprintf
 
 NicoVideoApi    = require "../video/NicoVideoApi"
 NicoLiveApi     = require "../live/NicoLiveApi"
 VideoInfo       = require "../video/NicoVideoInfo"
 NicoLiveInfo    = require "./NicoLiveInfo"
 NicoUrl         = require "../NicoURL"
-cheerio         = require "cheerio"
-request         = require "request"
-sprintf         = require("sprintf").sprintf
+
+NsenChannels    = require "./NsenChannels"
 
 NSEN_URL_REQUEST        = NicoUrl.Live.NSEN_REQUEST
 NSEN_URL_REQUEST_CANCEL = NicoUrl.Live.NSEN_REQUEST_CANCEL
@@ -112,7 +114,7 @@ class NsenChannel
         nsen_long       : "動画が長過ぎます。"
         nsen_requested  : "リクエストされたばかりです。"
 
-    @Channels       : require "./NsenChannels.json"
+    @Channels       : NsenChannels
 
     @_cache         : {}
 
