@@ -100,7 +100,7 @@ _instances = {}
 # @param {NicoLiveInfo liveInfo Nsenの配信を指すLiveInfoオブジェクト
 ###
 class NsenChannel
-    _.extends @::, Backbone.Events
+    _.extend @::, Backbone.Events
 
     ###*
     # Nsenリクエスト時のエラーコード
