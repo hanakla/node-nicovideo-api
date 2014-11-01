@@ -1,8 +1,8 @@
 ###*
 ニコニコ生放送APIラッパークラスエントランス
 ###
-NicoLiveInfo    = require("./NicoLiveInfo")
-#NsenChannel = require("../models/NsenChannel")
+NicoLiveInfo    = require "./NicoLiveInfo"
+NsenChannel     = require "./NsenChannel"
 
 class NicoLiveApi
 
@@ -25,7 +25,7 @@ class NicoLiveApi
     # @param    {string}   liveId  放送ID
     # @return   {Promise} Promiseオブジェクト
     ###
-    getLiveInfo : (liveId) ->
+    getLiveInfo     : (liveId) ->
 
         if typeof liveId isnt "string" or liveId is ""
             throw new Error("liveIdは文字列である必要があります。")
@@ -35,11 +35,12 @@ class NicoLiveApi
 
     ###*
     # NicoLiveInfoオブジェクトからNsenChannelのインスタンスを取得します。
-    # @param {NicoLiveInfo} obj
+    #
+    # @param {NicoLiveInfo} liveInfo
     # @return {NsenChannel}
     ###
-    #nsenChannelFrom : (obj) ->
-    #    new NsenChannel(obj)
+    getNsenChannelHandlerFor : (liveInfo) ->
+        return new NsenChannel liveInfo
 
 
 return NicoLiveAPI

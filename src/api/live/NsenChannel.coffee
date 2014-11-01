@@ -65,7 +65,6 @@ NicoLiveApi     = require "../live/NicoLiveApi"
 VideoInfo       = require "../video/NicoVideoInfo"
 NicoLiveInfo    = require "./NicoLiveInfo"
 NicoUrl         = require "../impl/NicoUrl"
-StringUtil      = require "utils/StringUtil"
 cheerio         = require "cheerio"
 request         = require "request"
 sprintf         = require("sprintf").sprintf
@@ -113,7 +112,9 @@ class NsenChannel
         nsen_long       : "動画が長過ぎます。"
         nsen_requested  : "リクエストされたばかりです。"
 
-    @_cache     : {}
+    @Channels       : require "./NsenChannels.json"
+
+    @_cache         : {}
 
 
     ###*
