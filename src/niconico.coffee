@@ -29,7 +29,7 @@ class Nico
         @_ticket.loginThen resolved, rejected
 
 
-return Nico
+module.exports = Nico
 
 ###
 Object.defineProperties module.exports,
