@@ -43,4 +43,4 @@ class NicoLiveApi
         return new NsenChannel liveInfo
 
 
-return NicoLiveAPI
+return NicoLiveApi
