@@ -21,7 +21,7 @@
 # Properties
 #   (none)
 ###
-_           = require "underscore"
+_           = require "lodash"
 request     = require "request"
 
 MyListMeta = require "./MyListIndex"

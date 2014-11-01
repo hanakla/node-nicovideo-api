@@ -40,7 +40,7 @@
 #       同期に失敗した時に発火します。
 ###
 
-_           = require "underscore"
+_           = require "lodash"
 Backbone    = require "backbone"
 request     = require "request"
 

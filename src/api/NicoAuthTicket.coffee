@@ -6,7 +6,7 @@
 #  - logout:() -- ニコニコ動画からログアウトした時に発火します。
 #
 
-_           = require "underscore"
+_           = require "lodash"
 Backbone    = require "backbone"
 cheerio     = require "cheerio"
 request     = require "request"

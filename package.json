@@ -19,6 +19,7 @@
   "devDependencies": {
     "backbone": "^1.1.2",
     "coffee-script": "^1.8.0",
+    "lodash": "^2.4.1",
     "request": "^2.47.0",
     "sprintf": "^0.1.4",
     "tough-cookie": "^0.12.1"

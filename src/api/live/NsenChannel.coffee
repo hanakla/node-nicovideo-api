@@ -57,7 +57,7 @@
 #  - ended:()
 #       配信が終了した時に発火します。
 ###
-_               = require "underscore"
+_               = require "lodash"
 Backbone        = require "backbone"
 
 NicoVideoApi    = require "../video/NicoVideoApi"

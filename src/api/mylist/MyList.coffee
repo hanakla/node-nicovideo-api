@@ -30,7 +30,7 @@
 #  - updateTime     : Date      -- マイリストの更新日
 ###
 
-_                   = require "underscore"
+_                   = require "lodash"
 Backbone            = require "backbone"
 request             = require "request"
 sprintf             = require("sprintf").sprintf

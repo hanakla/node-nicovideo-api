@@ -31,7 +31,7 @@
 #          - mylist     : number    -- マイリスト数
 ###
 
-_           = require "underscore"
+_           = require "lodash"
 Backbone    = require "backbone"
 sprintf     = require("sprintf").sprintf
 

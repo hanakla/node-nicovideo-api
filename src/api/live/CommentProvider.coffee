@@ -31,7 +31,7 @@
 INIT_GET_RESPONSES = 200
 SEND_TIMEOUT = 3000
 
-_           = require "underscore"
+_           = require "lodash"
 Backbone    = require "backbone"
 net         = require "net"
 cheerio     = require "cheerio"

@@ -78,7 +78,7 @@
 #       thread:         number -- この放送と対応するスレッドID
 #
 
-_           = require "underscore"
+_           = require "lodash"
 Backbone    = require "backbone"
 request     = require "request"
 sprintf     = require("sprintf").sprintf
