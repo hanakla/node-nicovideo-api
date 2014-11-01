@@ -35,7 +35,7 @@ Backbone            = require "backbone"
 request             = require "request"
 sprintf             = require("sprintf").sprintf
 
-NicoUrl             = require "../NicoUrl"
+NicoUrl             = require "../NicoURL"
 MyListItem          = require "./MyListItem"
 
 _instances = {}
