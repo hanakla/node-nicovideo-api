@@ -44,8 +44,7 @@ _           = require "lodash"
 Backbone    = require "backbone"
 request     = require "request"
 
-Global = require("utils/Global")
-NicoURL     = require("../NicoURL")
+NicoURL     = require "../NicoURL"
 _instances  = {}
 
 
