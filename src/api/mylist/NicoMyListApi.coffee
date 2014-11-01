@@ -24,8 +24,8 @@
 _           = require "lodash"
 request     = require "request"
 
-MyListMeta = require "./MyListIndex"
-MyList          = require "./MyList"
+MyListMeta  = require "./MyListMeta"
+MyList      = require "./MyList"
 
 # 一分以上経過したらトークンを取得する
 FETCH_INTERVAL = 60 * 1000
