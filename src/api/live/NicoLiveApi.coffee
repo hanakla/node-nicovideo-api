@@ -31,7 +31,7 @@ class NicoLiveApi
         if typeof liveId isnt "string" or liveId is ""
             throw new Error("liveIdは文字列である必要があります。")
 
-        return new NicoLiveInfo @, liveId
+        return new NicoLiveInfo @_session, liveId
 
 
     ###*

@@ -179,17 +179,17 @@ class NicoLiveInfo extends Backbone.Model
     ###
     constructor     : (session, liveId) ->
         if NicoLiveInfo._cache[liveId]?
-            return _instances[liveId]
+            return NicoLiveInfo._cache[liveId]
 
         super id: liveId
         @_session = session
 
         _.bindAll @
-            , "_autoUpdate"
+            , "_onIntervalSync"
             , "_onClosed"
 
         # 自動アップデートイベントをリスニング
-        _updateEventer.on "intervalSync", _onIntervalSync
+        _updateEventer.on "intervalSync", @_onIntervalSync
 
         NicoLiveInfo._cache[liveId] = @
 
