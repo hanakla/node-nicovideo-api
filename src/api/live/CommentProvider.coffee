@@ -96,7 +96,7 @@ class CommentProvider extends Backbone.Collection
             #, "_postResultDetector"
             #, "_liveEndDetector"
             , "_onLiveInfoSynced"
-            , "_onAuthLogout"
+            #, "_onAuthLogout"
 
         @.once "receive", @_threadInfoDetector    # スレッド情報リスナを登録
 
