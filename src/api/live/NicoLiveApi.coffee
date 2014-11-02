@@ -5,6 +5,7 @@ NicoLiveInfo    = require "./NicoLiveInfo"
 NsenChannel     = require "./NsenChannel"
 
 class NicoLiveApi
+    @NsenChannel    = NsenChannel
 
     ###*
     # @param {NicoAuthTicket}   Authenticated NicoAuthTicket object

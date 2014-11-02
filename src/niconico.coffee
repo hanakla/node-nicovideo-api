@@ -11,6 +11,11 @@ NicoVideo       = require "./api/video/NicoVideoApi"
 
 
 class Nico
+    @Session    = NicoAuthTicket
+    @Live       = NicoLive
+    @MyList     = NicoMyList
+    @Video      = NicoVideo
+
     _ticket     : null
 
     live        : null

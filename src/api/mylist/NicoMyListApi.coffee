@@ -35,6 +35,8 @@ TOKEN_REGEXP = /NicoAPI.token = "([0-9a-z\-]*)";/
 
 
 class NicoMyListApi
+    @MyListMeta     = MyListMeta
+    @MyList         = MyList
 
     _ticket     : null
 

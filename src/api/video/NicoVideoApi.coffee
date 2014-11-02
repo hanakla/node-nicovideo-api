@@ -5,6 +5,8 @@
 NicoVideoInfo   = require "./NicoVideoInfo"
 
 class NicoVideoApi
+    @NicoVideoInfo  = NicoVideoInfo
+
     _ticket     : null
 
     constructor : (ticket) ->
