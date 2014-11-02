@@ -18,17 +18,23 @@ class Nico
 
     _ticket     : null
 
-    live        : null
-    mylist      : null
-    video       : null
+    # _live        : null # Lazy initialize
+    # _video       : null # Lazy initialize
+    # _mylist      : null # Lazy initialize
 
     constructor     : (user, password) ->
         @_ticket = new NicoAuthTicket user, password
 
-        @live   = new NicoLive @_ticket
-        @mylist = new NicoMyList @_ticket
-        @video  = new NicoVideo @_ticket
-
+        Object.defineProperties @,
+            live    :
+                get     : -> @_live ?= new NicoLive @_ticket
+                set     : ->
+            video   :
+                get     : -> @_video ?= new NicoVideo @_ticket
+                set     : ->
+            mylist  :
+                get     : -> @_mylist ?= new NicoMyList @_ticket
+                set     : ->
 
     loginThen : (resolved, rejected) ->
         @_ticket.loginThen resolved, rejected
