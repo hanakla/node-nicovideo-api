@@ -53,10 +53,6 @@ class NicoSession
                     password    : @_pass
 
                 , (err, resp, body) ->
-
-                    console.error err
-                    console.dir resp
-
                     if resp.statusCode is 503
                         dfd.reject "Nicovideo has in maintenance."
                         return
