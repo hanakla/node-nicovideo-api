@@ -133,6 +133,10 @@ class NicoSession
             , "http://www.nicovideo.jp/"
             , {}
 
+        jar._jar.setCookieSync "user_session=#{sessionId}; expires=#{expireDate}; path=/; domain=live.nicovideo.jp"
+            , "http://live.nicovideo.jp/"
+            , {}
+
         return jar
 
 
