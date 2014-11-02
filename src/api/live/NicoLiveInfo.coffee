@@ -271,16 +271,16 @@ class NicoLiveInfo extends Backbone.Model
     # @param {string} res API受信結果
     ###
     parse           : (res) ->
-        $res    = cheerio(res)
-        $root   = $res.find(":root")
-        $stream = $res.find("stream")
-        $user   = $res.find("user")
-        $rtmp   = $res.find("rtmp")
-        $ms     = $res.find("ms")
+        $res    = cheerio.load res
+        $root   = $res ":root"
+        $stream = $res "stream"
+        $user   = $res "user"
+        $rtmp   = $res "rtmp"
+        $ms     = $res "ms"
         val     = null
 
         if $root.attr("status") isnt "ok"
-            msg = $res.find("error code").text()
+            msg = $res("error code").text()
 
             console.error "NicoLiveInfo[%s]: Failed live info fetch. (%s)", @id, msg
             @trigger "error", msg, @
@@ -302,11 +302,11 @@ class NicoLiveInfo extends Backbone.Model
                 endTime     : new Date(($stream.find("end_time")|0) * 1000)
 
                 isOfficial  : $stream.find("provider_type").text() is "official"
-                isNsen      : $res.find("ns").length > 0
-                nsenType    : $res.find("ns nstype").text()||null
+                isNsen      : $res("ns").length > 0
+                nsenType    : $res("ns nstype").text()||null
 
-                contents    : _.map $stream.find("contents_list contents"), (content) ->
-                    $content = cheerio(content)
+                contents    : $stream.find("contents_list contents").map () ->
+                    $content = cheerio @
                     return {
                         id              : $content.attr("id")
                         startTime       : new Date(($content.attr("start_time")|0) * 1000)
@@ -341,7 +341,7 @@ class NicoLiveInfo extends Backbone.Model
                 port        : $ms.find("port").text()|0
                 thread      : $ms.find("thread").text()|0
 
-            _hasError: $res.find("getplayerstatus").attr("status") isnt "ok"
+            _hasError: $res("getplayerstatus").attr("status") isnt "ok"
 
         return val
 
