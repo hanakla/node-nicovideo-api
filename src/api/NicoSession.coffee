@@ -46,7 +46,7 @@ class NicoSession
         request
             .post
                 url     : NicoUrl.Auth.LOGIN
-                #followAllRedirects  : true
+                followAllRedirects  : true
                 jar     : @_cookieJar
                 form    :
                     mail_tel    : @_user
@@ -57,28 +57,23 @@ class NicoSession
                         dfd.reject "Nicovideo has in maintenance."
                         return
 
-                    if resp.headers["x-niconico-authflag"] isnt "0"
-                    else
-                        dfd.reject "Authorize failed"
-                        return
-
                     if err?
                         console.error err, NicoUrl.Auth.LOGIN
                         dfd.reject "Authorize failed by connection problem (#{err})"
                         return
 
-                    # get cookie
-                    self._cookieJar
-                        ._jar.store
+                    # try get cookie
+                    self._cookieJar._jar.store
                         .findCookie "nicovideo.jp", "/", "user_session", (err, cookie) ->
                             if cookie?
                                 self._sessionKey = cookie.value
                                 dfd.resolve self
                             else if err?
-                                dfd.reject err
+                                dfd.reject "Authorize failed"
                             else
-                                dfd.reject()
+                                dfd.reject "Authorize failed (reason unknown)"
 
+                            return
                     return
 
         return dfd.promise
