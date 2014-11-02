@@ -196,7 +196,7 @@ class CommentProvider extends Backbone.Collection
     #
     # コネクション上のエラー処理
     #
-    _onErrorOnConnetion : (err) ->
+    _onErrorOnConnection : (err) ->
         @trigger "error", err.message
 
 
