@@ -15,7 +15,7 @@ sprintf     = require("sprintf").sprintf
 NicoUrl     = require "./NicoURL"
 
 class NicoSession
-    _.extend @::, Backbone.Event
+    _.extend @::, Backbone.Events
 
     _user   : null
     _pass   : null
