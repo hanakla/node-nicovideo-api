@@ -26,6 +26,9 @@ class Nico
         @_session = new NicoSession user, password
 
         Object.defineProperties @,
+            session :
+                get     : -> @_session
+                set     : ->
             live    :
                 get     : -> @_live ?= new NicoLive @_session
                 set     : ->
@@ -35,6 +38,7 @@ class Nico
             mylist  :
                 get     : -> @_mylist ?= new NicoMyList @_session
                 set     : ->
+
 
     loginThen : (resolved, rejected) ->
         @_session.loginThen resolved, rejected
