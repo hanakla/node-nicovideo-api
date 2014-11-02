@@ -118,8 +118,8 @@ class NicoLiveInfo extends Backbone.Model
     # @type {CommentProvider}
     _commentProvider    : null
 
-    # @type {NicoAuthTicket}
-    _ticket             : null
+    # @type {NicoSession}
+    _session             : null
 
     # @type {Object}
     defaults    :
@@ -174,15 +174,15 @@ class NicoLiveInfo extends Backbone.Model
 
 
     ###*
-    # @param {NicoAuthTicket}   ticket  認証チケット
-    # @param {string}           liveId  放送ID
+    # @param {NicoSession}  session 認証チケット
+    # @param {string}       liveId  放送ID
     ###
-    constructor     : (ticket, liveId) ->
+    constructor     : (session, liveId) ->
         if NicoLiveInfo._cache[liveId]?
             return _instances[liveId]
 
         super id: liveId
-        @_ticket = ticket
+        @_session = session
 
         _.bindAll @
             , "_autoUpdate"
@@ -248,10 +248,10 @@ class NicoLiveInfo extends Backbone.Model
 
     #
     # 割り当てられた認証チケットを取得します。
-    # @return {NicoAuthTicket}
+    # @return {NicoSession}
     #
-    getTicket       : ->
-        return @_ticket
+    getSession      : ->
+        return @_session
 
 
     #
@@ -361,7 +361,7 @@ class NicoLiveInfo extends Backbone.Model
         # getPlayerStatusの結果を取得
         request.get
             url     : url
-            jar     : @_ticket.getCookieJar()
+            jar     : @_session.getCookieJar()
             , (err, res, body) ->
 
                 # check errors

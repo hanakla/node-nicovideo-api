@@ -8,14 +8,14 @@ class NicoLiveApi
     @NsenChannel    = NsenChannel
 
     ###*
-    # @param {NicoAuthTicket}   Authenticated NicoAuthTicket object
+    # @param {NicoSession} session NicoSession object
     ###
-    constructor     : (ticket) ->
-        @_ticket = ticket
+    constructor     : (session) ->
+        @_session = session
 
 
-    _getTicket      : ->
-        @_ticket
+    _getSession     : ->
+        @_session
 
     ###*
     # 指定された放送の情報を取得します。

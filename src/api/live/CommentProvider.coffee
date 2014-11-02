@@ -102,7 +102,7 @@ class CommentProvider extends Backbone.Collection
 
         liveInfo.on "sync", @_onLiveInfoSynced
 
-        liveInfo.getTicket().once "logout", => @_disconnect
+        liveInfo.getSession().once "logout", => @_disconnect
 
         # コメントサーバーへ接続
         @_initConnection()
@@ -251,7 +251,7 @@ class CommentProvider extends Backbone.Collection
 
         request.get
             url     : url
-            jar     : @_live.getTicket().getCookieJar()
+            jar     : @_live.getSession().getCookieJar()
             , (err, res, body) ->
                 if err?
                     console.error "CommentProvider[%s]: Failed to retrive postKey.", self.id

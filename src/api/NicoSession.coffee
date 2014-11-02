@@ -14,7 +14,7 @@ sprintf     = require("sprintf").sprintf
 
 NicoUrl     = require "./NicoURL"
 
-class AuthTicket
+class NicoSession
     _.extend @::, Backbone.Event
 
     _user   : null
@@ -149,4 +149,4 @@ class AuthTicket
         @_promise.then resolved, rejected
         return
 
-    module.exports = AuthTicket
+    module.exports = NicoSession

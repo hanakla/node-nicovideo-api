@@ -145,9 +145,9 @@ class NsenChannel
 
     ###*
     # @private
-    # @type {NicoAuthTicket}
+    # @type {NicoSession}
     ###
-    _ticket         : null
+    _session         : null
 
 
     ###*
@@ -204,7 +204,7 @@ class NsenChannel
 
         # 必要なオブジェクトを取得
         @_live      = liveInfo
-        @_ticket    = liveInfo._getTicket()
+        @_session    = liveInfo.getSession()
         @_commentProvider = liveInfo.commentProvider()
 
         # イベントリスニング
@@ -340,7 +340,7 @@ class NsenChannel
     ###
     _getVideoApi        : ->
         if not @_videoApi?
-            @_videoApi = new NicoVideoApi @_ticket
+            @_videoApi = new NicoVideoApi @_session
 
         return @_videoApi
 
@@ -352,7 +352,7 @@ class NsenChannel
     ###
     _getLiveApi         : ->
         if not @_liveApi?
-            @_liveApi = new NicoLiveApi @_ticket
+            @_liveApi = new NicoLiveApi @_session
 
         return @_liveApi
 
@@ -410,7 +410,7 @@ class NsenChannel
 
         request.get
             url     : url
-            jar     : @_ticket.getCookieJar()
+            jar     : @_session.getCookieJar()
             , (err, res, body) ->
                 $res = cheerio body
 

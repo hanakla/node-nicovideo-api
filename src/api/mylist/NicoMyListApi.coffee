@@ -38,14 +38,14 @@ class NicoMyListApi
     @MyListMeta     = MyListMeta
     @MyList         = MyList
 
-    _ticket     : null
+    _session     : null
 
     _token      :
         timestamp   : null
         token       : null
 
-    constructor : (ticket) ->
-        @_ticket = ticket
+    constructor : (session) ->
+        @_session = session
         @_token = _.clone @_token
 
 
@@ -64,7 +64,7 @@ class NicoMyListApi
         # 何故か取り出せない
         request.get
             url   : NicoUrl.MyList.FETCH_TOKEN
-            jar   : @_ticket.getCookieJar()
+            jar   : @_session.getCookieJar()
             , (err, res, body) ->
                 # 通信エラー
                 if err?
@@ -89,8 +89,8 @@ class NicoMyListApi
     ###*
     # 割り当てられている認証チケットを取得します。
     ###
-    getTicket   : ->
-        return @_ticket
+    getSession      : ->
+        return @_session
 
 
     ###*

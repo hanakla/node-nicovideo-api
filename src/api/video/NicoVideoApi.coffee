@@ -7,10 +7,10 @@ NicoVideoInfo   = require "./NicoVideoInfo"
 class NicoVideoApi
     @NicoVideoInfo  = NicoVideoInfo
 
-    _ticket     : null
+    _session     : null
 
-    constructor : (ticket) ->
-        @_ticket = ticket
+    constructor : (session) ->
+        @_session = session
 
 
     ###*
