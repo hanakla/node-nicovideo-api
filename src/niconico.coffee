@@ -41,15 +41,3 @@ class Nico
 
 
 module.exports = Nico
-
-###
-Object.defineProperties module.exports,
-    Auth:
-        get: -> return NicoAuthApi
-    Live:
-        get: -> return NicoLiveApi
-    Video:
-        get: -> return NicoVideoApi
-    MyList:
-        get: -> return NicoMyListApi
-###
