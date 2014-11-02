@@ -44,4 +44,4 @@ class NicoLiveApi
         return new NsenChannel liveInfo
 
 
-return NicoLiveApi
+module.exports = NicoLiveApi
