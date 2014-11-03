@@ -34,7 +34,7 @@ class NicoLiveApi
         dfr         = Promise.defer()
         liveInfo    = new NicoLiveInfo @_session, liveId
         liveInfo.initThen ->
-            dfr.resolve()
+            dfr.resolve liveInfo
 
         return dfr.promise
 
