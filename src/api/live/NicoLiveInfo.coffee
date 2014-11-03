@@ -11,6 +11,8 @@
 #       公式放送番組か判定します。
 #  - isNsen: boolean
 #       放送がNsenのチャンネルか判定します。
+#  - initThen(fn: function): void
+#       データ取得後に実行する関数を登録します。
 #  - commentProvider: CommentProvider
 #       この放送へのコメント送受信を行うCommentProviderオブジェクトを取得します。
 #  - destroy: void
@@ -121,6 +123,9 @@ class NicoLiveInfo extends Backbone.Model
     # @type {NicoSession}
     _session             : null
 
+    # @type {NicoAuth}
+    _initPromise           : null
+
     # @type {Object}
     defaults    :
         stream      :
@@ -193,6 +198,8 @@ class NicoLiveInfo extends Backbone.Model
 
         NicoLiveInfo._cache[liveId] = @
 
+        @_initPromise = @fetch
+
 
     ###*
     # 自動更新イベントのリスナ
@@ -263,6 +270,15 @@ class NicoLiveInfo extends Backbone.Model
             @_commentProvider = new CommentProvider @
 
         return @_commentProvider
+
+
+    ###*
+    # 最初のデータ取得が終了した時の処理を登録します。
+    # @param {Function} fn データ取得後に実行する関数
+    ###
+    initThen        : (fn) ->
+        @_initPromise.then fn
+        return @
 
 
     ###*
@@ -351,7 +367,7 @@ class NicoLiveInfo extends Backbone.Model
     # @return {Promise}
     ###
     fetch           :  ->
-        if @id is null
+        unless @id?
             return Promise.reject "Live id not specified."
 
         self    = @
