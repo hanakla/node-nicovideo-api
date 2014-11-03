@@ -104,9 +104,12 @@ class CommentProvider extends Backbone.Collection
 
         liveInfo.getSession().once "logout", => @_disconnect
 
-        liveInfo.initThen ->
-            # コメントサーバーへ接続
-            @_initConnection()
+        liveInfo.initThen =>
+            try
+                # コメントサーバーへ接続
+                @_initConnection()
+            catch e
+                console.error "CommentProvider[%s]: Connection failed.", @_live.get "id", e
 
 
     #
@@ -143,11 +146,11 @@ class CommentProvider extends Backbone.Collection
     #
     _onCommentReceive    : (data) ->
         self    = @
-        $c      = cheerio "<res>#{data}</res>"
+        $c      = cheerio.load "<res>#{data}</res>"
 
         # 要素をばらしてイベントを呼ぶ
-        $c.find("*").each ->
-            self._rawCommentProcessor @toString()
+        $c("*").each ->
+            self._rawCommentProcessor cheerio(@).toString()
 
     #
     #
@@ -180,7 +183,7 @@ class CommentProvider extends Backbone.Collection
             when $thread.is "thread"
                 # チケットを取得
                 @_postInfo.ticket = $thread.attr "ticket"
-                console.info "CommentProvider[%s]: Reveive thread info", @_live.get("id")
+                console.info "CommentProvider[%s]: Receive thread info", @_live.get("id")
 
             # 自分のコメント投稿結果を受信
             when $thread.is "chat_result"
