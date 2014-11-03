@@ -43,6 +43,7 @@
 _           = require "lodash"
 Backbone    = require "backbone"
 request     = require "request"
+cheerio     = require "cheerio"
 
 NicoURL     = require "../NicoURL"
 _instances  = {}
@@ -129,16 +130,16 @@ class VideoInfo extends Backbone.Model
         return dfd.promise
 
     parse: (res) ->
-        $res = $(res)
+        $res = cheerio.load res
         length = 0
         val = undefined
 
         if $res.find(":root").attr("status") isnt "ok"
-            errCode = $res.find("error code")
-            console.error "MovieInfo: 動画情報の取得に失敗しました。 (%s)", $res.find("error description")
+            errCode = $res.find "error code"
+            console.error "MovieInfo: 動画情報の取得に失敗しました。 (%s)", $res.find "error description"
             return isDeleted: errCode is "DELETED"
 
-        $res = $res.find("thumb")
+        $res = $res.find "thumb"
 
         # 動画の秒単位の長さを出しておく
         length = ((length) ->
