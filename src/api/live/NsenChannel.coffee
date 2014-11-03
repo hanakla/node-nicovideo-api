@@ -279,13 +279,13 @@ class NsenChannel
         videoId = content && content.content.match(/^smile:((?:sm|nm)[1-9][0-9]*)/)
 
         unless videoId?[1]?
-            console.info "NsenChannel[%s]: Playing movie not known.", @_live.get("stream").nsenType
-            @_onVideoChangeDetected null
-            return
+           console.info "NsenChannel[%s]: Playing movie is unknown.", @_live.get("stream").nsenType
+           @_onVideoChangeDetected null
+           return
 
         if not @_playingMovie? or @_playingMovie.id isnt videoId
             # 直前の再生中動画と異なれば情報を更新
-            @_onVideoChangeDetected videoId
+            @_onVideoChangeDetected videoId[1]
 
 
     ###*
@@ -301,7 +301,6 @@ class NsenChannel
             @_playingMovie = null
             return
 
-        console.log @_getVideoApi()
         @_getVideoApi().getVideoInfo videoId
             .then (video) ->
                 self._playingMovie = video
