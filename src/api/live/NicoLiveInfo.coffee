@@ -89,7 +89,7 @@ cheerio     = require "cheerio"
 CommentProvider = require "./CommentProvider"
 NicoURL         = require "../NicoURL"
 
-UPDATE_INTERVAL = 10000
+UPDATE_INTERVAL = 60000
 
 
 _updateEventer = _.extend({}, Backbone.Events)
@@ -198,7 +198,7 @@ class NicoLiveInfo extends Backbone.Model
 
         NicoLiveInfo._cache[liveId] = @
 
-        @_initPromise = @fetch
+        @_initPromise = @fetch()
 
 
     ###*
