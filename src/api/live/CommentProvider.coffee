@@ -104,8 +104,9 @@ class CommentProvider extends Backbone.Collection
 
         liveInfo.getSession().once "logout", => @_disconnect
 
-        # コメントサーバーへ接続
-        @_initConnection()
+        liveInfo.initThen ->
+            # コメントサーバーへ接続
+            @_initConnection()
 
 
     #
