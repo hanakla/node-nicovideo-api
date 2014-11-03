@@ -203,9 +203,9 @@ class NsenChannel
             , "_onVideoChanged"
 
         # 必要なオブジェクトを取得
-        @_live      = liveInfo
-        @_session    = liveInfo.getSession()
-        @_commentProvider = liveInfo.commentProvider()
+        @_live              = liveInfo
+        @_session           = liveInfo.getSession()
+        @_commentProvider   = liveInfo.commentProvider()
 
         # イベントリスニング
         @_live
