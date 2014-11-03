@@ -274,8 +274,8 @@ class NsenChannel
     # 再生中の動画などのデータを取得する
     # @param {NicoLiveInfo} live
     ###
-    _onLiveInfoUpdated      : (live) ->
-        content = live.get("stream").contents[0]
+    _onLiveInfoUpdated      : () ->
+        content = @_live.get("stream").contents[0]
         videoId = content && content.content.match(/^smile:((?:sm|nm)[1-9][0-9]*)/)
 
         unless videoId?[1]?
@@ -301,7 +301,8 @@ class NsenChannel
             @_playingMovie = null
             return
 
-        @_videoApi.getVideoInfo videoId
+        console.log @_getVideoApi()
+        @_getVideoApi().getVideoInfo videoId
             .then (video) ->
                 self._playingMovie = video
                 self.trigger "videochanged", video, beforeVideo
@@ -425,7 +426,7 @@ class NsenChannel
                     # 直前にリクエストした動画と内容が異なれば
                     # 新しい動画に更新
                     if not self._requestedMovie? or self._requestedMovie.id isnt videoId
-                        self._videoApi.getVideoInfo videoId
+                        self._getVideoApi().getVideoInfo videoId
                             .then (movie) ->
                                 self._requestedMovie = movie
                                 self.trigger "sendRequest", movie
