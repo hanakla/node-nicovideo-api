@@ -31,7 +31,12 @@ class NicoLiveApi
         if typeof liveId isnt "string" or liveId is ""
             throw new Error("liveIdは文字列である必要があります。")
 
-        return new NicoLiveInfo @_session, liveId
+        dfr         = Promise.defer()
+        liveInfo    = new NicoLiveInfo @_session, liveId
+        liveInfo.initThen ->
+            dfr.resolve()
+
+        return dfr.promise
 
 
     ###*
