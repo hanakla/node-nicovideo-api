@@ -83,7 +83,7 @@ class VideoInfo extends Backbone.Model
     constructor     : (movieId) ->
         # 指定された動画の動画情報インスタンスがキャッシュされていればそれを返す
         # キャッシュに対応する動画情報インスタンスがなければ、新規作成してキャッシュ
-        return VideoInfo._cache[videoId] if VideoInfo._cache[videoId]?
+        return VideoInfo._cache[movieId] if VideoInfo._cache[movieId]?
 
         super id: movieId
 
