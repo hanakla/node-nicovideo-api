@@ -44,6 +44,7 @@ _           = require "lodash"
 Backbone    = require "backbone"
 request     = require "request"
 cheerio     = require "cheerio"
+sprintf     = require("sprintf").sprintf
 
 NicoURL     = require "../NicoURL"
 _instances  = {}
@@ -109,7 +110,7 @@ class VideoInfo extends Backbone.Model
 
         # getThumbInfoの結果を取得
         request.get
-            url     : NicoURL.Video.GET_VIDEO_INFO + @id
+            url     : sprintf NicoURL.Video.GET_VIDEO_INFO, @id
             , (err, res, body) ->
                 if err?
                     console.error "VideoInfo[id:%s]: Failed to fetch movie info.", self.id
@@ -121,7 +122,7 @@ class VideoInfo extends Backbone.Model
                         self.trigger "error"
                     return
 
-                self.set self.parse(res)
+                self.set self.parse body
 
                 dfd.resolve()
                 self.trigger "sync", self
@@ -134,12 +135,12 @@ class VideoInfo extends Backbone.Model
         length = 0
         val = undefined
 
-        if $res.find(":root").attr("status") isnt "ok"
-            errCode = $res.find "error code"
-            console.error "MovieInfo: 動画情報の取得に失敗しました。 (%s)", $res.find "error description"
+        if $res(":root").attr("status") isnt "ok"
+            errCode = $res "error code"
+            console.error "MovieInfo: 動画情報の取得に失敗しました。 (%s)", $res "error description"
             return isDeleted: errCode is "DELETED"
 
-        $res = $res.find "thumb"
+        $resThumb = $res "thumb"
 
         # 動画の秒単位の長さを出しておく
         length = ((length) ->
@@ -148,23 +149,23 @@ class VideoInfo extends Backbone.Model
             m = length.pop() | 0
             h = length.pop() | 0
             s + (m * 60) + (h * 3600)
-        ) $res.find("length").text()
+        ) $resThumb.find("length").text()
 
         val =
-            id          : $res.find("video_id").text()
-            title       : $res.find("title").text()
-            description : $res.find("description").text()
+            id          : $resThumb.find("video_id").text()
+            title       : $resThumb.find("title").text()
+            description : $resThumb.find("description").text()
             length      : length    # 秒数
 
-            movieType   : $res.find("movie_type").text()# "flv"とか
-            thumbnail   : $res.find("thumbnail_url").text()
+            movieType   : $resThumb.find("movie_type").text()# "flv"とか
+            thumbnail   : $resThumb.find("thumbnail_url").text()
             isDeleted   : false
             count       :
-                view        : $res.find("view_counter").text() | 0
-                comments    : $res.find("comment_num").text() | 0
-                mylist      : $res.find("mylist_counter").text() | 0
+                view        : $resThumb.find("view_counter").text() | 0
+                comments    : $resThumb.find("comment_num").text() | 0
+                mylist      : $resThumb.find("mylist_counter").text() | 0
 
-            tags    : _.map $res.find("tags[domain='jp'] tag"), (tag) ->
+            tags    : _.map $resThumb.find("tags[domain='jp'] tag"), (tag) ->
                 $t = $(tag)
                 return {
                     name        : $t.text()
@@ -173,9 +174,9 @@ class VideoInfo extends Backbone.Model
                 }
 
             user        :
-                id          : $res.find("user_id").text() | 0
-                name        : $res.find("user_nickname").text()
-                icon        : $res.find("user_icon_url").text()
+                id          : $resThumb.find("user_id").text() | 0
+                name        : $resThumb.find("user_nickname").text()
+                icon        : $resThumb.find("user_icon_url").text()
 
         _isValid: true
 
