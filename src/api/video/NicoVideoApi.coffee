@@ -7,9 +7,9 @@ NicoVideoInfo   = require "./NicoVideoInfo"
 class NicoVideoApi
     @NicoVideoInfo  = NicoVideoInfo
 
-    _session     : null
+    _session        : null
 
-    constructor : (session) ->
+    constructor     : (session) ->
         @_session = session
 
 
@@ -21,7 +21,7 @@ class NicoVideoApi
     # @param    {string}    movieId 情報を取得したい動画ID
     # @return   {Promise}
     ###
-    getVideoInfo = (movieId) ->
+    getVideoInfo    : (movieId) ->
         dfd = Promise.defer()
 
         model = new NicoVideoInfo movieId
