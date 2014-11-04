@@ -96,7 +96,7 @@ class NicoSession
         request
             .get
                 url     : NicoUrl.Auth.LOGINTEST
-                jar     : @_cookieJar
+                jar     : @getCookieJar()
                 , (err, resp, resBody) ->
                     # 通信失敗
                     if err isnt null
