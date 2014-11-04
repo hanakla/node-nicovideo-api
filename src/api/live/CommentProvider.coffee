@@ -35,8 +35,10 @@ _           = require "lodash"
 Backbone    = require "backbone"
 net         = require "net"
 cheerio     = require "cheerio"
+request     = require "request"
 sprintf     = require("sprintf").sprintf
 
+NicoUrl     = require "../NicoURL"
 NicoLiveComment = require "./NicoLiveComment"
 
 
@@ -56,7 +58,7 @@ COMMANDS =
          res_from="#{-INIT_GET_RESPONSES}"/>
     """
     post    : _.template """
-        <chat thread="<%-threadId%>" ticket="<%-ticket%>" vpos="<%-vpos%>"
+        <chat thread="<%-threadId%>" ticket="<%-ticket%>"
          postkey="<%-postKey%>" mail="<%-command%>" user_id="<%-userId%>"
          premium="<%-isPremium%>"><%-comment%></chat>
     """
@@ -158,26 +160,27 @@ class CommentProvider extends Backbone.Collection
     _rawCommentProcessor    : (rawXMLComment) ->
         $thread = cheerio rawXMLComment
 
+        @trigger "receive", rawXMLComment
+
         switch true
             # 受信したデータからNicoLiveCommentインスタンスを生成してイベントを発火させる
             when $thread.is "chat"
                 comment = NicoLiveComment.fromRawXml rawXMLComment
 
                 # 時々流れてくるよくわからない無効データは破棄
-                unless comment.get("comment") is ""
-
-                    # NicoLiveCommentの自己ポスト判定が甘いので厳密に。
-                    if comment.get("user").id is this._live.get("user").id
-                        comment.set "isMyPost", true
-
-                    # 配信終了通知が来たら切断
-                    if comment.get("comment") is "/disconnect"
-                        @trigger "ended", @_live
-                        @_disconnect()
-
+                if comment.get("comment") is ""
                     return
 
-                    this.add comment
+                # NicoLiveCommentの自己ポスト判定が甘いので厳密に。
+                if comment.get("user").id is this._live.get("user").id
+                    comment.set "isMyPost", true
+
+                # 配信終了通知が来たら切断
+                if comment.get("comment") is "/disconnect"
+                    @trigger "ended", @_live
+                    @_disconnect()
+
+                this.add comment
 
             # 最初の接続応答を受け付け
             when $thread.is "thread"
@@ -188,10 +191,8 @@ class CommentProvider extends Backbone.Collection
             # 自分のコメント投稿結果を受信
             when $thread.is "chat_result"
                 status = $thread.attr "status"
-                status = (status | 0) if status
+                status = status | 0
                 @trigger "_chatresult", {status}
-
-        @trigger "receive", rawXMLComment
 
         return
 
@@ -245,7 +246,7 @@ class CommentProvider extends Backbone.Collection
     # @return {Promise} 取得出来た時にpostkeyと共にresolveされ、
     #    失敗した時は、rejectされます。
     _fetchPostKey           : (retry) ->
-        self        = this
+        self        = @
         dfd         = Promise.defer()
         threadId    = @_live.get("comment").thread
         url         = sprintf NicoUrl.Live.GET_POSTKEY, threadId
@@ -258,7 +259,7 @@ class CommentProvider extends Backbone.Collection
             jar     : @_live.getSession().getCookieJar()
             , (err, res, body) ->
                 if err?
-                    console.error "CommentProvider[%s]: Failed to retrive postKey.", self.id
+                    console.error "CommentProvider[%s]: Failed to retrive postKey.", self._live.id
 
                     if maxRetry is 0
                         dfd.reject "Reached to max retry count."
@@ -275,16 +276,16 @@ class CommentProvider extends Backbone.Collection
                 # 通信成功
                 if res.statusCode is 200
                     # 正常に通信できた時
-                    postKey = /^postkey=(.*)\s*/.exec res
+                    postKey = /^postkey=(.*)\s*/.exec body
                     postKey = postKey[1] if postKey?
 
                 if postKey isnt ""
                     # ポストキーがちゃんと取得できれば
-                    console.info "CommentProvider[%s]: postKey update successful.", postKey
                     self._postInfo.postKey = postKey
+                    console.info "CommentProvider[%s]: postKey update successful.", self._live.id
                     dfd.resolve postKey
                 else
-                    console.error "CommentProvider[%s]: Failed to retrive postKey.", self.id, arguments
+                    console.error "CommentProvider[%s]: Failed to retrive postKey.", self._live.id, arguments
                     dfd.reject()
 
                 return
@@ -314,7 +315,7 @@ class CommentProvider extends Backbone.Collection
             dfd.reject "空コメントは投稿できません。"
             return dfd.promise
 
-        if this._connection?
+        unless @_connection?
             dfd.reject "コメントサーバと接続していません。"
             return dfd.promise
 
@@ -327,7 +328,7 @@ class CommentProvider extends Backbone.Collection
                     userId      : self._live.get("user").id
                     isPremium   : self._live.get("user").isPremium|0
 
-                    comment     : escapeHtml(msg)
+                    comment     : msg
                     command     : command || ""
 
                     threadId    : self._postInfo.threadId
@@ -335,7 +336,7 @@ class CommentProvider extends Backbone.Collection
                     ticket      : self._postInfo.ticket
 
                 # 投稿結果の受信イベントをリスニング
-                @once "_chatresult", (result) ->
+                self.once "_chatresult", (result) ->
                     clearTimeout timeoutId
 
                     if result.status is CHAT_RESULT.SUCCESS
@@ -345,7 +346,6 @@ class CommentProvider extends Backbone.Collection
                     switch result.status
                         when CHAT_RESULT.LOCKED
                             dfd.reject "コメント投稿がロックされています。"
-
                         else
                             dfd.reject "投稿に失敗しました"
 
@@ -355,11 +355,12 @@ class CommentProvider extends Backbone.Collection
                 , SEND_TIMEOUT
 
                 # コメントを投稿
+                console.log "send:", COMMANDS.post(postInfo) + "\0"
                 self._connection.write COMMANDS.post(postInfo) + "\0"
 
-                # 通信失敗
-                , (err) ->
-                    dfd.reject err
+            # 通信失敗
+            , (err) ->
+                dfd.reject err
 
         return dfd.promise
 
