@@ -89,7 +89,7 @@ class NicoSession
         return @_sessionKey isnt false
 
 
-    isLoging        : ->
+    isLogging        : ->
         dfd = Promise.defer()
 
         # ログインしてないと使えないAPIを叩く
@@ -116,6 +116,7 @@ class NicoSession
 
     setSessionId    : (key) ->
         @_sessionKey = key
+        @_promise = @isLogging()
         return
 
 
