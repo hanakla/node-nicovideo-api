@@ -2,10 +2,15 @@
 ニコニコ生放送APIラッパークラスエントランス
 ###
 NicoLiveInfo    = require "./NicoLiveInfo"
+NicoLiveComment = require "./NicoLiveComment"
+CommentProvider = require "./CommentProvider"
 NsenChannel     = require "./NsenChannel"
 
 class NicoLiveApi
-    @NsenChannel    = NsenChannel
+    @CommentProvider    = CommentProvider
+    @NicoLiveInfo       = NicoLiveInfo
+    @NicoLiveComment    = NicoLiveComment
+    @NsenChannel        = NsenChannel
 
     ###*
     # @param {NicoSession} session NicoSession object
