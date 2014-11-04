@@ -355,7 +355,6 @@ class CommentProvider extends Backbone.Collection
                 , SEND_TIMEOUT
 
                 # コメントを投稿
-                console.log "send:", COMMANDS.post(postInfo) + "\0"
                 self._connection.write COMMANDS.post(postInfo) + "\0"
 
             # 通信失敗
