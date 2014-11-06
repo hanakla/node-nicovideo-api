@@ -532,22 +532,23 @@ class NsenChannel
     #   成功したらresolveされます。
     #   失敗した時、エラーメッセージつきでrejectされます。
     ###
-    pushGood        : () ->
+    pushGood        : ->
         self    = @
         dfr     = Promise.defer()
         liveId  = @_live.get("stream").liveId
 
         request.get
             url     : sprintf NSEN_URL_GOOD, liveId
-            , (err, res, body) ->
+            jar     : @_session.getCookieJar()
+        , (err, res, body) ->
                 if err?
                     dfr.reject err
 
-                $res = $(res).find(":root")
+                $res = cheerio.load(body)(":root")
                 result = $res.attr("status") is "ok"
 
                 if result
-                    self.trigger("sendGood")
+                    self.trigger "sendGood"
                     dfr.resolve()
                  else
                     dfr.reject $res.find("error code").text()
@@ -567,27 +568,28 @@ class NsenChannel
         self    = @
         dfr     = Promise.defer()
         liveId  = @_live.get("stream").liveId
-        movieId = @getCurrentVideo().id
+        movieId = @getCurrentVideo()?.id?
 
         if ! @isSkipRequestable()
             return Promise.reject "Skip request already sended."
 
         request.get
             url     : sprintf NSEN_URL_SKIP, liveId
-            , (err, res, body) ->
-                if err?
-                    dfr.reject err
+            jar     : @_session.getCookieJar()
+        , (err, res, body) ->
+            if err?
+                dfr.reject err
 
-                $res = $(res).find(":root")
-                status = $res.attr("status") is "ok"
+            $res = cheerio.load(body).find(":root")
+            status = $res.attr("status") is "ok"
 
-                # 通信に失敗
-                if status
-                    self._lastSkippedMovieId = movieId
-                    self.trigger "sendSkip"
-                    dfr.resolve()
-                 else
-                    dfr.reject $res.find("error code").text()
+            # 通信に失敗
+            if status
+                self._lastSkippedMovieId = movieId
+                self.trigger "sendSkip"
+                dfr.resolve()
+             else
+                dfr.reject $res.find("error code").text()
 
         return dfr.promise
 
