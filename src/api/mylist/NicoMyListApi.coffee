@@ -142,44 +142,44 @@ class NicoMyListApi
         return dfd.promise
 
 
-        ###*
-        # MyListインスタンスを取得します。
-        #
-        # @param    {MyListItemIndex|number} id
-        #   MyListItemIndexかマイリストIDを渡します。
-        # @return   {Promise(MyList, string)}
-        #   取得できればMyListオブジェクトと共にresolveされ、
-        #   そうでなければエラーメッセージと共にrejectされます
-        ###
-        fetchMyList = (id = "default") ->
-            dfd = Promise.defer()
-            getInstanceDfd = Promise.defer()
+    ###*
+    # MyListインスタンスを取得します。
+    #
+    # @param    {MyListItemIndex|number} id
+    #   MyListItemIndexかマイリストIDを渡します。
+    # @return   {Promise(MyList, string)}
+    #   取得できればMyListオブジェクトと共にresolveされ、
+    #   そうでなければエラーメッセージと共にrejectされます
+    ###
+    fetchMyList     : (id = "default") ->
+        dfd = Promise.defer()
+        getInstanceDfd = Promise.defer()
 
-            if id instanceof MyListMeta
-                getInstanceDfd.resolve new MyList id
-            else
-                if id isnt "default"
-                    id = id | 0
+        if id instanceof MyListMeta
+            getInstanceDfd.resolve new MyList id
+        else
+            if id isnt "default"
+                id = id | 0
 
-                @getMyListIndex().then (groups) ->
-                    _.each groups, (obj) ->
-                        # マイリストIDを元にインスタンスを取得
-                        if obj.id is id
-                            getInstanceDfd.resolve new MyList obj
-                            return false
+            @getMyListIndex().then (groups) ->
+                _.each groups, (obj) ->
+                    # マイリストIDを元にインスタンスを取得
+                    if obj.id is id
+                        getInstanceDfd.resolve new MyList obj
+                        return false
 
-                    getInstanceDfd.reject "Can't find specified mylist."
-                    return
+                getInstanceDfd.reject "Can't find specified mylist."
+                return
 
-            getInstanceDfd.then (instance) ->
-                instance.fetch().then ->
-                    dfd.resolve instance
-                    return
-                , (msg) ->
-                    dfd.reject msg
-                    return
+        getInstanceDfd.then (instance) ->
+            instance.fetch().then ->
+                dfd.resolve instance
+                return
+            , (msg) ->
+                dfd.reject msg
+                return
 
-            return dfd.promise
+        return dfd.promise
 
 
     #
