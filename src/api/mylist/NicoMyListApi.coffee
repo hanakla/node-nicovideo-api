@@ -182,44 +182,5 @@ class NicoMyListApi
         return dfd.promise
 
 
-    #
-    #        if (_mylistGroups.groups && _mylistGroups.groups[id]) {
-    #            return dfd.resolve(_mylistGroups.groups[id]).promise();
-    #        }
-    #
-    #        if (["", "default", null, void 0].indexOf(id) !== -1) {
-    #            return dfd.resolve(new MyListGroup()).promise();
-    #        }
-    #
-    #        $.ajax({url:NicoUrl.MyList.GET_GROUPS, dataType:"json"})
-    #            .done(function (res) {
-    #                if (res.status !== "ok") {
-    #                    dfd.reject("不明なエラー(API接続完了)");
-    #                    return;
-    #                }
-    #
-    #                // リストが初期化されていなければ初期化
-    #                _mylistGroups.groups = _mylistGroups.groups || {};
-    #
-    #                var cache = _mylistGroups.groups,
-    #                    groups = res.mylistgroup;
-    #
-    #                // 受信したデータからMyListGroupインスタンスを生成
-    #                _.each(groups, function (group) {
-    #                    if (group.id === id) {
-    #                        cache[group.id] = new MyListGroup(group);
-    #                    }
-    #                });
-    #
-    #                if (_mylistGroups.groups[id]) {
-    #                    dfd.resolve(_mylistGroups.groups[id]);
-    #                } else {
-    #                    dfd.reject("指定されたマイリストは見つかりませんでした。");
-    #                }
-    #            })
-    #            .fail(function (jqxhr, status, error) {
-    #                dfd.reject(error);
-    #            });
-    #
 
 module.exports = NicoMyListApi
