@@ -91,7 +91,7 @@ class MyList extends Backbone.Collection
     # このマイリストが"とりあえずマイリスト"か検証します。
     # @return {boolean} とりあえずマイリストならtrueを返します。
     isDefaultList       : ->
-        return this.attr("id") is "default"
+        return @attr("id") is "default"
 
 
     ###*
@@ -101,20 +101,21 @@ class MyList extends Backbone.Collection
     fetch               : (options) ->
         self    = this
         dfd     = Promise.defer()
+        id      = @attr("id")
         url     = null
 
-        url = sprintf this._urlSet.LIST, @attr("id")
+        url = sprintf this._urlSet.LIST, id
 
         request.get
             url     : url
             jar     : @_mylistApi.getSession().getCookieJar()
             , (err, res, bodyJson) ->
                 if err?
-                    dfd.reject sprintf("MyList[id:%s]: Failed to fetch contents (Connection error: %s)", self.attr("id"), err)
+                    dfd.reject sprintf("MyList[id:%s]: Failed to fetch contents (Connection error: %s)", id, err)
                     return
 
                 if bodyJson.status isnt "ok"
-                    dfd.reject sprintf("MyList[id:%s]: Failed to fetch contents (unknown)")
+                    dfd.reject sprintf("MyList[id:%s]: Failed to fetch contents (unknown)", id)
                     return
 
                 _.each bodyJson.mylistitem.reverse(), (item) ->
