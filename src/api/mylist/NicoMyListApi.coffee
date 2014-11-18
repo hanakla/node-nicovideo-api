@@ -152,8 +152,8 @@ class NicoMyListApi
     #   そうでなければエラーメッセージと共にrejectされます
     ###
     fetchMyList     : (id = "default") ->
-        dfd = Promise.defer()
-        getInstanceDfd = Promise.defer()
+        dfd             = Promise.defer()
+        getInstanceDfd  = Promise.defer()
 
         if id instanceof MyListMeta
             getInstanceDfd.resolve new MyList id
@@ -161,26 +161,25 @@ class NicoMyListApi
             if id isnt "default"
                 id = id | 0
 
-            @getMyListIndex().then (groups) ->
-                _.each groups, (obj) ->
-                    # マイリストIDを元にインスタンスを取得
-                    if obj.id is id
-                        getInstanceDfd.resolve new MyList obj
-                        return false
+            @fetchMyListsIndex().then (metaList) ->
+                meta = _.where metaList, {id}
 
-                getInstanceDfd.reject "Can't find specified mylist."
+                if meta.length is 0
+                    getInstanceDfd.reject "Can't find specified mylist.(#{id})"
+                else
+                    getInstanceDfd.resolve new MyList meta[0]
+
                 return
 
-        getInstanceDfd.then (instance) ->
-            instance.fetch().then ->
-                dfd.resolve instance
+            getInstanceDfd.promise.then (instance) ->
+                instance.fetch().then ->
+                    dfd.resolve instance
+                    return
                 return
-            , (msg) ->
-                dfd.reject msg
-                return
+
+            , ->
+                dfd.reject.apply dfd, arguments
 
         return dfd.promise
-
-
 
 module.exports = NicoMyListApi
