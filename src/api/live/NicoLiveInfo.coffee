@@ -218,7 +218,7 @@ class NicoLiveInfo extends Backbone.Model
     ###
     _onClosed       : ->
         @trigger "ended"
-        _dispose this
+        @destroy()
 
 
     #
