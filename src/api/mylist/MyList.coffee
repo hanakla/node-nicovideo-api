@@ -114,6 +114,12 @@ class MyList extends Backbone.Collection
                     dfd.reject sprintf("MyList[id:%s]: Failed to fetch contents (Connection error: %s)", id, err)
                     return
 
+                try
+                    bodyJson = JSON.parse bodyJson
+                catch e
+                    dfd.reject sprintf("MyList[id:%s]: Failed to response parse as JSON", id);
+                    return
+
                 if bodyJson.status isnt "ok"
                     dfd.reject sprintf("MyList[id:%s]: Failed to fetch contents (unknown)", id)
                     return
