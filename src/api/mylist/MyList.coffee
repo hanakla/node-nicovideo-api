@@ -63,7 +63,7 @@ class MyList extends Backbone.Collection
 
 
     _urlSet     : null
-    _api        : null
+    _mylistApi        : null
 
     ###
     # @param {MyListMeta} metaInfo 操作対象の MyListMetaのインスタンス。
@@ -79,7 +79,7 @@ class MyList extends Backbone.Collection
         # 適切なAPIのURLを注入する
         this._urlSet = if this.isDefaultList() then NicoUrl.MyList.DefList else NicoUrl.MyList.Normal
 
-        @_api = metaInfo._api
+        @_mylistApi = metaInfo._api
 
         Backbone.Collection.apply @
 
@@ -167,7 +167,7 @@ class MyList extends Backbone.Collection
         #-- APIと通信
         # アクセストークンを取得
         # TODO Rewrite use promises
-        @_api.fetchToken
+        @_mylistApi.fetchToken
             # 通信エラー
             .catch (err) ->
                 dfd.reject error
