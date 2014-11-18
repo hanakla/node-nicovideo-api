@@ -107,7 +107,7 @@ class MyList extends Backbone.Collection
 
         request.get
             url     : url
-            json    : true
+            jar     : @_mylistApi.getSession().getCookieJar()
             , (err, res, bodyJson) ->
                 if err?
                     dfd.reject sprintf("MyList[id:%s]: Failed to fetch contents (Connection error: %s)", self.attr("id"), err)
@@ -178,6 +178,7 @@ class MyList extends Backbone.Collection
 
                 request.post
                     url     : self._urlSet.ADD
+                    jar     : @_mylistApi.getSession().getCookieJar()
                     form    : data
                     json    : true
                     , (err, res, apiResult) ->
