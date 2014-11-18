@@ -69,8 +69,8 @@ class MyList extends Backbone.Collection
     # @param {MyListMeta} metaInfo 操作対象の MyListMetaのインスタンス。
     ###
     constructor         : (metaInfo) ->
-        @_attributes = metaInfo.toJSON()
         id = metaInfo.get("id")
+        @_attributes = _.merge _.clone(@_attributes), metaInfo.toJSON()
 
         # 既存のインスタンスがあればそれを返す。
         if _instances[id]?
