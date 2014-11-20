@@ -8,13 +8,13 @@
 # Methods
 #   - getLiveInfo()         : NicoLiveInfo
 #       現在接続中の配信のNicoLiveInfoオブジェクトを取得します。
-#   - getCurrentVideo()     : VideoInfo|null
+#   - getCurrentVideo()     : NicoVideoInfo|null
 #       現在再生中の動画情報を取得します。
 #   - getChannelType()      : string
 #       チャンネルの種別を取得します。（nsen/***の"***"の部分だけ）
 #   - isSkipRequestable()   : boolean
 #       今現在、スキップリクエストを送ることができるか検証します。
-#   - pushRequest(movie: VideoInfo)
+#   - pushRequest(movie: NicoVideoInfo)
 #       リクエストを送信します。
 #   - cancelRequest()
 #       リクエストをキャンセルします。
@@ -28,13 +28,13 @@
 # Events
 #  - streamChanged: (newLive: NicoLiveInfo)
 #      午前４時以降、インスタンス内部で参照している放送が切り変わった時に発火します。
-#  - videochanged: (video:VideoInfo|null, beforeVideo:VideoInfo|null)
+#  - videochanged: (video:NicoVideoInfo|null, beforeVideo:NicoVideoInfo|null)
 #      再生中の動画が変わった時に発火します。
 #      第２引数に変更後の動画の情報が渡され、第３引数には変更前の動画の情報が渡されます。
 #
-#  - sendRequest:(video:VideoInfo)
+#  - sendRequest:(video:NicoVideoInfo)
 #      リクエストが完了した時に発火します。第２引数にリクエストされた動画の情報が渡されます。
-#  - cancelRequest:(video:VideoInfo)
+#  - cancelRequest:(video:NicoVideoInfo)
 #      リクエストがキャンセルされた時に発火します。第２引数にキャンセルされた動画の情報が渡されます。
 #
 #  - sendGood:()
@@ -65,7 +65,7 @@ sprintf         = require("sprintf").sprintf
 
 NicoVideoApi    = require "../video/NicoVideoApi"
 NicoLiveApi     = require "../live/NicoLiveApi"
-VideoInfo       = require "../video/NicoVideoInfo"
+NicoVideoInfo   = require "../video/NicoVideoInfo"
 NicoLiveInfo    = require "./NicoLiveInfo"
 NicoUrl         = require "../NicoURL"
 
@@ -160,7 +160,7 @@ class NsenChannel
     ###*
     # 最後にリクエストした動画情報
     # @private
-    # @type {VideoInfo}
+    # @type {NicoVideoInfo}
     ###
     _requestedMovie : null
 
@@ -440,15 +440,13 @@ class NsenChannel
 
     ###*
     # リクエストを送信します。
-    # @param    {VideoInfo} movie
-    #   リクエストする動画のVideoInfoオブジェクト
+    # @param    {NicoVideoInfo} movie
+    #   リクエストする動画のNicoVideoInfoオブジェクト
     # @return   {Promise}
     #   リクエストに成功したらresolveされます。
     #   リクエストに失敗した時、Errorオブジェクトつきでrejectされます。
     ###
     pushRequest     : (movie) ->
-        # TODO: インスタンス比較方法の修正
-        #（VideoInfoクラスの外部公開）
         if not NicoVideoInfo.isInstance movie
             return
 
