@@ -460,6 +460,7 @@ class NsenChannel
         # NsenAPIにリクエストを送信する
         request.get
             url     : url
+            jar     : @_session.getCookieJar()
             , (err, res, body) ->
                 # 通信エラー
                 if err?
@@ -509,6 +510,7 @@ class NsenChannel
         # NsenAPIにリクエストキャンセルを送信
         request.get
             url     : url
+            jar     : @_session.getCookieJar()
             , (err, res, body) ->
                 $res = cheerio.load(body)(":root")
 
