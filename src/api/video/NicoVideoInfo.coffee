@@ -122,7 +122,7 @@ class VideoInfo extends Backbone.Model
                     self.trigger "error"
                 return
 
-            self.set self.parse body
+            self.set self.parse(body)
 
             dfd.resolve()
             self.trigger "sync", self
