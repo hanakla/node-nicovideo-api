@@ -482,10 +482,10 @@ class NsenChannel
                     errCode = $res.find("error code").text()
                     reason = NsenChannel.RequestErrors[errCode]
 
-                    if reason is null
+                    if not reason?
                         reason = errCode
 
-                    dfd.reject reason
+                    dfd.reject sprintf("NsenChannel[%s]: %s", self.id, reason)
 
         return dfd.promise
 
