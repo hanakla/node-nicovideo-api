@@ -138,7 +138,7 @@ class VideoInfo extends Backbone.Model
         if $res(":root").attr("status") isnt "ok"
             errCode = $res "error code"
             errMsg = $res("error description").text()
-            console.error "MovieInfo: 動画情報の取得に失敗しました。 (%s)", errMsg
+            console.error "VideoInfo[%s]: 動画情報の取得に失敗しました。 (%s)", @id, errMsg
             return isDeleted: errCode is "DELETED"
 
         $resThumb = $res "thumb"
