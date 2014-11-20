@@ -413,7 +413,7 @@ class NsenChannel
             url     : url
             jar     : @_session.getCookieJar()
             , (err, res, body) ->
-                $res = cheerio body
+                $res = cheerio.load(body)(":root")
 
                 if err?
                     dfd.reject err
@@ -468,7 +468,7 @@ class NsenChannel
                     return
 
                 # 送信に成功したら、正しくリクエストされたか確認する
-                $res    = cheerio(res).find ":root"
+                $res    = cheerio.load(body)(":root")
                 result  = $res.attr("status") is "ok"
 
                 if result
@@ -510,7 +510,7 @@ class NsenChannel
         request.get
             url     : url
             , (err, res, body) ->
-                $res = cheerio res
+                $res = cheerio.load(body)(":root")
 
                 if err?
                     console.error ""
