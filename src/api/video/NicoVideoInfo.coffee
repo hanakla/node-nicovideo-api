@@ -111,22 +111,22 @@ class VideoInfo extends Backbone.Model
         # getThumbInfoの結果を取得
         request.get
             url     : sprintf NicoURL.Video.GET_VIDEO_INFO, @id
-            , (err, res, body) ->
-                if err?
-                    console.error "VideoInfo[id:%s]: Failed to fetch movie info.", self.id
+        , (err, res, body) ->
+            if err?
+                console.error "VideoInfo[id:%s]: Failed to fetch movie info.", self.id
 
-                    if res.statusCode is 503
-                        dfd.reject sprintf "VideoInfo[id:%s]: Nicovideo has in maintenance.", self.id
-                    else
-                        dfd.reject err
-                        self.trigger "error"
-                    return
-
-                self.set self.parse body
-
-                dfd.resolve()
-                self.trigger "sync", self
+                if res.statusCode is 503
+                    dfd.reject sprintf "VideoInfo[id:%s]: Nicovideo has in maintenance.", self.id
+                else
+                    dfd.reject err
+                    self.trigger "error"
                 return
+
+            self.set self.parse body
+
+            dfd.resolve()
+            self.trigger "sync", self
+            return
 
         return dfd.promise
 
@@ -166,7 +166,7 @@ class VideoInfo extends Backbone.Model
                 mylist      : $resThumb.find("mylist_counter").text() | 0
 
             tags    : _.map $resThumb.find("tags[domain='jp'] tag"), (tag) ->
-                $t = $(tag)
+                $t = cheerio(tag)
                 return {
                     name        : $t.text()
                     isCategory  : $t.attr("category") is "1"
