@@ -109,6 +109,7 @@ class NsenChannel
     # @const {Object.<string, string>
     ###
     @RequestErrors  :
+        not_login       : "ログインしていません。"
         nsen_close      : "現在リクエストを受け付けていません。"
         nsen_tag        : "リクエストに必要なタグが登録されていません。"
         nsen_long       : "動画が長過ぎます。"
