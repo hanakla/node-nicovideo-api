@@ -268,7 +268,7 @@ class NsenChannel
                     videoId = CommentRegExp.videoChange.exec com
 
                     if videoId?[1]?
-                        @_onVideoChangeDetected videoId
+                        @_onVideoChangeDetected videoId[1]
 
 
     ###*
@@ -307,6 +307,8 @@ class NsenChannel
             .then (video) ->
                 self._playingMovie = video
                 self.trigger "videochanged", video, beforeVideo
+
+        return
 
 
     ###*
