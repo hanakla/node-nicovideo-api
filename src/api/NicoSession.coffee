@@ -13,6 +13,7 @@ request     = require "request"
 sprintf     = require("sprintf").sprintf
 
 NicoUrl     = require "./NicoURL"
+DisposeHelper   = require "../helper/disposeHelper"
 
 class NicoSession
     _.extend @::, Backbone.Events
@@ -144,5 +145,11 @@ class NicoSession
     loginThen : (resolved, rejected) ->
         @_promise.then resolved, rejected
         return
+
+
+    dispose         : ->
+        @off()
+        DisposeHelper.wrapAllMembers @
+
 
     module.exports = NicoSession

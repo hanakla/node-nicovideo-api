@@ -86,6 +86,7 @@ request     = require "request"
 sprintf     = require("sprintf").sprintf
 cheerio     = require "cheerio"
 
+DisposeHelper   = require "../../helper/disposeHelper"
 CommentProvider = require "./CommentProvider"
 NicoURL         = require "../NicoURL"
 
@@ -194,7 +195,7 @@ class NicoLiveInfo extends Backbone.Model
             , "_onClosed"
 
         # 自動アップデートイベントをリスニング
-        _updateEventer.on "intervalSync", @_onIntervalSync
+        @listenTo _updateEventer, "intervalSync", @_onIntervalSync
 
         NicoLiveInfo._cache[liveId] = @
 
@@ -408,25 +409,26 @@ class NicoLiveInfo extends Backbone.Model
 
         return dfd.promise
 
-    #
-    # インスタンスが破棄可能か調べ、可能であれば破棄します。
-    #
+    ###*
+    # 現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。
+    ###
     destroy             : ->
-        requireKeep = false
-        @trigger "beforeDestroy", -> requireKeep = true
+        _updateEventer.off "intervalSync", @_onIntervalSync
+        @off()
+        @stopListening()
 
-        if requireKeep is false
-            _updateEventer.off "intervalSync", @_onIntervalSync
-            @off()
+        @_commentProvider.dispose()
+        @_commentProvider = undefined
+        @set "isEnded", true
+        delete NicoLiveInfo._cache[@id]
 
-            @_commentProvider.dispose()
-            @_commentProvider = undefined
-            @set "isEnded", true
-            delete NicoLiveInfo._cache[@id]
+        DisposeHelper.wrapAllMembers @, ["get", "attributes"]
+        return
 
     # 別名
     dispose             : ->
         @destroy()
+        return
 
     # Backbone.Modelのメソッドを無効化
     sync                : _.noop

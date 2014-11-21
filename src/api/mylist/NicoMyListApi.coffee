@@ -20,6 +20,8 @@
 #
 # Properties
 #   (none)
+#
+# TODO Manage MyList instances for support dispose.
 ###
 _           = require "lodash"
 request     = require "request"
@@ -27,6 +29,8 @@ request     = require "request"
 NicoUrl     = require "../NicoURL"
 MyListMeta  = require "./MyListMeta"
 MyList      = require "./MyList"
+
+DisposeHelper   = require "../../helper/disposeHelper"
 
 # 一分以上経過したらトークンを取得する
 FETCH_INTERVAL = 60 * 1000
@@ -61,8 +65,6 @@ class NicoMyListApi
 
         # トークン取得
         dfd = Promise.defer()
-
-        # 何故か取り出せない
         request.get
             url   : NicoUrl.MyList.FETCH_TOKEN
             jar   : @_session.getCookieJar()
@@ -181,5 +183,12 @@ class NicoMyListApi
                 dfd.reject.apply dfd, arguments
 
         return dfd.promise
+
+
+    ###*
+    # 現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。
+    ###
+    dispose         : ->
+        DisposeHelper.wrapAllMembers @, "isDisposed"
 
 module.exports = NicoMyListApi

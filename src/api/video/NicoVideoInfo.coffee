@@ -47,6 +47,7 @@ cheerio     = require "cheerio"
 sprintf     = require("sprintf").sprintf
 
 NicoURL     = require "../NicoURL"
+DisposeHelper   = require "../../helper/disposeHelper"
 _instances  = {}
 
 
@@ -186,5 +187,9 @@ class VideoInfo extends Backbone.Model
     sync    : _.noop
     save    : _.noop
     destroy : _.noop
+
+    dispose : ->
+        @off()
+        DisposeHelper.wrapAllMembers @
 
 module.exports = VideoInfo

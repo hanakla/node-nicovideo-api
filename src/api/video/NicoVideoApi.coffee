@@ -3,6 +3,7 @@
 ###
 
 NicoVideoInfo   = require "./NicoVideoInfo"
+DisposeHelper   = require "../../helper/disposeHelper"
 
 class NicoVideoApi
     @NicoVideoInfo  = NicoVideoInfo
@@ -34,6 +35,13 @@ class NicoVideoApi
             return
 
         return dfd.promise
+
+
+    ###*
+    # 現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。
+    ###
+    dispose         : ->
+        DisposeHelper.wrapAllMembers @
 
 
 module.exports = NicoVideoApi
