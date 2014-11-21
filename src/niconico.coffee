@@ -44,4 +44,14 @@ class Nico
         @_session.loginThen resolved, rejected
 
 
+    ###*
+    # 現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。
+    ###
+    dispose : ->
+        @_session?.dispose()
+        @_live?.dispose()
+        @_video?.dispose()
+        @_mylist?.dispose()
+
+
 module.exports = Nico

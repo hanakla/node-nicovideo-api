@@ -1,10 +1,13 @@
 ###*
-ニコニコ生放送APIラッパークラスエントランス
+# ニコニコ生放送APIラッパークラスエントランス
+# TODO Manage LiveInfo and NsenChannel instances for support dispose.
 ###
 NicoLiveInfo    = require "./NicoLiveInfo"
 NicoLiveComment = require "./NicoLiveComment"
 CommentProvider = require "./CommentProvider"
 NsenChannel     = require "./NsenChannel"
+
+DisposeHelper   = require "../../helper/disposeHelper"
 
 class NicoLiveApi
     @CommentProvider    = CommentProvider
@@ -12,11 +15,19 @@ class NicoLiveApi
     @NicoLiveComment    = NicoLiveComment
     @NsenChannel        = NsenChannel
 
+
+    _session        : null
+
+    _nsenChannelInstances   : null
+    _nicoLiveInstances      : null
+
     ###*
     # @param {NicoSession} session NicoSession object
     ###
     constructor     : (session) ->
         @_session = session
+        @_nsenChannelInstances  = []
+        @_nicoLiveInstances     = []
 
 
     _getSession     : ->
@@ -40,6 +51,7 @@ class NicoLiveApi
         liveInfo    = new NicoLiveInfo @_session, liveId
         liveInfo.initThen ->
             dfr.resolve liveInfo
+        @_nicoLiveInstances.push liveInfo
 
         return dfr.promise
 
@@ -51,7 +63,22 @@ class NicoLiveApi
     # @return {NsenChannel}
     ###
     getNsenChannelHandlerFor : (liveInfo) ->
-        return new NsenChannel liveInfo
+        instance = new NsenChannel liveInfo
+        @_nsenChannelInstances.push instance
+        return instance
+
+
+    ###*
+    # 現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。
+    ###
+    dispose         : ->
+        for instance in @_nsenChannelInstances
+            instance.dispose();
+
+        for instance in @_nicoLiveInstances
+            instance.dispose();
+
+        DisposeHelper.wrapAllMembers @
 
 
 module.exports = NicoLiveApi

@@ -70,6 +70,7 @@ NicoLiveInfo    = require "./NicoLiveInfo"
 NicoUrl         = require "../NicoURL"
 
 NsenChannels    = require "./NsenChannels"
+DisposeHelper   = require "../../helper/disposeHelper"
 
 NSEN_URL_REQUEST        = NicoUrl.Live.NSEN_REQUEST
 NSEN_URL_REQUEST_CANCEL = NicoUrl.Live.NSEN_REQUEST_CANCEL
@@ -652,5 +653,15 @@ class NsenChannel
 
         return dfd.promise
 
+
+    dispose         : ->
+        @_live
+            .off "sync", @_onLiveInfoUpdated
+            .off "ended", @_onLiveClosed
+
+        @_commentProvider
+            .off "add", @_onCommentAdded
+        @off()
+        DisposeHelper.wrapAllMembers @
 
 module.exports = NsenChannel

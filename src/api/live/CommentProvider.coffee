@@ -41,6 +41,8 @@ sprintf     = require("sprintf").sprintf
 NicoUrl     = require "../NicoURL"
 NicoLiveComment = require "./NicoLiveComment"
 
+DisposeHelper   = require "../../helper/disposeHelper"
+
 
 CHAT_RESULT =
     SUCCESS             : 0
@@ -366,9 +368,12 @@ class CommentProvider extends Backbone.Collection
 
     # このインスタンスを破棄します。
     dispose                 : ->
-        this._live = null
-        this._postInfo = null
-        this._disconnect()
+        @_live = null
+        @_postInfo = null
+        @_disconnect()
+        @off()
+
+        DisposeHelper.wrapAllMembers @
 
     # Backbone.Collectionのいくつかのメソッドを無効化
     create                  : _.noop
