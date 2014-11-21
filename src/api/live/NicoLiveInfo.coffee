@@ -195,7 +195,7 @@ class NicoLiveInfo extends Backbone.Model
             , "_onClosed"
 
         # 自動アップデートイベントをリスニング
-        _updateEventer.on "intervalSync", @_onIntervalSync
+        @listenTo _updateEventer, "intervalSync", @_onIntervalSync
 
         NicoLiveInfo._cache[liveId] = @
 
@@ -415,6 +415,7 @@ class NicoLiveInfo extends Backbone.Model
     destroy             : ->
         _updateEventer.off "intervalSync", @_onIntervalSync
         @off()
+        @stopListening()
 
         @_commentProvider.dispose()
         @_commentProvider = undefined
