@@ -186,9 +186,16 @@ class MyList extends Backbone.Collection
                     url     : self._urlSet.ADD
                     jar     : @_mylistApi.getSession().getCookieJar()
                     form    : data
-                    json    : true
                     , (err, res, apiResult) ->
                         # APIの実行結果受信
+                        if err?
+                            dfd.reject sprintf "Mylist[%s]: Failed to add item by connection error. (%s)", @attr("id"), err
+
+                        try
+                            apiResult = JSON.parse apiResult
+                        catch e
+                            dfd.rejsct "Mylist[%s]: Failed to add item (json parse error)"
+
                         if apiResult.status is "ok"
                             # APIを叩き終わったら最新の情報に更新
                             dfd.resolve()
@@ -196,7 +203,7 @@ class MyList extends Backbone.Collection
                         else
                             dfd.reject sprintf "MyList[%s]: Failed to add item (reason: %s)"
                                     , self.attr("id")
-                                    , res.error.description
+                                    , apiResult.error.description
 
                         return
 
