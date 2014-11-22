@@ -184,7 +184,7 @@ class MyList extends Backbone.Collection
 
                 request.post
                     url     : self._urlSet.ADD
-                    jar     : @_mylistApi.getSession().getCookieJar()
+                    jar     : self._mylistApi.getSession().getCookieJar()
                     form    : data
                     , (err, res, apiResult) ->
                         # APIの実行結果受信
