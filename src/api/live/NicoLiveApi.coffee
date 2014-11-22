@@ -1,20 +1,37 @@
 ###*
-ニコニコ生放送APIラッパークラスエントランス
+# ニコニコ生放送APIラッパークラスエントランス
+# TODO Manage LiveInfo and NsenChannel instances for support dispose.
 ###
 NicoLiveInfo    = require "./NicoLiveInfo"
+NicoLiveComment = require "./NicoLiveComment"
+CommentProvider = require "./CommentProvider"
 NsenChannel     = require "./NsenChannel"
 
+DisposeHelper   = require "../../helper/disposeHelper"
+
 class NicoLiveApi
+    @CommentProvider    = CommentProvider
+    @NicoLiveInfo       = NicoLiveInfo
+    @NicoLiveComment    = NicoLiveComment
+    @NsenChannel        = NsenChannel
+
+
+    _session        : null
+
+    _nsenChannelInstances   : null
+    _nicoLiveInstances      : null
 
     ###*
-    # @param {NicoAuthTicket}   Authenticated NicoAuthTicket object
+    # @param {NicoSession} session NicoSession object
     ###
-    constructor     : (ticket) ->
-        @_ticket = ticket
+    constructor     : (session) ->
+        @_session = session
+        @_nsenChannelInstances  = []
+        @_nicoLiveInstances     = []
 
 
-    _getTicket      : ->
-        @_ticket
+    _getSession     : ->
+        @_session
 
     ###*
     # 指定された放送の情報を取得します。
@@ -30,7 +47,13 @@ class NicoLiveApi
         if typeof liveId isnt "string" or liveId is ""
             throw new Error("liveIdは文字列である必要があります。")
 
-        return new NicoLiveInfo @, liveId
+        dfr         = Promise.defer()
+        liveInfo    = new NicoLiveInfo @_session, liveId
+        liveInfo.initThen ->
+            dfr.resolve liveInfo
+        @_nicoLiveInstances.push liveInfo
+
+        return dfr.promise
 
 
     ###*
@@ -40,7 +63,22 @@ class NicoLiveApi
     # @return {NsenChannel}
     ###
     getNsenChannelHandlerFor : (liveInfo) ->
-        return new NsenChannel liveInfo
+        instance = new NsenChannel liveInfo
+        @_nsenChannelInstances.push instance
+        return instance
 
 
-return NicoLiveAPI
+    ###*
+    # 現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。
+    ###
+    dispose         : ->
+        for instance in @_nsenChannelInstances
+            instance.dispose();
+
+        for instance in @_nicoLiveInstances
+            instance.dispose();
+
+        DisposeHelper.wrapAllMembers @
+
+
+module.exports = NicoLiveApi

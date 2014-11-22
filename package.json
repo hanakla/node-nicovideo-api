@@ -1,9 +1,9 @@
 {
   "name": "node-nicovideo-api",
-  "version": "0.0.1",
+  "version": "0.0.5",
   "description": "nicovideo api (video, live, etc..) wrapper package for node.js",
   "homepage": "https://github.com/Ragg-/node-nicovideo",
-  "main": "lib/nico.js",
+  "main": "lib/niconico.js",
   "author": "Ragg",
   "license": "MIT",
   "repository": {
@@ -19,12 +19,13 @@
   "devDependencies": {
     "backbone": "^1.1.2",
     "coffee-script": "^1.8.0",
+    "lodash": "^2.4.1",
     "request": "^2.47.0",
     "sprintf": "^0.1.4",
     "tough-cookie": "^0.12.1"
   },
   "scripts": {
-    "prepublish": "coffee -o lib/ -c src/",
+    "postinstall": "coffee -o lib/ -c src/",
     "test": "echo \"Error: no test specified\" && exit 1"
   }
 }

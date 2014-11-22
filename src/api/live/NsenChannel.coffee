@@ -8,13 +8,13 @@
 # Methods
 #   - getLiveInfo()         : NicoLiveInfo
 #       現在接続中の配信のNicoLiveInfoオブジェクトを取得します。
-#   - getCurrentVideo()     : VideoInfo|null
+#   - getCurrentVideo()     : NicoVideoInfo|null
 #       現在再生中の動画情報を取得します。
 #   - getChannelType()      : string
 #       チャンネルの種別を取得します。（nsen/***の"***"の部分だけ）
 #   - isSkipRequestable()   : boolean
 #       今現在、スキップリクエストを送ることができるか検証します。
-#   - pushRequest(movie: VideoInfo)
+#   - pushRequest(movie: NicoVideoInfo)
 #       リクエストを送信します。
 #   - cancelRequest()
 #       リクエストをキャンセルします。
@@ -28,13 +28,13 @@
 # Events
 #  - streamChanged: (newLive: NicoLiveInfo)
 #      午前４時以降、インスタンス内部で参照している放送が切り変わった時に発火します。
-#  - videochanged: (video:VideoInfo|null, beforeVideo:VideoInfo|null)
+#  - videochanged: (video:NicoVideoInfo|null, beforeVideo:NicoVideoInfo|null)
 #      再生中の動画が変わった時に発火します。
 #      第２引数に変更後の動画の情報が渡され、第３引数には変更前の動画の情報が渡されます。
 #
-#  - sendRequest:(video:VideoInfo)
+#  - sendRequest:(video:NicoVideoInfo)
 #      リクエストが完了した時に発火します。第２引数にリクエストされた動画の情報が渡されます。
-#  - cancelRequest:(video:VideoInfo)
+#  - cancelRequest:(video:NicoVideoInfo)
 #      リクエストがキャンセルされた時に発火します。第２引数にキャンセルされた動画の情報が渡されます。
 #
 #  - sendGood:()
@@ -57,17 +57,20 @@
 #  - ended:()
 #       配信が終了した時に発火します。
 ###
-_               = require "underscore"
+_               = require "lodash"
 Backbone        = require "backbone"
-
-NicoVideoApi    = require "../video/NicoVideoApi"
-NicoLiveApi     = require "../live/NicoLiveApi"
-VideoInfo       = require "../video/NicoVideoInfo"
-NicoLiveInfo    = require "./NicoLiveInfo"
-NicoUrl         = require "../impl/NicoUrl"
 cheerio         = require "cheerio"
 request         = require "request"
 sprintf         = require("sprintf").sprintf
+
+NicoVideoApi    = require "../video/NicoVideoApi"
+NicoLiveApi     = require "../live/NicoLiveApi"
+NicoVideoInfo   = require "../video/NicoVideoInfo"
+NicoLiveInfo    = require "./NicoLiveInfo"
+NicoUrl         = require "../NicoURL"
+
+NsenChannels    = require "./NsenChannels"
+DisposeHelper   = require "../../helper/disposeHelper"
 
 NSEN_URL_REQUEST        = NicoUrl.Live.NSEN_REQUEST
 NSEN_URL_REQUEST_CANCEL = NicoUrl.Live.NSEN_REQUEST_CANCEL
@@ -100,19 +103,20 @@ _instances = {}
 # @param {NicoLiveInfo liveInfo Nsenの配信を指すLiveInfoオブジェクト
 ###
 class NsenChannel
-    _.extends @::, Backbone.Events
+    _.extend @::, Backbone.Events
 
     ###*
     # Nsenリクエスト時のエラーコード
     # @const {Object.<string, string>
     ###
     @RequestErrors  :
+        not_login       : "ログインしていません。"
         nsen_close      : "現在リクエストを受け付けていません。"
         nsen_tag        : "リクエストに必要なタグが登録されていません。"
         nsen_long       : "動画が長過ぎます。"
         nsen_requested  : "リクエストされたばかりです。"
 
-    @Channels       : require "./NsenChannels.json"
+    @Channels       : NsenChannels
 
     @_cache         : {}
 
@@ -143,9 +147,9 @@ class NsenChannel
 
     ###*
     # @private
-    # @type {NicoAuthTicket}
+    # @type {NicoSession}
     ###
-    _ticket         : null
+    _session         : null
 
 
     ###*
@@ -158,7 +162,7 @@ class NsenChannel
     ###*
     # 最後にリクエストした動画情報
     # @private
-    # @type {VideoInfo}
+    # @type {NicoVideoInfo}
     ###
     _requestedMovie : null
 
@@ -201,9 +205,9 @@ class NsenChannel
             , "_onVideoChanged"
 
         # 必要なオブジェクトを取得
-        @_live      = liveInfo
-        @_ticket    = liveInfo._getTicket()
-        @_commentProvider = liveInfo.commentProvider()
+        @_live              = liveInfo
+        @_session           = liveInfo.getSession()
+        @_commentProvider   = liveInfo.commentProvider()
 
         # イベントリスニング
         @_live
@@ -226,6 +230,7 @@ class NsenChannel
             self._acceptVideoChangeDetectionFromComments = true
         , 1000
 
+        @_onLiveInfoUpdated()
         @fetch()
 
 
@@ -264,7 +269,7 @@ class NsenChannel
                     videoId = CommentRegExp.videoChange.exec com
 
                     if videoId?[1]?
-                        @_onVideoChangeDetected videoId
+                        @_onVideoChangeDetected videoId[1]
 
 
     ###*
@@ -272,18 +277,18 @@ class NsenChannel
     # 再生中の動画などのデータを取得する
     # @param {NicoLiveInfo} live
     ###
-    _onLiveInfoUpdated      : (live) ->
-        content = live.get("stream").contents[0]
+    _onLiveInfoUpdated      : () ->
+        content = @_live.get("stream").contents[0]
         videoId = content && content.content.match(/^smile:((?:sm|nm)[1-9][0-9]*)/)
 
         unless videoId?[1]?
-            console.info "NsenChannel[%s]: Playing movie not known.", @_live.get("stream").nsenType
-            @_onVideoChangeDetected null
-            return
+           console.info "NsenChannel[%s]: Playing movie is unknown.", @_live.get("stream").nsenType
+           @_onVideoChangeDetected null
+           return
 
         if not @_playingMovie? or @_playingMovie.id isnt videoId
             # 直前の再生中動画と異なれば情報を更新
-            @_onVideoChangeDetected videoId
+            @_onVideoChangeDetected videoId[1]
 
 
     ###*
@@ -299,10 +304,12 @@ class NsenChannel
             @_playingMovie = null
             return
 
-        @_videoApi.getVideoInfo videoId
+        @_getVideoApi().getVideoInfo videoId
             .then (video) ->
                 self._playingMovie = video
                 self.trigger "videochanged", video, beforeVideo
+
+        return
 
 
     ###*
@@ -338,7 +345,7 @@ class NsenChannel
     ###
     _getVideoApi        : ->
         if not @_videoApi?
-            @_videoApi = new NicoVideoApi @_ticket
+            @_videoApi = new NicoVideoApi @_session
 
         return @_videoApi
 
@@ -350,7 +357,7 @@ class NsenChannel
     ###
     _getLiveApi         : ->
         if not @_liveApi?
-            @_liveApi = new NicoLiveApi @_ticket
+            @_liveApi = new NicoLiveApi @_session
 
         return @_liveApi
 
@@ -408,9 +415,9 @@ class NsenChannel
 
         request.get
             url     : url
-            jar     : @_ticket.getCookieJar()
+            jar     : @_session.getCookieJar()
             , (err, res, body) ->
-                $res = cheerio body
+                $res = cheerio.load(body)(":root")
 
                 if err?
                     dfd.reject err
@@ -423,7 +430,7 @@ class NsenChannel
                     # 直前にリクエストした動画と内容が異なれば
                     # 新しい動画に更新
                     if not self._requestedMovie? or self._requestedMovie.id isnt videoId
-                        self._videoApi.getVideoInfo videoId
+                        self._getVideoApi().getVideoInfo videoId
                             .then (movie) ->
                                 self._requestedMovie = movie
                                 self.trigger "sendRequest", movie
@@ -438,15 +445,13 @@ class NsenChannel
 
     ###*
     # リクエストを送信します。
-    # @param    {VideoInfo} movie
-    #   リクエストする動画のVideoInfoオブジェクト
+    # @param    {NicoVideoInfo} movie
+    #   リクエストする動画のNicoVideoInfoオブジェクト
     # @return   {Promise}
     #   リクエストに成功したらresolveされます。
     #   リクエストに失敗した時、Errorオブジェクトつきでrejectされます。
     ###
     pushRequest     : (movie) ->
-        # TODO: インスタンス比較方法の修正
-        #（VideoInfoクラスの外部公開）
         if not NicoVideoInfo.isInstance movie
             return
 
@@ -459,6 +464,7 @@ class NsenChannel
         # NsenAPIにリクエストを送信する
         request.get
             url     : url
+            jar     : @_session.getCookieJar()
             , (err, res, body) ->
                 # 通信エラー
                 if err?
@@ -467,7 +473,7 @@ class NsenChannel
                     return
 
                 # 送信に成功したら、正しくリクエストされたか確認する
-                $res    = cheerio(res).find ":root"
+                $res    = cheerio.load(body)(":root")
                 result  = $res.attr("status") is "ok"
 
                 if result
@@ -481,10 +487,10 @@ class NsenChannel
                     errCode = $res.find("error code").text()
                     reason = NsenChannel.RequestErrors[errCode]
 
-                    if reason is null
+                    if not reason?
                         reason = errCode
 
-                    dfd.reject reason
+                    dfd.reject sprintf("NsenChannel[%s]: %s", self.id, reason)
 
         return dfd.promise
 
@@ -508,8 +514,9 @@ class NsenChannel
         # NsenAPIにリクエストキャンセルを送信
         request.get
             url     : url
+            jar     : @_session.getCookieJar()
             , (err, res, body) ->
-                $res = cheerio res
+                $res = cheerio.load(body)(":root")
 
                 if err?
                     console.error ""
@@ -530,22 +537,23 @@ class NsenChannel
     #   成功したらresolveされます。
     #   失敗した時、エラーメッセージつきでrejectされます。
     ###
-    pushGood        : () ->
+    pushGood        : ->
         self    = @
         dfr     = Promise.defer()
         liveId  = @_live.get("stream").liveId
 
         request.get
             url     : sprintf NSEN_URL_GOOD, liveId
-            , (err, res, body) ->
+            jar     : @_session.getCookieJar()
+        , (err, res, body) ->
                 if err?
                     dfr.reject err
 
-                $res = $(res).find(":root")
+                $res = cheerio.load(body)(":root")
                 result = $res.attr("status") is "ok"
 
                 if result
-                    self.trigger("sendGood")
+                    self.trigger "sendGood"
                     dfr.resolve()
                  else
                     dfr.reject $res.find("error code").text()
@@ -565,27 +573,28 @@ class NsenChannel
         self    = @
         dfr     = Promise.defer()
         liveId  = @_live.get("stream").liveId
-        movieId = @getCurrentVideo().id
+        movieId = @getCurrentVideo()?.id?
 
         if ! @isSkipRequestable()
             return Promise.reject "Skip request already sended."
 
         request.get
             url     : sprintf NSEN_URL_SKIP, liveId
-            , (err, res, body) ->
-                if err?
-                    dfr.reject err
+            jar     : @_session.getCookieJar()
+        , (err, res, body) ->
+            if err?
+                dfr.reject err
 
-                $res = $(res).find(":root")
-                status = $res.attr("status") is "ok"
+            $res = cheerio.load(body).find(":root")
+            status = $res.attr("status") is "ok"
 
-                # 通信に失敗
-                if status
-                    self._lastSkippedMovieId = movieId
-                    self.trigger "sendSkip"
-                    dfr.resolve()
-                 else
-                    dfr.reject $res.find("error code").text()
+            # 通信に失敗
+            if status
+                self._lastSkippedMovieId = movieId
+                self.trigger "sendSkip"
+                dfr.resolve()
+             else
+                dfr.reject $res.find("error code").text()
 
         return dfr.promise
 
@@ -647,5 +656,15 @@ class NsenChannel
 
         return dfd.promise
 
+
+    dispose         : ->
+        @_live
+            .off "sync", @_onLiveInfoUpdated
+            .off "ended", @_onLiveClosed
+
+        @_commentProvider
+            .off "add", @_onCommentAdded
+        @off()
+        DisposeHelper.wrapAllMembers @
 
 module.exports = NsenChannel

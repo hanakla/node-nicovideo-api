@@ -30,7 +30,7 @@
 #   - createTime    : Date      -- マイリストの作成日
 #   - updateTime    : Date      -- マイリストの更新日
 ###
-_           = require "underscore"
+_           = require "lodash"
 Backbone    = require "backbone"
 
 MyList      = require "./MyList"

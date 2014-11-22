@@ -35,6 +35,39 @@ REGEXP_GT = />/g
 noop = ->
 
 class NicoLiveComment extends Backbone.Model
+    ###*
+    # 規定の形式のXMLからNicoLiveCommentモデルを生成します。
+    #
+    # ニコ生サーバーから配信されてくる以下のような形式のコメント（１行）を第１引数に渡してください。
+    #   <chat thread="##" vpos="##" date="##" date_usec="##" user_id="##" premium="#" locale="**">コメント内容</chat>
+    #
+    # @param {string} xml ニコ生コメントサーバーから受信したXMLコメントデータ
+    ###
+    @fromRawXml     : (xml) ->
+        $xml    = cheerio xml
+        obj     =
+            threadId: $xml.attr("thread")
+
+            date    : new Date($xml.attr("date")|0 * 1000)
+            locale  : $xml.attr("locale")
+            command : $xml.attr("mail")
+            comment : $xml.text().replace(REGEXP_GT, ">").replace(REGEXP_LT, "<")
+
+            isMyPost: $xml.attr("yourpost") is "1"
+
+            user    :
+                id          : $xml.attr("user_id")
+                score       : $xml.attr("score")|0
+                accountType : $xml.attr("premium")|0
+                isPremium   : ($xml.attr("premium")|0) > 0
+                isAnonymous : $xml.attr("anonymity")|0 isnt 0
+
+        # user.idを数値へ変換
+        if obj.user.id and obj.user.id.match(/^[0-9]*$/)
+            obj.user.id = obj.user.id | 0
+
+        return new NicoLiveComment obj
+
     defaults :
         threadId: null,
 
@@ -72,37 +105,5 @@ class NicoLiveComment extends Backbone.Model
     save    : noop
     destroy : noop
 
-###*
-# 規定の形式のXMLからNicoLiveCommentモデルを生成します。
-#
-# ニコ生サーバーから配信されてくる以下のような形式のコメント（１行）を第１引数に渡してください。
-#   <chat thread="##" vpos="##" date="##" date_usec="##" user_id="##" premium="#" locale="**">コメント内容</chat>
-#
-# @param {string} xml ニコ生コメントサーバーから受信したXMLコメントデータ
-###
-_fromRawXml   = (xml) ->
-    $xml    = cheerio xml
-    obj     =
-        threadId: $xml.attr("thread")
 
-        date    : new Date($xml.attr("date")|0 * 1000)
-        locale  : $xml.attr("locale")
-        command : $xml.attr("mail")
-        comment : $xml.text().replace(REGEXP_GT, ">").replace(REGEXP_LT, "<")
-
-        isMyPost: $xml.attr("yourpost") is "1"
-
-        user    :
-            id          : $xml.attr("user_id")
-            score       : $xml.attr("score")|0
-            accountType : $xml.attr("premium")|0
-            isPremium   : ($xml.attr("premium")|0) > 0
-            isAnonymous : $xml.attr("anonymity")|0 isnt 0
-
-    # user.idを数値へ変換
-    if obj.user.id and obj.user.id.match(/^[0-9]*$/)
-        obj.user.id = obj.user.id | 0
-
-    return new NicoLiveComment obj
-
-module.exports.fromRawXml = _fromRawXml
+module.exports = NicoLiveComment

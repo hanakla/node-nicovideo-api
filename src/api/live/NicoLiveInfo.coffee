@@ -11,6 +11,8 @@
 #       公式放送番組か判定します。
 #  - isNsen: boolean
 #       放送がNsenのチャンネルか判定します。
+#  - initThen(fn: function): void
+#       データ取得後に実行する関数を登録します。
 #  - commentProvider: CommentProvider
 #       この放送へのコメント送受信を行うCommentProviderオブジェクトを取得します。
 #  - destroy: void
@@ -78,16 +80,17 @@
 #       thread:         number -- この放送と対応するスレッドID
 #
 
-_           = require "underscore"
+_           = require "lodash"
 Backbone    = require "backbone"
 request     = require "request"
 sprintf     = require("sprintf").sprintf
 cheerio     = require "cheerio"
 
+DisposeHelper   = require "../../helper/disposeHelper"
 CommentProvider = require "./CommentProvider"
 NicoURL         = require "../NicoURL"
 
-UPDATE_INTERVAL = 10000
+UPDATE_INTERVAL = 60000
 
 
 _updateEventer = _.extend({}, Backbone.Events)
@@ -118,8 +121,11 @@ class NicoLiveInfo extends Backbone.Model
     # @type {CommentProvider}
     _commentProvider    : null
 
-    # @type {NicoAuthTicket}
-    _ticket             : null
+    # @type {NicoSession}
+    _session             : null
+
+    # @type {NicoAuth}
+    _initPromise           : null
 
     # @type {Object}
     defaults    :
@@ -174,24 +180,26 @@ class NicoLiveInfo extends Backbone.Model
 
 
     ###*
-    # @param {NicoAuthTicket}   ticket  認証チケット
-    # @param {string}           liveId  放送ID
+    # @param {NicoSession}  session 認証チケット
+    # @param {string}       liveId  放送ID
     ###
-    constructor     : (ticket, liveId) ->
+    constructor     : (session, liveId) ->
         if NicoLiveInfo._cache[liveId]?
-            return _instances[liveId]
+            return NicoLiveInfo._cache[liveId]
 
         super id: liveId
-        @_ticket = ticket
+        @_session = session
 
         _.bindAll @
-            , "_autoUpdate"
+            , "_onIntervalSync"
             , "_onClosed"
 
         # 自動アップデートイベントをリスニング
-        _updateEventer.on "intervalSync", _onIntervalSync
+        @listenTo _updateEventer, "intervalSync", @_onIntervalSync
 
         NicoLiveInfo._cache[liveId] = @
+
+        @_initPromise = @fetch()
 
 
     ###*
@@ -211,7 +219,7 @@ class NicoLiveInfo extends Backbone.Model
     ###
     _onClosed       : ->
         @trigger "ended"
-        _dispose this
+        @destroy()
 
 
     #
@@ -248,10 +256,10 @@ class NicoLiveInfo extends Backbone.Model
 
     #
     # 割り当てられた認証チケットを取得します。
-    # @return {NicoAuthTicket}
+    # @return {NicoSession}
     #
-    getTicket       : ->
-        return @_ticket
+    getSession      : ->
+        return @_session
 
 
     #
@@ -266,21 +274,30 @@ class NicoLiveInfo extends Backbone.Model
 
 
     ###*
+    # 最初のデータ取得が終了した時の処理を登録します。
+    # @param {Function} fn データ取得後に実行する関数
+    ###
+    initThen        : (fn) ->
+        @_initPromise.then fn
+        return @
+
+
+    ###*
     # APIから取得した情報をパースします。
     # @private
     # @param {string} res API受信結果
     ###
     parse           : (res) ->
-        $res    = cheerio(res)
-        $root   = $res.find(":root")
-        $stream = $res.find("stream")
-        $user   = $res.find("user")
-        $rtmp   = $res.find("rtmp")
-        $ms     = $res.find("ms")
+        $res    = cheerio.load res
+        $root   = $res ":root"
+        $stream = $res "stream"
+        $user   = $res "user"
+        $rtmp   = $res "rtmp"
+        $ms     = $res "ms"
         val     = null
 
         if $root.attr("status") isnt "ok"
-            msg = $res.find("error code").text()
+            msg = $res("error code").text()
 
             console.error "NicoLiveInfo[%s]: Failed live info fetch. (%s)", @id, msg
             @trigger "error", msg, @
@@ -302,11 +319,11 @@ class NicoLiveInfo extends Backbone.Model
                 endTime     : new Date(($stream.find("end_time")|0) * 1000)
 
                 isOfficial  : $stream.find("provider_type").text() is "official"
-                isNsen      : $res.find("ns").length > 0
-                nsenType    : $res.find("ns nstype").text()||null
+                isNsen      : $res("ns").length > 0
+                nsenType    : $res("ns nstype").text()||null
 
-                contents    : _.map $stream.find("contents_list contents"), (content) ->
-                    $content = cheerio(content)
+                contents    : $stream.find("contents_list contents").map () ->
+                    $content = cheerio @
                     return {
                         id              : $content.attr("id")
                         startTime       : new Date(($content.attr("start_time")|0) * 1000)
@@ -341,7 +358,7 @@ class NicoLiveInfo extends Backbone.Model
                 port        : $ms.find("port").text()|0
                 thread      : $ms.find("thread").text()|0
 
-            _hasError: $res.find("getplayerstatus").attr("status") isnt "ok"
+            _hasError: $res("getplayerstatus").attr("status") isnt "ok"
 
         return val
 
@@ -351,7 +368,7 @@ class NicoLiveInfo extends Backbone.Model
     # @return {Promise}
     ###
     fetch           :  ->
-        if @id is null
+        unless @id?
             return Promise.reject "Live id not specified."
 
         self    = @
@@ -361,7 +378,7 @@ class NicoLiveInfo extends Backbone.Model
         # getPlayerStatusの結果を取得
         request.get
             url     : url
-            jar     : @_ticket.getCookieJar()
+            jar     : @_session.getCookieJar()
             , (err, res, body) ->
 
                 # check errors
@@ -392,25 +409,26 @@ class NicoLiveInfo extends Backbone.Model
 
         return dfd.promise
 
-    #
-    # インスタンスが破棄可能か調べ、可能であれば破棄します。
-    #
+    ###*
+    # 現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。
+    ###
     destroy             : ->
-        requireKeep = false
-        @trigger "beforeDestroy", -> requireKeep = true
+        _updateEventer.off "intervalSync", @_onIntervalSync
+        @off()
+        @stopListening()
 
-        if requireKeep is false
-            _updateEventer.off "intervalSync", @_onIntervalSync
-            @off()
+        @_commentProvider.dispose()
+        @_commentProvider = undefined
+        @set "isEnded", true
+        delete NicoLiveInfo._cache[@id]
 
-            @_commentProvider.dispose()
-            @_commentProvider = undefined
-            @set "isEnded", true
-            delete NicoLiveInfo._cache[@id]
+        DisposeHelper.wrapAllMembers @, ["get", "attributes"]
+        return
 
     # 別名
     dispose             : ->
         @destroy()
+        return
 
     # Backbone.Modelのメソッドを無効化
     sync                : _.noop

@@ -4,41 +4,54 @@
 #   "logout" : ニコニコ動画からログアウトした時に発生します。
 ###
 
-NicoAuthTicket  = require "./api/NicoAuthTicket"
+NicoSession  = require "./api/NicoSession"
 NicoLive        = require "./api/live/NicoLiveApi"
 NicoMyList      = require "./api/mylist/NicoMyListApi"
 NicoVideo       = require "./api/video/NicoVideoApi"
 
 
 class Nico
-    _ticket     : null
+    @Session    = NicoSession
+    @Live       = NicoLive
+    @MyList     = NicoMyList
+    @Video      = NicoVideo
 
-    live        : null
-    mylist      : null
-    video       : null
+    _session     : null
+
+    # _live        : null # Lazy initialize
+    # _video       : null # Lazy initialize
+    # _mylist      : null # Lazy initialize
 
     constructor     : (user, password) ->
-        @_ticket = new NicoAuthTicket user, password
+        @_session = new NicoSession user, password
 
-        @live   = new NicoLive @_ticket
-        @mylist = new NicoMyList @_ticket
-        @video  = new NicoVideo @_ticket
+        Object.defineProperties @,
+            session :
+                get     : -> @_session
+                set     : ->
+            live    :
+                get     : -> @_live ?= new NicoLive @_session
+                set     : ->
+            video   :
+                get     : -> @_video ?= new NicoVideo @_session
+                set     : ->
+            mylist  :
+                get     : -> @_mylist ?= new NicoMyList @_session
+                set     : ->
 
 
     loginThen : (resolved, rejected) ->
-        @_ticket.loginThen resolved, rejected
+        @_session.loginThen resolved, rejected
 
 
-return Nico
+    ###*
+    # 現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。
+    ###
+    dispose : ->
+        @_session?.dispose()
+        @_live?.dispose()
+        @_video?.dispose()
+        @_mylist?.dispose()
 
-###
-Object.defineProperties module.exports,
-    Auth:
-        get: -> return NicoAuthApi
-    Live:
-        get: -> return NicoLiveApi
-    Video:
-        get: -> return NicoVideoApi
-    MyList:
-        get: -> return NicoMyListApi
-###
+
+module.exports = Nico

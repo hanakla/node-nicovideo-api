@@ -30,12 +30,12 @@
 #  - updateTime     : Date      -- マイリストの更新日
 ###
 
-_                   = require "underscore"
+_                   = require "lodash"
 Backbone            = require "backbone"
 request             = require "request"
 sprintf             = require("sprintf").sprintf
 
-NicoUrl             = require "../NicoUrl"
+NicoUrl             = require "../NicoURL"
 MyListItem          = require "./MyListItem"
 
 _instances = {}
@@ -63,14 +63,14 @@ class MyList extends Backbone.Collection
 
 
     _urlSet     : null
-    _api        : null
+    _mylistApi        : null
 
     ###
     # @param {MyListMeta} metaInfo 操作対象の MyListMetaのインスタンス。
     ###
     constructor         : (metaInfo) ->
-        id = metaInfo.attr("id")
-        @_attributes = metaInfo.toJSON()
+        id = metaInfo.get("id")
+        @_attributes = _.merge _.clone(@_attributes), metaInfo.toJSON()
 
         # 既存のインスタンスがあればそれを返す。
         if _instances[id]?
@@ -79,7 +79,7 @@ class MyList extends Backbone.Collection
         # 適切なAPIのURLを注入する
         this._urlSet = if this.isDefaultList() then NicoUrl.MyList.DefList else NicoUrl.MyList.Normal
 
-        @_api = metaInfo._api
+        @_mylistApi = metaInfo._api
 
         Backbone.Collection.apply @
 
@@ -91,7 +91,7 @@ class MyList extends Backbone.Collection
     # このマイリストが"とりあえずマイリスト"か検証します。
     # @return {boolean} とりあえずマイリストならtrueを返します。
     isDefaultList       : ->
-        return this.attr("id") is "default"
+        return @attr("id") is "default"
 
 
     ###*
@@ -101,20 +101,27 @@ class MyList extends Backbone.Collection
     fetch               : (options) ->
         self    = this
         dfd     = Promise.defer()
+        id      = @attr("id")
         url     = null
 
-        url = sprintf this._urlSet.LIST, @attr("id")
+        url = sprintf this._urlSet.LIST, id
 
         request.get
             url     : url
-            json    : true
+            jar     : @_mylistApi.getSession().getCookieJar()
             , (err, res, bodyJson) ->
                 if err?
-                    dfd.reject sprintf("MyList[id:%s]: Failed to fetch contents (Connection error: %s)", self.attr("id"), err)
+                    dfd.reject sprintf("MyList[id:%s]: Failed to fetch contents (Connection error: %s)", id, err)
+                    return
+
+                try
+                    bodyJson = JSON.parse bodyJson
+                catch e
+                    dfd.reject sprintf("MyList[id:%s]: Failed to response parse as JSON", id);
                     return
 
                 if bodyJson.status isnt "ok"
-                    dfd.reject sprintf("MyList[id:%s]: Failed to fetch contents (unknown)")
+                    dfd.reject sprintf("MyList[id:%s]: Failed to fetch contents (unknown)", id)
                     return
 
                 _.each bodyJson.mylistitem.reverse(), (item) ->
@@ -166,8 +173,7 @@ class MyList extends Backbone.Collection
 
         #-- APIと通信
         # アクセストークンを取得
-        # TODO Rewrite use promises
-        @_api.fetchToken
+        @_mylistApi.fetchToken()
             # 通信エラー
             .catch (err) ->
                 dfd.reject error
@@ -178,10 +184,18 @@ class MyList extends Backbone.Collection
 
                 request.post
                     url     : self._urlSet.ADD
+                    jar     : self._mylistApi.getSession().getCookieJar()
                     form    : data
-                    json    : true
                     , (err, res, apiResult) ->
                         # APIの実行結果受信
+                        if err?
+                            dfd.reject sprintf "Mylist[%s]: Failed to add item by connection error. (%s)", @attr("id"), err
+
+                        try
+                            apiResult = JSON.parse apiResult
+                        catch e
+                            dfd.rejsct "Mylist[%s]: Failed to add item (json parse error)"
+
                         if apiResult.status is "ok"
                             # APIを叩き終わったら最新の情報に更新
                             dfd.resolve()
@@ -189,7 +203,7 @@ class MyList extends Backbone.Collection
                         else
                             dfd.reject sprintf "MyList[%s]: Failed to add item (reason: %s)"
                                     , self.attr("id")
-                                    , res.error.description
+                                    , apiResult.error.description
 
                         return
 

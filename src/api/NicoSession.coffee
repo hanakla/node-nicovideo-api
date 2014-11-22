@@ -6,16 +6,17 @@
 #  - logout:() -- ニコニコ動画からログアウトした時に発火します。
 #
 
-_           = require "underscore"
+_           = require "lodash"
 Backbone    = require "backbone"
 cheerio     = require "cheerio"
 request     = require "request"
 sprintf     = require("sprintf").sprintf
 
 NicoUrl     = require "./NicoURL"
+DisposeHelper   = require "../helper/disposeHelper"
 
-class AuthTicket
-    _.extend @::, Backbone.Event
+class NicoSession
+    _.extend @::, Backbone.Events
 
     _user   : null
     _pass   : null
@@ -46,24 +47,15 @@ class AuthTicket
         request
             .post
                 url     : NicoUrl.Auth.LOGIN
-                #followAllRedirects  : true
+                followAllRedirects  : true
                 jar     : @_cookieJar
                 form    :
                     mail_tel    : @_user
                     password    : @_pass
 
                 , (err, resp, body) ->
-
-                    console.error err
-                    console.dir resp
-
                     if resp.statusCode is 503
                         dfd.reject "Nicovideo has in maintenance."
-                        return
-
-                    if resp.headers["x-niconico-authflag"] isnt "0"
-                    else
-                        dfd.reject "Authorize failed"
                         return
 
                     if err?
@@ -71,18 +63,18 @@ class AuthTicket
                         dfd.reject "Authorize failed by connection problem (#{err})"
                         return
 
-                    # get cookie
-                    self._cookieJar
-                        ._jar.store
+                    # try get cookie
+                    self._cookieJar._jar.store
                         .findCookie "nicovideo.jp", "/", "user_session", (err, cookie) ->
                             if cookie?
                                 self._sessionKey = cookie.value
                                 dfd.resolve self
                             else if err?
-                                dfd.reject err
+                                dfd.reject "Authorize failed"
                             else
-                                dfd.reject()
+                                dfd.reject "Authorize failed (reason unknown)"
 
+                            return
                     return
 
         return dfd.promise
@@ -98,14 +90,14 @@ class AuthTicket
         return @_sessionKey isnt false
 
 
-    isLoging        : ->
+    isLogging        : ->
         dfd = Promise.defer()
 
         # ログインしてないと使えないAPIを叩く
         request
             .get
                 url     : NicoUrl.Auth.LOGINTEST
-                jar     : @_cookieJar
+                jar     : @getCookieJar()
                 , (err, resp, resBody) ->
                     # 通信失敗
                     if err isnt null
@@ -125,6 +117,7 @@ class AuthTicket
 
     setSessionId    : (key) ->
         @_sessionKey = key
+        @_promise = @isLogging()
         return
 
 
@@ -142,6 +135,10 @@ class AuthTicket
             , "http://www.nicovideo.jp/"
             , {}
 
+        jar._jar.setCookieSync "user_session=#{sessionId}; expires=#{expireDate}; path=/; domain=live.nicovideo.jp"
+            , "http://live.nicovideo.jp/"
+            , {}
+
         return jar
 
 
@@ -149,4 +146,10 @@ class AuthTicket
         @_promise.then resolved, rejected
         return
 
-    module.exports = AuthTicket
+
+    dispose         : ->
+        @off()
+        DisposeHelper.wrapAllMembers @
+
+
+    module.exports = NicoSession

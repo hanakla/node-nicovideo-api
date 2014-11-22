@@ -3,12 +3,15 @@
 ###
 
 NicoVideoInfo   = require "./NicoVideoInfo"
+DisposeHelper   = require "../../helper/disposeHelper"
 
 class NicoVideoApi
-    _ticket     : null
+    @NicoVideoInfo  = NicoVideoInfo
 
-    constructor : (ticket) ->
-        @_ticket = ticket
+    _session        : null
+
+    constructor     : (session) ->
+        @_session = session
 
 
     ###*
@@ -19,7 +22,7 @@ class NicoVideoApi
     # @param    {string}    movieId 情報を取得したい動画ID
     # @return   {Promise}
     ###
-    getVideoInfo = (movieId) ->
+    getVideoInfo    : (movieId) ->
         dfd = Promise.defer()
 
         model = new NicoVideoInfo movieId
@@ -32,6 +35,13 @@ class NicoVideoApi
             return
 
         return dfd.promise
+
+
+    ###*
+    # 現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。
+    ###
+    dispose         : ->
+        DisposeHelper.wrapAllMembers @
 
 
 module.exports = NicoVideoApi

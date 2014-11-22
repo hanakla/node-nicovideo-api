@@ -40,12 +40,14 @@
 #       同期に失敗した時に発火します。
 ###
 
-_           = require "underscore"
+_           = require "lodash"
 Backbone    = require "backbone"
 request     = require "request"
+cheerio     = require "cheerio"
+sprintf     = require("sprintf").sprintf
 
-Global = require("utils/Global")
-NicoURL     = require("../NicoURL")
+NicoURL     = require "../NicoURL"
+DisposeHelper   = require "../../helper/disposeHelper"
 _instances  = {}
 
 
@@ -84,7 +86,7 @@ class VideoInfo extends Backbone.Model
     constructor     : (movieId) ->
         # 指定された動画の動画情報インスタンスがキャッシュされていればそれを返す
         # キャッシュに対応する動画情報インスタンスがなければ、新規作成してキャッシュ
-        return VideoInfo._cache[videoId] if VideoInfo._cache[videoId]?
+        return VideoInfo._cache[movieId] if VideoInfo._cache[movieId]?
 
         super id: movieId
 
@@ -109,37 +111,38 @@ class VideoInfo extends Backbone.Model
 
         # getThumbInfoの結果を取得
         request.get
-            url     : NicoURL.Video.GET_VIDEO_INFO + @id
-            , (err, res, body) ->
-                if err?
-                    console.error "VideoInfo[id:%s]: Failed to fetch movie info.", self.id
+            url     : sprintf NicoURL.Video.GET_VIDEO_INFO, @id
+        , (err, res, body) ->
+            if err?
+                console.error "VideoInfo[id:%s]: Failed to fetch movie info.", self.id
 
-                    if res.statusCode is 503
-                        dfd.reject sprintf "VideoInfo[id:%s]: Nicovideo has in maintenance.", self.id
-                    else
-                        dfd.reject err
-                        self.trigger "error"
-                    return
-
-                self.set self.parse(res)
-
-                dfd.resolve()
-                self.trigger "sync", self
+                if res.statusCode is 503
+                    dfd.reject sprintf "VideoInfo[id:%s]: Nicovideo has in maintenance.", self.id
+                else
+                    dfd.reject err
+                    self.trigger "error"
                 return
+
+            self.set self.parse(body)
+
+            dfd.resolve()
+            self.trigger "sync", self
+            return
 
         return dfd.promise
 
     parse: (res) ->
-        $res = $(res)
+        $res = cheerio.load res
         length = 0
         val = undefined
 
-        if $res.find(":root").attr("status") isnt "ok"
-            errCode = $res.find("error code")
-            console.error "MovieInfo: 動画情報の取得に失敗しました。 (%s)", $res.find("error description")
+        if $res(":root").attr("status") isnt "ok"
+            errCode = $res "error code"
+            errMsg = $res("error description").text()
+            console.error "VideoInfo[%s]: 動画情報の取得に失敗しました。 (%s)", @id, errMsg
             return isDeleted: errCode is "DELETED"
 
-        $res = $res.find("thumb")
+        $resThumb = $res "thumb"
 
         # 動画の秒単位の長さを出しておく
         length = ((length) ->
@@ -148,24 +151,24 @@ class VideoInfo extends Backbone.Model
             m = length.pop() | 0
             h = length.pop() | 0
             s + (m * 60) + (h * 3600)
-        ) $res.find("length").text()
+        ) $resThumb.find("length").text()
 
         val =
-            id          : $res.find("video_id").text()
-            title       : $res.find("title").text()
-            description : $res.find("description").text()
+            id          : $resThumb.find("video_id").text()
+            title       : $resThumb.find("title").text()
+            description : $resThumb.find("description").text()
             length      : length    # 秒数
 
-            movieType   : $res.find("movie_type").text()# "flv"とか
-            thumbnail   : $res.find("thumbnail_url").text()
+            movieType   : $resThumb.find("movie_type").text()# "flv"とか
+            thumbnail   : $resThumb.find("thumbnail_url").text()
             isDeleted   : false
             count       :
-                view        : $res.find("view_counter").text() | 0
-                comments    : $res.find("comment_num").text() | 0
-                mylist      : $res.find("mylist_counter").text() | 0
+                view        : $resThumb.find("view_counter").text() | 0
+                comments    : $resThumb.find("comment_num").text() | 0
+                mylist      : $resThumb.find("mylist_counter").text() | 0
 
-            tags    : _.map $res.find("tags[domain='jp'] tag"), (tag) ->
-                $t = $(tag)
+            tags    : _.map $resThumb.find("tags[domain='jp'] tag"), (tag) ->
+                $t = cheerio(tag)
                 return {
                     name        : $t.text()
                     isCategory  : $t.attr("category") is "1"
@@ -173,9 +176,9 @@ class VideoInfo extends Backbone.Model
                 }
 
             user        :
-                id          : $res.find("user_id").text() | 0
-                name        : $res.find("user_nickname").text()
-                icon        : $res.find("user_icon_url").text()
+                id          : $resThumb.find("user_id").text() | 0
+                name        : $resThumb.find("user_nickname").text()
+                icon        : $resThumb.find("user_icon_url").text()
 
         _isValid: true
 
@@ -184,5 +187,9 @@ class VideoInfo extends Backbone.Model
     sync    : _.noop
     save    : _.noop
     destroy : _.noop
+
+    dispose : ->
+        @off()
+        DisposeHelper.wrapAllMembers @
 
 module.exports = VideoInfo
