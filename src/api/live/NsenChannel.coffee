@@ -230,6 +230,7 @@ class NsenChannel
             self._acceptVideoChangeDetectionFromComments = true
         , 1000
 
+        @_onLiveInfoUpdated()
         @fetch()
 
 
