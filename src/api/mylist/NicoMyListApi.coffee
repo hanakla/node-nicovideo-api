@@ -60,8 +60,8 @@ class NicoMyListApi
     ###
     fetchToken         : ->
         # 一定時間以内に取得したトークンがあればそれを返す
-        if _token.token? and (Date.now() - _token.timestamp) < FETCH_INTERVAL
-            return Promise.resolve _token.token
+        if @_token.token? and (Date.now() - @_token.timestamp) < FETCH_INTERVAL
+            return Promise.resolve @_token.token
 
         # トークン取得
         dfd = Promise.defer()
