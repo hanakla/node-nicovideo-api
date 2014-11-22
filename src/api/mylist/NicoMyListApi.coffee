@@ -64,7 +64,8 @@ class NicoMyListApi
             return Promise.resolve @_token.token
 
         # トークン取得
-        dfd = Promise.defer()
+        self    = @
+        dfd     = Promise.defer()
         request.get
             url   : NicoUrl.MyList.FETCH_TOKEN
             jar   : @_session.getCookieJar()
@@ -78,8 +79,8 @@ class NicoMyListApi
                 token = TOKEN_REGEXP.exec body
 
                 if token[1]?
-                    @_token.timestamp = Date.now()
-                    @_token.token = token[1]
+                    self._token.timestamp = Date.now()
+                    self._token.token = token[1]
 
                     dfd.resolve token[1]
                 else
