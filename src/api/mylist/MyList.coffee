@@ -173,7 +173,6 @@ class MyList extends Backbone.Collection
 
         #-- APIと通信
         # アクセストークンを取得
-        # TODO Rewrite use promises
         @_mylistApi.fetchToken()
             # 通信エラー
             .catch (err) ->
