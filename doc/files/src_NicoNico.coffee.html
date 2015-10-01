@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>src/NicoNico.coffee</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="icon" href="../assets/favicon.ico">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="hd" class="yui3-g header">
+        <div class="yui3-u-3-4">
+                <h1><img src="../assets/css/logo.png" title="" width="117" height="52"></h1>
+        </div>
+        <div class="yui3-u-1-4 version">
+            <em>API Docs for: </em>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+                    <h2 class="off-left">APIs</h2>
+                    <div id="api-tabview" class="tabview">
+                        <ul class="tabs">
+                            <li><a href="#api-classes">Classes</a></li>
+                            <li><a href="#api-modules">Modules</a></li>
+                        </ul>
+                
+                        <div id="api-tabview-filter">
+                            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+                        </div>
+                
+                        <div id="api-tabview-panel">
+                            <ul id="api-classes" class="apis classes">
+                                <li><a href="../classes/NicoMyListApi.html">NicoMyListApi</a></li>
+                                <li><a href="../classes/NicoNico.html">NicoNico</a></li>
+                                <li><a href="../classes/NicoSession.html">NicoSession</a></li>
+                                <li><a href="../classes/NicoVideoApi.html">NicoVideoApi</a></li>
+                                <li><a href="../classes/NicoVideoInfo.html">NicoVideoInfo</a></li>
+                            </ul>
+                
+                            <ul id="api-modules" class="apis modules">
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+                    Show:
+                    <label for="api-show-inherited">
+                        <input type="checkbox" id="api-show-inherited" checked>
+                        Inherited
+                    </label>
+            
+                    <label for="api-show-protected">
+                        <input type="checkbox" id="api-show-protected">
+                        Protected
+                    </label>
+            
+                    <label for="api-show-private">
+                        <input type="checkbox" id="api-show-private">
+                        Private
+                    </label>
+                    <label for="api-show-deprecated">
+                        <input type="checkbox" id="api-show-deprecated">
+                        Deprecated
+                    </label>
+            
+                </div>
+            
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+<h1 class="file-heading">File: src/NicoNico.coffee</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+NicoSession     = require &quot;./NicoSession&quot;
+NicoLive        = require &quot;./api/live/NicoLiveApi&quot;
+NicoMyList      = require &quot;./api/mylist/NicoMyListApi&quot;
+NicoVideo       = require &quot;./api/video/NicoVideoApi&quot;
+
+###*
+# ニコニコ動画APIのハンドラクラス
+# 通常、&#x60;NicoNico.login&#x60;メソッドを利用して初期化します。
+#
+# @class NicoNico
+###
+class NicoNico
+    @Session    = NicoSession
+    @Live       = NicoLive
+    @MyList     = NicoMyList
+    @Video      = NicoVideo
+
+    ###*
+    # ニコニコ動画へログインし、ハンドラを取得します。
+    #
+    # @static
+    # @method login
+    # @param {String}   user        ログインユーザーID
+    # @param {String}   password    ログインパスワード
+    # @return {Promise}
+    ###
+    @login = (user, password) -&gt;
+        new Promise (resolve, reject) -&gt;
+            nico = new Nico user, password
+            nico.session._login()
+                .then -&gt; resolve nico
+                .catch (err) -&gt; reject err
+
+
+    ###*
+    # @private
+    # @property _session
+    # @type NicoSession
+    ###
+    _session     : null
+
+    ###*
+    # @private
+    # @property _live
+    # @type NicoLive
+    ###
+    _live        : null # Lazy initialize
+
+    ###*
+    # @private
+    # @property _video
+    # @type NicoVideo
+    ###
+    _video       : null # Lazy initialize
+
+    ###*
+    # @private
+    # @property _mylist
+    # @type NicoMyList
+    ###
+    _mylist      : null # Lazy initialize
+
+
+    ###*
+    # @property session
+    # @type NicoSession
+    ###
+
+    ###*
+    # @property live
+    # @type NicoLive
+    ###
+
+    ###*
+    # @property video
+    # @type NicoVideo
+    ###
+
+    ###*
+    # @property mylist
+    # @type NicoMyList
+    ###
+
+
+
+    ###*
+    # @class NicoNico
+    # @constructor
+    # @param {String}       user        ユーザーID
+    # @param {String}       password    ログインパスワード
+    ###
+    constructor     : (user, password) -&gt;
+        @_session = new NicoSession user, password
+
+        Object.defineProperties @,
+            session :
+                get     : -&gt; @_session
+            live    :
+                get     : -&gt; @_live ?= new NicoLive @_session
+            video   :
+                get     : -&gt; @_video ?= new NicoVideo @_session
+            mylist  :
+                get     : -&gt; @_mylist ?= new NicoMyList @_session
+
+
+    ###*
+    # インスタンスに紐付いているオブジェクトを破棄し、利用不能にします。
+    # @method dispose
+    ###
+    dispose         : -&gt;
+        @_session?.dispose()
+        @_live?.dispose()
+        @_video?.dispose()
+        @_mylist?.dispose()
+        return
+
+
+module.exports = NicoNico
+
+    </pre>
+</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>

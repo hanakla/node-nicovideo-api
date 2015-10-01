@@ -1,57 +1,13 @@
-###
-# このモジュールでは以下のイベントが発生します。
-#   "login"  : ニコニコ動画へログインした時に発生します。
-#   "logout" : ニコニコ動画からログアウトした時に発生します。
-###
+NicoSession     = require "./NicoSession"
 
-NicoSession  = require "./api/NicoSession"
-NicoLive        = require "./api/live/NicoLiveApi"
-NicoMyList      = require "./api/mylist/NicoMyListApi"
-NicoVideo       = require "./api/video/NicoVideoApi"
-
-
-class Nico
-    @Session    = NicoSession
-    @Live       = NicoLive
-    @MyList     = NicoMyList
-    @Video      = NicoVideo
-
-    _session     : null
-
-    # _live        : null # Lazy initialize
-    # _video       : null # Lazy initialize
-    # _mylist      : null # Lazy initialize
-
-    constructor     : (user, password) ->
-        @_session = new NicoSession user, password
-
-        Object.defineProperties @,
-            session :
-                get     : -> @_session
-                set     : ->
-            live    :
-                get     : -> @_live ?= new NicoLive @_session
-                set     : ->
-            video   :
-                get     : -> @_video ?= new NicoVideo @_session
-                set     : ->
-            mylist  :
-                get     : -> @_mylist ?= new NicoMyList @_session
-                set     : ->
-
-
-    loginThen : (resolved, rejected) ->
-        @_session.loginThen resolved, rejected
-
-
+module.exports.login = (user, password) ->
     ###*
-    # 現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。
+    # ニコニコ動画へログインし、ハンドラを取得します。
+    #
+    # @static
+    # @method login
+    # @param {String}   user        ログインユーザーID
+    # @param {String}   password    ログインパスワード
+    # @return {Promise}
     ###
-    dispose : ->
-        @_session?.dispose()
-        @_live?.dispose()
-        @_video?.dispose()
-        @_mylist?.dispose()
-
-
-module.exports = Nico
+    NicoSession.login(user, password)

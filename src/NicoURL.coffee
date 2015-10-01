@@ -1,0 +1,84 @@
+#
+# ニコニコ動画APIのURLを定義しています。
+#
+
+exports.Auth =
+    # POST : mail_tel, password
+    LOGIN       : "https://secure.nicovideo.jp/secure/login?site=niconico"
+
+    # GET
+    LOGOUT      : "https://secure.nicovideo.jp/secure/logout"
+
+    # GET
+    LOGINTEST   : "http://live.nicovideo.jp/api/getplayerstatus/nsen/vocaloid"
+
+exports.Live =
+    #  URL + 放送ID
+    GET_PLAYER_STATUS: "http://live.nicovideo.jp/api/getplayerstatus/%s"
+
+    #  パラメータ: コメントスレッドID
+    GET_POSTKEY: "http://live.nicovideo.jp/api/getpostkey?thread=%s"
+
+    #  パラメータ: 放送ID, 動画ID
+    NSEN_REQUEST: "http://live.nicovideo.jp/api/nsenrequest?v=%s&id=%s"
+    #  パラメータ: 放送ID
+    NSEN_REQUEST_CANCEL: "http://live.nicovideo.jp/api/nsenrequest?v=%s&mode=cancel"
+    #  パラメータ: 放送ID
+    NSEN_REQUEST_SYNC: "http://live.nicovideo.jp/api/nsenrequest?v=%s&mode=requesting"
+    #  パラメータ: 放送ID
+    NSEN_GOOD: "http://ow.live.nicovideo.jp/api/nsengood?v=%s"
+    #  パラメータ: 放送ID
+    NSEN_SKIP: "http://ow.live.nicovideo.jp/api/nsenskip?v=%s"
+
+
+exports.Video =
+    #  URL + 動画ID
+    GET_VIDEO_INFO: "http://ext.nicovideo.jp/api/getthumbinfo/%s"
+
+exports.MyList =
+    FETCH_TOKEN: "http://www.nicovideo.jp/my/mylist"
+    GET_GROUPS: "http://www.nicovideo.jp/api/mylistgroup/list"
+
+    DefList :
+        LIST: "http://www.nicovideo.jp/api/deflist/list"
+
+        #  フォームデータ: item_type, item_id, token, ?description
+        ADD: "http://www.nicovideo.jp/api/deflist/add"
+
+        # POST
+        #   id_list[0][]    : MyList Item ID Array for deletion
+        #   token           : MyList control token
+        DELETE: "http://www.nicovideo.jp/api/deflist/delete"
+
+        # POST
+        #   target_group_id : MyListID to move
+        #   id_list[0][]    : MyList Item ID Array
+        #   token           : MyList control token
+        MOVE: "http://www.nicovideo.jp/api/deflist/move"
+
+
+    Normal  :
+        # パラメータ: マイリストID
+        # GET
+        #   group_id        : MyListID
+        LIST: "http://www.nicovideo.jp/api/mylist/list?group_id=%s",
+
+        # POST
+        #   group_id        : MyListID
+        #   item_id         : Movie ID
+        #   description     : comment
+        #   token           : MyList control token
+        ADD: "http://www.nicovideo.jp/api/mylist/add",
+
+        # POST
+        #   group_id        : MyListID
+        #   id_list[0][]    : MyList Item ID Array for deletion
+        #   token           : MyList control token
+        DELETE: "http://www.nicovideo.jp/api/mylist/delete"
+
+        # POST
+        #   group_id        : MyListID from move
+        #   target_group_id : MyListID to move
+        #   id_list[0][]    : MyList Item ID Array
+        #   token           : MyList control token
+        MOVE: "http://www.nicovideo.jp/api/deflist/move"

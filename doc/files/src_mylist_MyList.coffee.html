@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>src/mylist/MyList.coffee</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="icon" href="../assets/favicon.ico">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="hd" class="yui3-g header">
+        <div class="yui3-u-3-4">
+                <h1><img src="../assets/css/logo.png" title="" width="117" height="52"></h1>
+        </div>
+        <div class="yui3-u-1-4 version">
+            <em>API Docs for: </em>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+                    <h2 class="off-left">APIs</h2>
+                    <div id="api-tabview" class="tabview">
+                        <ul class="tabs">
+                            <li><a href="#api-classes">Classes</a></li>
+                            <li><a href="#api-modules">Modules</a></li>
+                        </ul>
+                
+                        <div id="api-tabview-filter">
+                            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+                        </div>
+                
+                        <div id="api-tabview-panel">
+                            <ul id="api-classes" class="apis classes">
+                                <li><a href="../classes/NicoMyListApi.html">NicoMyListApi</a></li>
+                                <li><a href="../classes/NicoNico.html">NicoNico</a></li>
+                                <li><a href="../classes/NicoSession.html">NicoSession</a></li>
+                                <li><a href="../classes/NicoVideoApi.html">NicoVideoApi</a></li>
+                                <li><a href="../classes/NicoVideoInfo.html">NicoVideoInfo</a></li>
+                            </ul>
+                
+                            <ul id="api-modules" class="apis modules">
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+                    Show:
+                    <label for="api-show-inherited">
+                        <input type="checkbox" id="api-show-inherited" checked>
+                        Inherited
+                    </label>
+            
+                    <label for="api-show-protected">
+                        <input type="checkbox" id="api-show-protected">
+                        Protected
+                    </label>
+            
+                    <label for="api-show-private">
+                        <input type="checkbox" id="api-show-private">
+                        Private
+                    </label>
+                    <label for="api-show-deprecated">
+                        <input type="checkbox" id="api-show-deprecated">
+                        Deprecated
+                    </label>
+            
+                </div>
+            
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+<h1 class="file-heading">File: src/mylist/MyList.coffee</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+###*
+# ひとつのリストと対応する マイリストのインターフェースです。
+# Backbone.Collectionを継承しています。
+#
+# Methods
+#  - isDefaultList(): boolean
+#       このリストが&quot;とりあえずマイリスト&quot;か判定します。
+#  - attr(attr: string)
+#       マイリストの属性（プロパティ）を取得します。
+#  - add(movie: NicoVideoInfo|string)
+#       マイリストに動画を追加します。
+#       引数には動画IDを指定することができます。
+#       (Backbone.Collection#addは実行されません。)
+#
+# Events
+#  (Backbone.Collection で発生するイベント)
+#
+# Properties
+#  attrメソッドを介して取得します。（とりあえずマイリストの場合、属性は一切設定されません。）
+#      Example: mylist.attr(&quot;id&quot;) // -&gt; マイリストIDを取得
+#  - id             : number    -- マイリストID
+#  - name           : string    -- リスト名
+#  - description    : string    -- マイリストの説明
+#  - public         : boolean   -- 公開マイリストかどうか
+#  - iconId         : number    -- マイリストのアイコンID
+#  - defaultSort    : number    -- 標準のソート方法（？）
+#  - sortOrder      : number    -- ソート方式（？）
+#  - userId         : number    -- ユーザー番号
+#  - createTime     : Date      -- マイリストの作成日
+#  - updateTime     : Date      -- マイリストの更新日
+###
+
+_                   = require &quot;lodash&quot;
+Backbone            = require &quot;backbone&quot;
+request             = require &quot;request&quot;
+sprintf             = require(&quot;sprintf&quot;).sprintf
+
+NicoUrl             = require &quot;../NicoURL&quot;
+MyListItem          = require &quot;./MyListItem&quot;
+
+_instances = {}
+
+
+###*
+# マイリストマイリストグループ（一つのリスト）のコレクションです。
+# Backbone.Collectionを継承しています。
+###
+class MyList extends Backbone.Collection
+    # デフォルトプロパティ
+    _attributes :
+        id          : -1
+        name        : null
+        description : null
+        public      : null
+
+        iconId      : -1
+        defaultSort : -1
+        sortOrder   : -1
+        userId      : -1
+
+        createTime  : null
+        updateTime  : null
+
+
+    _urlSet     : null
+    _mylistApi        : null
+
+    ###
+    # @param {MyListMeta} metaInfo 操作対象の MyListMetaのインスタンス。
+    ###
+    constructor         : (metaInfo) -&gt;
+        id = metaInfo.get(&quot;id&quot;)
+        @_attributes = _.merge _.clone(@_attributes), metaInfo.toJSON()
+
+        # 既存のインスタンスがあればそれを返す。
+        if _instances[id]?
+            return _instances[id]
+
+        # 適切なAPIのURLを注入する
+        this._urlSet = if this.isDefaultList() then NicoUrl.MyList.DefList else NicoUrl.MyList.Normal
+
+        @_mylistApi = metaInfo._api
+
+        Backbone.Collection.apply @
+
+
+    initialize          : -&gt;
+        @fetch()
+
+
+    # このマイリストが&quot;とりあえずマイリスト&quot;か検証します。
+    # @return {boolean} とりあえずマイリストならtrueを返します。
+    isDefaultList       : -&gt;
+        return @attr(&quot;id&quot;) is &quot;default&quot;
+
+
+    ###*
+    # マイリストのアイテムを取得します。
+    # @return {Promise}
+    ###
+    fetch               : (options) -&gt;
+        self    = this
+        dfd     = Promise.defer()
+        id      = @attr(&quot;id&quot;)
+        url     = null
+
+        url = sprintf this._urlSet.LIST, id
+
+        request.get
+            url     : url
+            jar     : @_mylistApi.getSession().getCookieJar()
+            , (err, res, bodyJson) -&gt;
+                if err?
+                    dfd.reject sprintf(&quot;MyList[id:%s]: Failed to fetch contents (Connection error: %s)&quot;, id, err)
+                    return
+
+                try
+                    bodyJson = JSON.parse bodyJson
+                catch e
+                    dfd.reject sprintf(&quot;MyList[id:%s]: Failed to response parse as JSON&quot;, id);
+                    return
+
+                if bodyJson.status isnt &quot;ok&quot;
+                    dfd.reject sprintf(&quot;MyList[id:%s]: Failed to fetch contents (unknown)&quot;, id)
+                    return
+
+                _.each bodyJson.mylistitem.reverse(), (item) -&gt;
+                    m = MyListItem.fromApiJson item
+                    self.set m
+                        , _.extend({merge: false}, options, {add: true, remove: false})
+
+                dfd.resolve()
+
+        return dfd.promise
+
+
+    ###*
+    # マイリストのメタ情報を取得します。
+    # @param {string}   attr    取得する属性名
+    ###
+    attr                : (attr) -&gt;
+        return @_attributes[attr]
+
+
+    ###*
+    # マイリストに動画を追加します。
+    # @param {NicoVideoInfo|string} movie   追加する、動画情報か動画ID
+    # @param {string?}              desc    マイリストの動画メモの内容
+    # @return {Promise} 動画の追加に成功すればresolve、失敗した時はエラーメッセージとともにrejectされます。
+    ###
+    add                 : (movie, desc = &quot;&quot;) -&gt;
+        self    = this
+        dfd     = Promise.defer()
+        id      = null
+
+        # movieが文字列じゃない上に、オブジェクトじゃないとか、idプロパティがない場合
+        if not _.isString(movie) and movie.id?
+            return Promise.reject &quot;動画IDが正しくありません&quot;
+        else
+            id = if _.isString(movie) then movie else movie.id
+
+        # 送信データを準備
+        data =
+            item_type   : 0
+            item_id     : id
+            token       : null
+            description : desc
+            group_id    : @attr(&quot;id&quot;)
+
+        # 不要なデータを削除
+        this.isDefaultList() and (delete data.group_id)
+
+
+        #-- APIと通信
+        # アクセストークンを取得
+        @_mylistApi.fetchToken()
+            # 通信エラー
+            .catch (err) -&gt;
+                dfd.reject error
+
+            # 取得成功
+            .then (token) -&gt;
+                data.token = token
+
+                request.post
+                    url     : self._urlSet.ADD
+                    jar     : self._mylistApi.getSession().getCookieJar()
+                    form    : data
+                    , (err, res, apiResult) -&gt;
+                        # APIの実行結果受信
+                        if err?
+                            dfd.reject sprintf &quot;Mylist[%s]: Failed to add item by connection error. (%s)&quot;, @attr(&quot;id&quot;), err
+
+                        try
+                            apiResult = JSON.parse apiResult
+                        catch e
+                            dfd.rejsct &quot;Mylist[%s]: Failed to add item (json parse error)&quot;
+
+                        if apiResult.status is &quot;ok&quot;
+                            # APIを叩き終わったら最新の情報に更新
+                            dfd.resolve()
+                            self.fetch()
+                        else
+                            dfd.reject sprintf &quot;MyList[%s]: Failed to add item (reason: %s)&quot;
+                                    , self.attr(&quot;id&quot;)
+                                    , apiResult.error.description
+
+                        return
+
+                #return $.ajax({url: self._urlSet.ADD, type:&quot;POST&quot;, data:data, dataType:&quot;json&quot;})
+
+        return dfd.promise
+
+
+module.exports = MyList
+
+    </pre>
+</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>src/live/CommentProvider.coffee</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="icon" href="../assets/favicon.ico">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="hd" class="yui3-g header">
+        <div class="yui3-u-3-4">
+                <h1><img src="../assets/css/logo.png" title="" width="117" height="52"></h1>
+        </div>
+        <div class="yui3-u-1-4 version">
+            <em>API Docs for: </em>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+                    <h2 class="off-left">APIs</h2>
+                    <div id="api-tabview" class="tabview">
+                        <ul class="tabs">
+                            <li><a href="#api-classes">Classes</a></li>
+                            <li><a href="#api-modules">Modules</a></li>
+                        </ul>
+                
+                        <div id="api-tabview-filter">
+                            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+                        </div>
+                
+                        <div id="api-tabview-panel">
+                            <ul id="api-classes" class="apis classes">
+                                <li><a href="../classes/NicoMyListApi.html">NicoMyListApi</a></li>
+                                <li><a href="../classes/NicoNico.html">NicoNico</a></li>
+                                <li><a href="../classes/NicoSession.html">NicoSession</a></li>
+                                <li><a href="../classes/NicoVideoApi.html">NicoVideoApi</a></li>
+                                <li><a href="../classes/NicoVideoInfo.html">NicoVideoInfo</a></li>
+                            </ul>
+                
+                            <ul id="api-modules" class="apis modules">
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+                    Show:
+                    <label for="api-show-inherited">
+                        <input type="checkbox" id="api-show-inherited" checked>
+                        Inherited
+                    </label>
+            
+                    <label for="api-show-protected">
+                        <input type="checkbox" id="api-show-protected">
+                        Protected
+                    </label>
+            
+                    <label for="api-show-private">
+                        <input type="checkbox" id="api-show-private">
+                        Private
+                    </label>
+                    <label for="api-show-deprecated">
+                        <input type="checkbox" id="api-show-deprecated">
+                        Deprecated
+                    </label>
+            
+                </div>
+            
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+<h1 class="file-heading">File: src/live/CommentProvider.coffee</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+###*
+# 放送中の番組のコメントの取得と投稿を行うクラスです。
+#
+# NicoLiveInfo#commentProviderメソッドを通じてインスタンスを取得します。
+# Backbone.Collectionを継承しています。
+#
+# Methods:
+#  - getLiveInfo(): LiveInfo
+#       配信情報オブジェクトを取得します。
+#  - postComment(msg: string, command: string): Promise
+#       コメントを投稿します。
+#       投稿に成功すればresolveされ、失敗すれば投稿結果オブジェクトとともにrejectされます。
+#       投稿結果オブジェクトは以下の形式のオブジェクトです。
+#       {code:number, message:string} -- code:エラーコード, message:エラーメッセージ
+#
+# Events:
+#  - receive: (rawXMLComment: string)
+#       コメントサーバーからレスポンスを受け取った際に発火します。
+#  - add: (model:NicoLiveComment)
+#       コメントを受信した際に発火します。
+#  - error: (error:Error)
+#       コネクションエラーが発生した際に発火します。
+#  - ended: (live: NicoLiveInfo)
+#       配信が終了した際に発火します。
+#  - disconnected:()
+#       コメントサーバから切断した時に発火します。
+#  - closed:()
+#       コメントサーバーから切断された際に発火します。
+#
+###
+INIT_GET_RESPONSES = 200
+SEND_TIMEOUT = 3000
+
+_           = require &quot;lodash&quot;
+Backbone    = require &quot;backbone&quot;
+net         = require &quot;net&quot;
+cheerio     = require &quot;cheerio&quot;
+request     = require &quot;request&quot;
+sprintf     = require(&quot;sprintf&quot;).sprintf
+
+NicoUrl     = require &quot;../NicoURL&quot;
+NicoLiveComment = require &quot;./NicoLiveComment&quot;
+
+DisposeHelper   = require &quot;../../helper/disposeHelper&quot;
+
+
+CHAT_RESULT =
+    SUCCESS             : 0
+    FAIL                : 1
+    THREAD_ID_ERROR     : 2
+    TICKET_ERROR        : 3
+    DIFFERENT_POSTKEY   : 4
+    _DIFFERENT_POSTKEY  : 8
+    LOCKED              : 5
+
+
+COMMANDS =
+    connect : _.template &quot;&quot;&quot;
+        &lt;thread thread=&quot;&lt;%-thread%&gt;&quot; version=&quot;20061206&quot;
+         res_from=&quot;#{-INIT_GET_RESPONSES}&quot;/&gt;
+    &quot;&quot;&quot;
+    post    : _.template &quot;&quot;&quot;
+        &lt;chat thread=&quot;&lt;%-threadId%&gt;&quot; ticket=&quot;&lt;%-ticket%&gt;&quot;
+         postkey=&quot;&lt;%-postKey%&gt;&quot; mail=&quot;&lt;%-command%&gt;&quot; user_id=&quot;&lt;%-userId%&gt;&quot;
+         premium=&quot;&lt;%-isPremium%&gt;&quot;&gt;&lt;%-comment%&gt;&lt;/chat&gt;
+    &quot;&quot;&quot;
+
+
+class CommentProvider extends Backbone.Collection
+
+    # @type {NicoLiveInfo}
+    _live       : null
+
+    # @type {Net.Socket}
+    _connection : null
+
+    # コメント投稿に必要な情報
+    _postInfo   :
+        ticket      : null
+        postKey     : null
+        threadId    : null
+
+
+    constructor     : (liveInfo) -&gt;
+        unless liveInfo?
+            throw new Error &quot;Can not passed LiveInfo object&quot;
+
+        Backbone.Collection.call @
+
+        @_postInfo  = _.clone(this._postInfo)
+        @_live      = liveInfo
+
+        _.bindAll @
+            , &quot;_onCommentReceive&quot;
+            , &quot;_onErrorOnConnection&quot;
+            , &quot;_onConnectionClose&quot;
+            , &quot;_rawCommentProcessor&quot;
+            #, &quot;_responseParser&quot;
+            #, &quot;_threadInfoDetector&quot;
+            #, &quot;_postResultDetector&quot;
+            #, &quot;_liveEndDetector&quot;
+            , &quot;_onLiveInfoSynced&quot;
+            #, &quot;_onAuthLogout&quot;
+
+        @.once &quot;receive&quot;, @_threadInfoDetector    # スレッド情報リスナを登録
+
+        liveInfo.on &quot;sync&quot;, @_onLiveInfoSynced
+
+        liveInfo.getSession().once &quot;logout&quot;, =&gt; @_disconnect
+
+        liveInfo.initThen =&gt;
+            try
+                # コメントサーバーへ接続
+                @_initConnection()
+            catch e
+                console.error &quot;CommentProvider[%s]: Connection failed.&quot;, @_live.get &quot;id&quot;, e
+
+
+    #
+    # コメントサーバへ接続します。
+    # @private
+    # @param {CommentProvider} self
+    #
+    _initConnection     : -&gt;
+        self        = @
+        serverInfo  = @_live.get &quot;comment&quot;
+
+        # コメントサーバーへ接続する
+        @_connection = net.connect serverInfo.port, serverInfo.addr
+
+        @_connection
+            # 接続完了したら送信要求を送る
+            .once &quot;connect&quot;, -&gt;
+                self._connection.write COMMANDS.connect(serverInfo) + &#x27;\0&#x27;
+
+            # コメントを受信した時
+            .on &quot;data&quot;, @_onCommentReceive
+
+            # 接続エラーが起きた時
+            .once &quot;error&quot;, @_onErrorOnConnection
+
+            # 接続が閉じた時
+            .once &quot;close&quot;, @_onConnectionClose
+
+        return
+
+
+    #
+    # コメント受信処理
+    #
+    _onCommentReceive    : (data) -&gt;
+        self    = @
+        $c      = cheerio.load &quot;&lt;res&gt;#{data}&lt;/res&gt;&quot;
+
+        # 要素をばらしてイベントを呼ぶ
+        $c(&quot;*&quot;).each -&gt;
+            self._rawCommentProcessor cheerio(@).toString()
+
+    #
+    #
+    #
+    _rawCommentProcessor    : (rawXMLComment) -&gt;
+        $thread = cheerio rawXMLComment
+
+        @trigger &quot;receive&quot;, rawXMLComment
+
+        switch true
+            # 受信したデータからNicoLiveCommentインスタンスを生成してイベントを発火させる
+            when $thread.is &quot;chat&quot;
+                comment = NicoLiveComment.fromRawXml rawXMLComment
+
+                # 時々流れてくるよくわからない無効データは破棄
+                if comment.get(&quot;comment&quot;) is &quot;&quot;
+                    return
+
+                # NicoLiveCommentの自己ポスト判定が甘いので厳密に。
+                if comment.get(&quot;user&quot;).id is this._live.get(&quot;user&quot;).id
+                    comment.set &quot;isMyPost&quot;, true
+
+                # 配信終了通知が来たら切断
+                if comment.get(&quot;comment&quot;) is &quot;/disconnect&quot;
+                    @trigger &quot;ended&quot;, @_live
+                    @_disconnect()
+
+                this.add comment
+
+            # 最初の接続応答を受け付け
+            when $thread.is &quot;thread&quot;
+                # チケットを取得
+                @_postInfo.ticket = $thread.attr &quot;ticket&quot;
+                console.info &quot;CommentProvider[%s]: Receive thread info&quot;, @_live.get(&quot;id&quot;)
+
+            # 自分のコメント投稿結果を受信
+            when $thread.is &quot;chat_result&quot;
+                status = $thread.attr &quot;status&quot;
+                status = status | 0
+                @trigger &quot;_chatresult&quot;, {status}
+
+        return
+
+
+
+    #
+    # コネクション上のエラー処理
+    #
+    _onErrorOnConnection : (err) -&gt;
+        @trigger &quot;error&quot;, err.message
+
+
+    #
+    # コネクションが閉じられた時の処理
+    # @private
+    #
+    _onConnectionClose  : (hadError) -&gt;
+        if hadError
+            @trigger &quot;error&quot;, &quot;Connection closing error (unknown)&quot;
+
+        @trigger &quot;closed&quot;
+
+
+    #
+    # コメントサーバのスレッドID変更を監視するリスナ
+    # @private
+    #
+    _onLiveInfoSynced       : -&gt;
+        # 時々threadIdが変わるのでその変化を監視
+        @_postInfo.threadId = @_live.get(&quot;comment&quot;).thread
+        return
+
+
+    #
+    # コメントサーバから切断します。
+    # @private
+    #
+    _disconnect             : -&gt;
+        if @_connection?
+            @_connection.removeAllListeners()
+            @_connection.destroy()
+            @_connection = null
+
+        @trigger &quot;disconnected&quot;
+        @off()
+
+
+    # APIからpostkeyを取得します。
+    # @private
+    # @param {number} maxRetry 最大取得試行回数
+    # @return {Promise} 取得出来た時にpostkeyと共にresolveされ、
+    #    失敗した時は、rejectされます。
+    _fetchPostKey           : (retry) -&gt;
+        self        = @
+        dfd         = Promise.defer()
+        threadId    = @_live.get(&quot;comment&quot;).thread
+        url         = sprintf NicoUrl.Live.GET_POSTKEY, threadId
+        postKey     = &quot;&quot;
+
+        retry = if _.isNumber(retry) then Math.min(Math.abs(retry), 5) else 5
+
+        request.get
+            url     : url
+            jar     : @_live.getSession().getCookieJar()
+            , (err, res, body) -&gt;
+                if err?
+                    console.error &quot;CommentProvider[%s]: Failed to retrive postKey.&quot;, self._live.id
+
+                    if maxRetry is 0
+                        dfd.reject &quot;Reached to max retry count.&quot;
+                        return
+
+                    # ネットにつながってそうなときはリトライする。
+                    setTimeout -&gt;
+                        self
+                            ._fetchPostKey maxRetry - 1
+                            .then (key) -&gt;
+                                dfd.resolve key
+                        , 400
+
+                # 通信成功
+                if res.statusCode is 200
+                    # 正常に通信できた時
+                    postKey = /^postkey=(.*)\s*/.exec body
+                    postKey = postKey[1] if postKey?
+
+                if postKey isnt &quot;&quot;
+                    # ポストキーがちゃんと取得できれば
+                    self._postInfo.postKey = postKey
+                    console.info &quot;CommentProvider[%s]: postKey update successful.&quot;, self._live.id
+                    dfd.resolve postKey
+                else
+                    console.error &quot;CommentProvider[%s]: Failed to retrive postKey.&quot;, self._live.id, arguments
+                    dfd.reject()
+
+                return
+
+        return dfd.promise
+
+
+    # このインスタンスが保持しているNicoLiveInfoオブジェクトを取得します。
+    # @return {NicoLiveInfo}
+    getLiveInfo             : -&gt;
+        return @_live
+
+
+    # コメントを投稿します。
+    # @param {string} msg 投稿するコメント
+    # @param {string} command コマンド(184, bigなど)
+    # @return {Promise} 投稿に成功すればresolveされ、
+    # 失敗すればエラーメッセージとともにrejectされます。
+    postComment             : (msg, command) -&gt;
+        self        = this
+        dfd         = Promise.defer()
+        timeoutId   = null
+        postInfo    = null
+        err         = null
+
+        if typeof msg isnt &quot;string&quot; || msg.replace(/\s/g, &quot;&quot;) is &quot;&quot;
+            dfd.reject &quot;空コメントは投稿できません。&quot;
+            return dfd.promise
+
+        unless @_connection?
+            dfd.reject &quot;コメントサーバと接続していません。&quot;
+            return dfd.promise
+
+        # PostKeyを取得してコメントを送信
+        @_fetchPostKey()
+            .then -&gt;
+                # 取得成功
+                # 送信する情報を集める
+                postInfo =
+                    userId      : self._live.get(&quot;user&quot;).id
+                    isPremium   : self._live.get(&quot;user&quot;).isPremium|0
+
+                    comment     : msg
+                    command     : command || &quot;&quot;
+
+                    threadId    : self._postInfo.threadId
+                    postKey     : self._postInfo.postKey
+                    ticket      : self._postInfo.ticket
+
+                # 投稿結果の受信イベントをリスニング
+                self.once &quot;_chatresult&quot;, (result) -&gt;
+                    clearTimeout timeoutId
+
+                    if result.status is CHAT_RESULT.SUCCESS
+                        dfd.resolve()
+                        return
+
+                    switch result.status
+                        when CHAT_RESULT.LOCKED
+                            dfd.reject &quot;コメント投稿がロックされています。&quot;
+                        else
+                            dfd.reject &quot;投稿に失敗しました&quot;
+
+                # 規定時間内に応答がなければタイムアウトとする
+                timeoutId = setTimeout -&gt;
+                    dfd.reject &quot;タイムアウトしました。&quot;
+                , SEND_TIMEOUT
+
+                # コメントを投稿
+                self._connection.write COMMANDS.post(postInfo) + &quot;\0&quot;
+
+            # 通信失敗
+            , (err) -&gt;
+                dfd.reject err
+
+        return dfd.promise
+
+
+    # このインスタンスを破棄します。
+    dispose                 : -&gt;
+        @_live = null
+        @_postInfo = null
+        @_disconnect()
+        @off()
+
+        DisposeHelper.wrapAllMembers @
+
+    # Backbone.Collectionのいくつかのメソッドを無効化
+    create                  : _.noop
+    fetch                   : _.noop
+    sync                    : _.noop
+
+
+module.exports = CommentProvider
+module.exports.ChatResult = _.cloneCHAT_RESULT
+
+    </pre>
+</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>
