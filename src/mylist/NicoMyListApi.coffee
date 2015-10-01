@@ -77,13 +77,13 @@ class NicoMyListApi
     ###*
     # マイリストの一覧を取得します。
     # @method fetchMyListsIndex
-    # @param    {boolean} withoutDefault
+    # @param    {boolean} withoutHome
     #   trueを指定すると"とりあえずマイリスト"を一覧から除外します。
     # @return   {Promise}
     # - resolve : (mylists: Array.<MyListItemIndex>)
     # - reject : (message: String)
     ###
-    fetchOwnedListIndex : (withoutDefault = false) ->
+    fetchOwnedListIndex : (withoutHome = false) ->
         # 受信したデータからインデックスを作成
         Request.get
             resolveWithFullResponse : true
@@ -98,7 +98,7 @@ class NicoMyListApi
                     return Promise.reject "Failed to fetch mylist. (reason unknown)"
 
                 # とりあえずマイリスト
-                if withoutDefault is false
+                if withoutHome is false
                     lists.push MyListMeta.instance("home")
 
                 _.each result.mylistgroup, (group) =>
