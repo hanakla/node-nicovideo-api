@@ -28,7 +28,7 @@ class NicoVideoInfo
         return defer.reject "Fetch failed. Movie id not specified." unless movieId?
 
         # getThumbInfoの結果を取得
-        request.get
+        Request.get
             resolveWithFullResponse : true
             url : sprintf NicoURL.Video.GET_VIDEO_INFO, @_id
             jar : session.cookie
@@ -175,18 +175,18 @@ class NicoVideoInfo
     # @class NicoVideoInfo
     # @constructor
     # @param {String}       movieId     動画ID
-    # @param {NicoSession}  session     セッション
+    # @param {NicoSession} _session     セッション
     ###
-    constructor     : (movieId, session) ->
+    constructor     : (movieId, @_session) ->
         # 指定された動画の動画情報インスタンスがキャッシュされていればそれを返す
         # キャッシュに対応する動画情報インスタンスがなければ、新規作成してキャッシュ
         # return VideoInfo._cache[movieId] if VideoInfo._cache[movieId]?
 
-        @_id = movieId
-        @_session = session
         @attributes = _.cloneDeep(NicoVideoInfo.defaults)
 
-        super
+        Object.defineProperties @,
+            id :
+                value : movieId
 
     ###*
     # 動画が削除されているか調べます。

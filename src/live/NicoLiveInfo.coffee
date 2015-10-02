@@ -1,37 +1,4 @@
-#
-# ニコニコ生放送の放送情報のモデルです。
-# Backbone.Modelを継承しています。
-#
-# Methods
-#  - isValid: boolean
-#       放送情報が正しく取得されているか検証します。
-#  - isEnded: boolean
-#       配信が終了しているか判定します。
-#  - isOfficial: boolean
-#       公式放送番組か判定します。
-#  - isNsen: boolean
-#       放送がNsenのチャンネルか判定します。
-#  - initThen(fn: function): void
-#       データ取得後に実行する関数を登録します。
-#  - commentProvider: CommentProvider
-#       この放送へのコメント送受信を行うCommentProviderオブジェクトを取得します。
-#  - destroy: void
-#       インスタンスが破棄可能か調べ、可能であれば破棄します。
-#
-# Events
-#  - error  : (msg: String)
-#       番組情報の同期中にエラーが発生した時に発火します。
-#  - sync   : ()
-#       放送情報を最新状態と同期した時に発火します。
-#  - boforeDestroy:(requireKeep: Function)
-#       インスタンスが破棄される前に発火します。
-#       インスタンスの破棄によって不都合が生じる可能性がある場合
-#       リスナーはrequireKeepをコールしてください
-#  - destroy: ()
-#       インスタンスが破棄された時に発火します。
-#  - ended : ()
-#       配信が終了した時に発火します。
-#
+###
 # Properties
 #   stream:     -- 放送の基礎情報
 #       liveId:         string -- 放送ID
@@ -78,56 +45,34 @@
 #       addr:           string -- サーバーアドレス
 #       port:           number -- サーバーポート
 #       thread:         number -- この放送と対応するスレッドID
-#
-
-_           = require "lodash"
-Backbone    = require "backbone"
-request     = require "request"
-sprintf     = require("sprintf").sprintf
-cheerio     = require "cheerio"
-
-CommentProvider = require "./CommentProvider"
-NicoURL         = require "../NicoURL"
-
-UPDATE_INTERVAL = 60000
-
-
-_updateEventer = _.extend({}, Backbone.Events)
-
-
-###*
-# valがnullもしくはundefinedの時にdefを返します。
-#
-# @param {Object} val
-# @param {Object} def
-# @return {Object}
 ###
-defaultVal = (val, def) ->
-    return if val? then val else def
+
+_ = require "lodash"
+__ = require "lodash-deep"
+Cheerio = require "cheerio"
+Emitter =require "../Emitter"
+Request = require "request-promise"
+{sprintf} = require "sprintf"
+
+NicoURL = require "../NicoURL"
+CommentProvider = require "./CommentProvider"
+
+# UPDATE_INTERVAL = 60000
+
+#
+# # 定期的にデータを取得しに行く
+# setInterval ->
+#     _updateEventer.trigger "intervalSync"
+# , UPDATE_INTERVAL
 
 
-# 定期的にデータを取得しに行く
-setInterval ->
-    _updateEventer.trigger "intervalSync"
-, UPDATE_INTERVAL
 
+class NicoLiveInfo extends Emitter
 
-
-class NicoLiveInfo extends Backbone.Model
-    @_cache     : {}
-
-
-    # @type {CommentProvider}
-    _commentProvider    : null
-
-    # @type {NicoSession}
-    _session             : null
-
-    # @type {NicoAuth}
-    _initPromise           : null
-
-    # @type {Object}
-    defaults    :
+    ###*
+    # @propery {Object}
+    ###
+    @defaults :
         stream      :
             liveId      : null
             title       : null
@@ -177,133 +122,135 @@ class NicoLiveInfo extends Backbone.Model
 
         _hasError   : true
 
+    ###*
+    # @static
+    # @return {Promise}
+    ###
+    @instanceFor : (liveId, session) ->
+        if typeof liveId isnt "string" or liveId is ""
+            throw new TypeError("liveId must bea string")
+
+        live = new NicoLiveInfo(liveId, session)
+        live.fetch().then -> Promise.resolve(live)
+
+
+    ###*
+    # マイリストが最新の内容に更新された時に発火します
+    # @event MyList#did-refresh
+    # @property {NicoLiveInfo}  live
+    ###
+
+    ###*
+    # @private
+    # @property {CommentProvider}   _commentProvider
+    ###
+    _commentProvider : null
+
+    ###*
+    # @private
+    # @property {NicoSession}   _session
+    ###
+    _session : null
+
+    ###*
+    # @private
+    # @property {Object}    _attr
+    ###
+    _attr : null
+
+    ###*
+    # @property {String}    id
+    ###
+
 
     ###*
     # @param {NicoSession}  session 認証チケット
     # @param {string}       liveId  放送ID
     ###
-    constructor     : (session, liveId) ->
-        if NicoLiveInfo._cache[liveId]?
-            return NicoLiveInfo._cache[liveId]
+    constructor     : (liveId, @_session) ->
+        super
 
-        super id: liveId
-        @_session = session
-
-        _.bindAll @
-            , "_onIntervalSync"
-            , "_onClosed"
-
-        # 自動アップデートイベントをリスニング
-        @listenTo _updateEventer, "intervalSync", @_onIntervalSync
-
-        NicoLiveInfo._cache[liveId] = @
-
-        @_initPromise = @fetch()
+        Object.defineProperties @,
+            id :
+                value : liveId
 
 
     ###*
-    # 自動更新イベントのリスナ
-    # @private
-    ###
-    _onIntervalSync     : ->
-        try
-            @fetch()
-        catch e
-            console.error e.message
-
-
-    ###*
-    # 配信終了イベントのリスナ
-    # @private
-    ###
-    _onClosed       : ->
-        @trigger "ended"
-        @destroy()
-
-
-    #
-    # 放送情報が正しく同期されたか調べます。
-    # @return {boolean}
-    #
-    isValid          : ->
-        return !@get "_hasError"
-
-
-    #
     # 公式放送か調べます。
     # @return {boolean}
-    #
-    isOfficial      : ->
-        return !!@get("stream").isOfficial
-
-
-    #
-    # Nsenのチャンネルか調べます。
-    # @return {boolean}
-    #
-    isNsen          : ->
-        return !!@get("stream").isNsen
-
-
-    #
-    # 放送が終了しているか調べます。
-    # @return {boolean}
-    #
-    isEnded         : ->
-        return @get("isEnded") is true
-
-
-    #
-    # 割り当てられた認証チケットを取得します。
-    # @return {NicoSession}
-    #
-    getSession      : ->
-        return @_session
-
-
-    #
-    # この放送に対応するCommentProviderオブジェクトを取得します。
-    # @return {?CommentProvider}
-    #
-    commentProvider  : ->
-        if not @_commentProvider
-            @_commentProvider = new CommentProvider @
-
-        return @_commentProvider
+    ###
+    isOfficialLive : ->
+        !!@get("stream").isOfficial
 
 
     ###*
-    # 最初のデータ取得が終了した時の処理を登録します。
-    # @param {Function} fn データ取得後に実行する関数
+    # Nsenのチャンネルか調べます。
+    # @return {boolean}
     ###
-    initThen        : (fn) ->
-        @_initPromise.then fn
-        return @
+    isNsenLive : ->
+        !!@get("stream").isNsen
+
+
+    ###*
+    # 放送が終了しているか調べます。
+    # @return {boolean}
+    ###
+    isEnded         : ->
+        @get("isEnded") is true
+
+
+    ###*
+    # @param {String}   path
+    ###
+    get : (path) ->
+        __.deepGet @_attr, path
+
+
+    ###*
+    # この放送に対応するCommentProviderオブジェクトを取得します。
+    # @param {Object} options 接続設定
+    # @param {Number} [options.firstGetComments] 接続時に取得するコメント数
+    # @param {Number} [options.timeoutMs] タイムアウトまでのミリ秒
+    # @param {Boolean} [options.connect=true] trueを指定するとコネクション確立後にresolveします
+    # @return {Promise}
+    ###
+    commentProvider  : (options = {
+        connect: true
+    }) ->
+        unless @_commentProvider?
+            return CommentProvider.instanceFor(@, options).then (provider) =>
+                @_commentProvider = provider
+                provider.onDidEndLive @_didEndLive.bind(@)
+
+                if options.connect
+                    provider.connect(options)
+                else
+                    Promise.resolve provider
+
+        Promise.resolve @_commentProvider
 
 
     ###*
     # APIから取得した情報をパースします。
     # @private
-    # @param {string} res API受信結果
+    # @param {String}   res     API受信結果
     ###
     parse           : (res) ->
-        $res    = cheerio.load res
+        $res    = Cheerio.load res
         $root   = $res ":root"
         $stream = $res "stream"
         $user   = $res "user"
         $rtmp   = $res "rtmp"
         $ms     = $res "ms"
-        val     = null
+        props     = null
 
         if $root.attr("status") isnt "ok"
             msg = $res("error code").text()
 
-            console.error "NicoLiveInfo[%s]: Failed live info fetch. (%s)", @id, msg
+            console.error "Live[%s]: Failed live info fetch. (%s)", @id, msg
             @trigger "error", msg, @
-            return _hasError: true
 
-        val =
-            # 放送情報
+        props =
             stream  :
                 liveId      : $stream.find("id").text()
                 title       : $stream.find("title").text()
@@ -319,17 +266,17 @@ class NicoLiveInfo extends Backbone.Model
 
                 isOfficial  : $stream.find("provider_type").text() is "official"
                 isNsen      : $res("ns").length > 0
-                nsenType    : $res("ns nstype").text()||null
+                nsenType    : $res("ns nstype").text() or null
 
                 contents    : $stream.find("contents_list contents").map () ->
-                    $content = cheerio @
+                    $content = Cheerio @
                     return {
                         id              : $content.attr("id")
                         startTime       : new Date(($content.attr("start_time")|0) * 1000)
                         disableAudio    : ($content.attr("disableAudio")|0) isnt 1
                         disableVideo    : ($content.attr("disableVideo")|0) isnt 1
-                        duration        : defaultVal($content.attr("duration"), null)|0 # ついてない時がある
-                        title           : defaultVal($content.attr("title"), null)      # ついてない時がある
+                        duration        : $content.attr("duration")|0 ? null # ついてない時がある
+                        title           : $content.attr("title") ? null      # ついてない時がある
                         content         : $content.text()
                     }
 
@@ -359,77 +306,55 @@ class NicoLiveInfo extends Backbone.Model
 
             _hasError: $res("getplayerstatus").attr("status") isnt "ok"
 
-        return val
+        props
 
 
     ###*
     # 番組情報を最新の状態に同期します。
     # @return {Promise}
     ###
-    fetch           :  ->
-        unless @id?
-            return Promise.reject "Live id not specified."
-
-        self    = @
-        dfd     = Promise.defer()
-        url     = sprintf NicoURL.Live.GET_PLAYER_STATUS, @id
+    fetch :  ->
+        url = sprintf NicoURL.Live.GET_PLAYER_STATUS, @id
 
         # getPlayerStatusの結果を取得
-        request.get
-            url     : url
-            jar     : @_session.getCookieJar()
-            , (err, res, body) ->
+        Request.get
+            resolveWithFullResponse : true
+            url : url
+            jar : @_session.cookie
+        .then (res) =>
+            # check errors
+            if res.statusCode is 503
+                return Promise.reject new Error(sprintf("Live[%s]: Nicovideo has in maintenance.", @id))
 
-                # check errors
-                if err? and res.statusCode is 503
-                    err = sprintf "NicoLiveInfo[%s]: Nicovideo has in maintenance.", self.id
+            @_attr = @parse(res.body)
+            @emit "did-refresh", {live: @}
 
-                if err
-                    console.error "NicoLiveInfo[%s]: Failed live info fetch. (%s)", self.id, err
-
-                    self.trigger "error", err, self
-                    dfd.reject err
-
-                    return
-
-                # apply values
-                if not self.set(self.parse(body))
-                    return false
-
-                # Create CommentProvider the first time getSta
-                if not self._commentProvider?
-                    self._commentProvider = new CommentProvider self
-
-                    # 配信終了イベントをリスニング
-                    self._commentProvider.on "ended", self._onClosed
-
-                self.trigger "sync"
-                dfd.resolve()
-
-        return dfd.promise
+            Promise.resolve()
 
     ###*
     # 現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。
     ###
-    destroy             : ->
-        _updateEventer.off "intervalSync", @_onIntervalSync
-        @off()
-        @stopListening()
-
-        @_commentProvider.dispose()
-        @_commentProvider = undefined
-        @set "isEnded", true
+    dispose : ->
+        @_commentProvider?.dispose()
+        @_commentProvider = null
         delete NicoLiveInfo._cache[@id]
+        super
+
+
+    #
+    # Event Listeners
+    #
+
+    _didEndLive : ->
+        @_attr.isEnded = true
         return
 
-    # 別名
-    dispose             : ->
-        @destroy()
-        return
 
-    # Backbone.Modelのメソッドを無効化
-    sync                : _.noop
-    save                : _.noop
+    #
+    # Event Handlers
+    #
+    onDidRefresh : (listener) ->
+        @on "did-refresh", listener
 
 
 module.exports = NicoLiveInfo

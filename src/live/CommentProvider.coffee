@@ -28,25 +28,23 @@
 #       コメントサーバーから切断された際に発火します。
 #
 ###
-INIT_GET_RESPONSES = 200
 SEND_TIMEOUT = 3000
 
-_           = require "lodash"
-Backbone    = require "backbone"
-net         = require "net"
-cheerio     = require "cheerio"
-request     = require "request"
-sprintf     = require("sprintf").sprintf
+_ = require "lodash"
+Cheerio = require "cheerio"
+deepFreeze = require "deep-freeze"
+Request = require "request-promise"
+{Socket} = require "net"
+{sprintf} = require "sprintf"
 
+Emitter = require "../Emitter"
 NicoUrl     = require "../NicoURL"
 NicoLiveComment = require "./NicoLiveComment"
 
-DisposeHelper   = require "../../helper/disposeHelper"
 
-
-CHAT_RESULT =
+chatResults = deepFreeze
     SUCCESS             : 0
-    FAIL                : 1
+    CONTINUOUS_POST     : 1
     THREAD_ID_ERROR     : 2
     TICKET_ERROR        : 3
     DIFFERENT_POSTKEY   : 4
@@ -56,8 +54,8 @@ CHAT_RESULT =
 
 COMMANDS =
     connect : _.template """
-        <thread thread="<%-thread%>" version="20061206"
-         res_from="#{-INIT_GET_RESPONSES}"/>
+        <thread thread="<%- thread %>" version="20061206"
+         res_from="-<%- firstGetComments %>"/>
     """
     post    : _.template """
         <chat thread="<%-threadId%>" ticket="<%-ticket%>"
@@ -65,321 +63,411 @@ COMMANDS =
          premium="<%-isPremium%>"><%-comment%></chat>
     """
 
+module.exports =
+class CommentProvider extends Emitter
+    @ChatResult : chatResults
 
-class CommentProvider extends Backbone.Collection
+    ###*
+    # @param {NicoLiveInfo} liveInfo
+    # @return {Promise}
+    ###
+    @instanceFor : (liveInfo) ->
+        unless liveInfo?
+            throw new TypeError("liveInfo must be instance of NicoLiveInfo")
 
-    # @type {NicoLiveInfo}
+        Promise.resolve new CommentProvider(liveInfo)
+
+    ###*
+    # @private
+    # @propery {NicoLiveInfo} _live
+    ###
     _live       : null
 
-    # @type {Net.Socket}
-    _connection : null
-
-    # コメント投稿に必要な情報
-    _postInfo   :
-        ticket      : null
-        postKey     : null
-        threadId    : null
-
-
-    constructor     : (liveInfo) ->
-        unless liveInfo?
-            throw new Error "Can not passed LiveInfo object"
-
-        Backbone.Collection.call @
-
-        @_postInfo  = _.clone(this._postInfo)
-        @_live      = liveInfo
-
-        _.bindAll @
-            , "_onCommentReceive"
-            , "_onErrorOnConnection"
-            , "_onConnectionClose"
-            , "_rawCommentProcessor"
-            #, "_responseParser"
-            #, "_threadInfoDetector"
-            #, "_postResultDetector"
-            #, "_liveEndDetector"
-            , "_onLiveInfoSynced"
-            #, "_onAuthLogout"
-
-        @.once "receive", @_threadInfoDetector    # スレッド情報リスナを登録
-
-        liveInfo.on "sync", @_onLiveInfoSynced
-
-        liveInfo.getSession().once "logout", => @_disconnect
-
-        liveInfo.initThen =>
-            try
-                # コメントサーバーへ接続
-                @_initConnection()
-            catch e
-                console.error "CommentProvider[%s]: Connection failed.", @_live.get "id", e
-
-
-    #
-    # コメントサーバへ接続します。
+    ###*
     # @private
-    # @param {CommentProvider} self
-    #
-    _initConnection     : ->
-        self        = @
-        serverInfo  = @_live.get "comment"
+    # @propery {net.Socket} _socket
+    ###
+    _socket : null
 
-        # コメントサーバーへ接続する
-        @_connection = net.connect serverInfo.port, serverInfo.addr
+    ###*
+    # @private
+    # @propery {Object} _postInfo
+    ###
+    _postInfo   : null
+        # ticket      : null
+        # postKey     : null
+        # threadId    : null
 
-        @_connection
-            # 接続完了したら送信要求を送る
-            .once "connect", ->
-                self._connection.write COMMANDS.connect(serverInfo) + '\0'
+    ###*
+    # @property {Boolean} isFirstResponseProsessed
+    ###
+    isFirstResponseProsessed : false
 
-            # コメントを受信した時
-            .on "data", @_onCommentReceive
+    ###*
+    # @param {NicoLiveInfo} _live
+    ###
+    constructor : (@_live) ->
+        super
 
-            # 接続エラーが起きた時
-            .once "error", @_onErrorOnConnection
+        @isFirstResponseProsessed = false
+        @_postInfo  =
+            ticket : null
+            postKey : null
+            threadId : null
 
-            # 接続が閉じた時
-            .once "close", @_onConnectionClose
 
+    ###*
+    # このインスタンスが保持しているNicoLiveInfoオブジェクトを取得します。
+    # @return {NicoLiveInfo}
+    ###
+    getLiveInfo : ->
+        return @_live
+
+
+    _canContinue : ->
+        if @disposed
+            throw new Error("CommentProvider has been disposed")
         return
 
 
+    ###*
+    # コメントサーバーへ接続します。
     #
-    # コメント受信処理
+    # 既に接続済みの場合は接続を行いません。
+    # 再接続する場合は `CommentProvider#reconnect`を利用してください。
     #
-    _onCommentReceive    : (data) ->
-        self    = @
-        $c      = cheerio.load "<res>#{data}</res>"
+    # @fires CommentProvider#did-connect
+    # @param {Object} [options]
+    # @param {Number} [options.firstGetComments=100] 接続時に取得するコメント数
+    # @param {Number} [options.timeoutMs=5000] タイムアウトまでのミリ秒
+    # @return {Promise}
+    ###
+    connect : (options = {}) ->
+        @_canContinue()
 
-        # 要素をばらしてイベントを呼ぶ
-        $c("*").each ->
-            self._rawCommentProcessor cheerio(@).toString()
+        return Promise.resolve(@) if @_socket?
 
-    #
-    #
-    #
-    _rawCommentProcessor    : (rawXMLComment) ->
-        $thread = cheerio rawXMLComment
+        serverInfo  = @_live.get "comment"
+        options = _.defaults {}, options,
+            firstGetComments: 100
+            timeoutMs : 5000
 
-        @trigger "receive", rawXMLComment
+        new Promise (resolve, reject) =>
+            timerId = null
+            @_socket = new Socket
 
-        switch true
-            # 受信したデータからNicoLiveCommentインスタンスを生成してイベントを発火させる
-            when $thread.is "chat"
-                comment = NicoLiveComment.fromRawXml rawXMLComment
+            # @once "receive", @_threadInfoDetector
 
-                # 時々流れてくるよくわからない無効データは破棄
-                if comment.get("comment") is ""
+            @_socket
+            .once "connect", =>
+                @once "_did-receive-connection-response", =>
+                    clearTimeout timerId
+                    resolve(@)
                     return
 
-                # NicoLiveCommentの自己ポスト判定が甘いので厳密に。
-                if comment.get("user").id is this._live.get("user").id
-                    comment.set "isMyPost", true
+                # Send thread information
+                params = _.assign({}, {firstGetComments: options.firstGetComments}, serverInfo)
+                @_socket.write COMMANDS.connect(params) + '\0'
 
-                # 配信終了通知が来たら切断
-                if comment.get("comment") is "/disconnect"
-                    @trigger "ended", @_live
-                    @_disconnect()
+                return
 
-                this.add comment
+            .on "data", @_didReceiveData.bind(@)
 
-            # 最初の接続応答を受け付け
-            when $thread.is "thread"
-                # チケットを取得
-                @_postInfo.ticket = $thread.attr "ticket"
-                console.info "CommentProvider[%s]: Receive thread info", @_live.get("id")
+            .on "error", @_didErrorOnSocket.bind(@)
 
-            # 自分のコメント投稿結果を受信
-            when $thread.is "chat_result"
-                status = $thread.attr "status"
-                status = status | 0
-                @trigger "_chatresult", {status}
+            .on "close", @_didCloseSocket.bind(@)
+
+            @_socket.connect
+                host : serverInfo.addr
+                port : serverInfo.port
+
+            timerId = setTimeout =>
+                reject new Error("[CommentProvider: #{@_live.id}] Connection timed out.")
+                return
+            , options.timeoutMs
+
+
+    ###*
+    # @param {Object} options 接続設定（connectメソッドと同じ）
+    # @return {Promise}
+    ###
+    reconnect : (options) ->
+        @_canContinue()
+
+        @_socket.destroy() if @_socket?
+        @_socket = null
+        @connect()
+
+
+    ###*
+    # コメントサーバから切断します。
+    # @fires CommentProvider#did-disconnect
+    ####
+    disconnect : ->
+        @_canContinue()
+
+        return unless @_socket?
+
+        @_socket.removeAllListeners()
+        @_socket.destroy()
+        @_socket = null
+        @emit "did-close-connection"
+        return
+
+
+    ###*
+    # APIからpostkeyを取得します。
+    #
+    # @private
+    # @return {Promise} 取得出来た時にpostkeyと共にresolveされ、
+    #    失敗した時は、rejectされます。
+    ###
+    _fetchPostKey : ->
+        @_canContinue()
+
+        threadId    = @_live.get("comment.thread")
+        url         = sprintf NicoUrl.Live.GET_POSTKEY, threadId
+        postKey     = ""
+
+        # retry = if _.isNumber(retry) then Math.min(Math.abs(retry), 5) else 5
+
+        Request.get
+            resolveWithFullResponse : true
+            url : url
+            jar : @_live._session.cookie
+        .then (res) =>
+            if res.statusCode is 200
+                # 正常に通信できた時
+                postKey = /^postkey=(.*)\s*/.exec res.body
+                postKey = postKey[1] if postKey?
+
+            if postKey isnt ""
+                # ポストキーがちゃんと取得できれば
+                @_postInfo.postKey = postKey
+                Promise.resolve postKey
+            else
+                Promise.reject new Error("Failed to fetch post key")
+
+
+    ###*
+    # コメントを投稿します。
+    # @param {String} msg 投稿するコメント
+    # @param {String|Array.<String>} [command] コマンド(184, bigなど)
+    # @param {Number} [timeoutMs]
+    # @return {Promise} 投稿に成功すればresolveされ、
+    #   失敗すればエラーメッセージとともにrejectされます。
+    ###
+    postComment : (msg, command = "", timeoutMs = 3000) ->
+        @_canContinue()
+
+        if typeof msg isnt "string" || msg.replace(/\s/g, "") is ""
+            return Promise.reject new Error("Can not post empty comment")
+
+        unless @_socket?
+            return Promise.reject new Error("No connected to the comment server.")
+
+        command = command.join(" ") if Array.isArray(command)
+
+        @_fetchPostKey().then =>
+            defer = Promise.defer()
+            timerId = null
+
+            postInfo =
+                userId      : @_live.get("user.id")
+                isPremium   : @_live.get("user.isPremium")|0
+
+                comment     : msg
+                command     : command
+
+                threadId    : @_postInfo.threadId
+                postKey     : @_postInfo.postKey
+                ticket      : @_postInfo.ticket
+
+            disposer = @_onDidReceivePostResult ({status}) ->
+                disposer.dispose()
+                clearTimeout timerId
+
+                switch status
+                    when chatResults.SUCCESS
+                        defer.resolve()
+
+                    when chatResults.THREAD_ID_ERROR
+                        defer.reject new Error("Failed to post comment. (reason: thread id error)")
+
+                    when chatResults.TICKET_ERROR
+                        defer.reject new Error("Failed to post comment. (reason: ticket error)")
+
+                    when chatResults.DIFFERENT_POSTKEY, chatResults._DIFFERENT_POSTKEY
+                        defer.reject new Error("Failed to post comment. (reason: postkey is defferent)")
+
+                    when chatResults.LOCKED
+                        defer.reject new Error("Your posting has been locked.")
+
+                    when chatResults.CONTINUOUS_POST
+                        defer.reject new Error("Can not post continuous the same comment.")
+
+                    else
+                        defer.reject new Error("Failed to post comment. (status: #{status})")
+
+                return
+
+
+            timerId = setTimeout ->
+                disposer.dispose()
+                defer.reject new Error("Post result response is timed out.")
+            , timeoutMs
+
+            @_socket.write COMMANDS.post(postInfo) + "\0"
+
+            defer.promise
+
+    ###*
+    # インスタンスを破棄します。
+    ###
+    dispose : ->
+        @_live = null
+        @_postInfo = null
+        @disconnect()
+        super
+
+
+    #
+    # Event Listeners
+    #
+
+    ###*
+    # コメント受信処理
+    ###
+    _didReceiveData : (data) ->
+        @emit "did-receive-data", data
+
+        comments = []
+
+        $elements = Cheerio.load(data)(":root")
+        $elements.each (i, element) =>
+            $element = Cheerio(element)
+
+            switch element.name
+                when "thread"
+                    # Did receive first connection response
+                    @_postInfo.ticket = $element.attr "ticket"
+                    @emit "_did-receive-connection-response"
+                    # console.info "CommentProvider[%s]: Receive thread info", @_live.get("id")
+
+                when "chat"
+                    comment = NicoLiveComment.fromRawXml($element, @_live.get("user.id"))
+                    comments.push comment
+                    @emit "did-receive-comment", comment
+
+                    # 配信終了通知が来たら切断
+                    if comment.isPostByDistributor() and comment.comment is "/disconnect"
+                        @emit "did-end-live", @_live
+                        @disconnect()
+
+                when "chat_result"
+                    # Did receive post result
+                    status = $element.attr "status"
+                    status = status | 0
+                    @emit "did-receive-post-result", {status}
+
+            return
+
+        if @isFirstResponseProsessed is no
+            @isFirstResponseProsessed = yes
+            @emit "did-process-first-response", comments
 
         return
 
 
-
-    #
+    ###*
     # コネクション上のエラー処理
-    #
-    _onErrorOnConnection : (err) ->
-        @trigger "error", err.message
+    ###
+    _didErrorOnSocket : (error) ->
+        @emit "did-error", error
+        return
 
 
-    #
+    ###*
     # コネクションが閉じられた時の処理
     # @private
-    #
-    _onConnectionClose  : (hadError) ->
+    ###
+    _didCloseSocket  : (hadError) ->
         if hadError
-            @trigger "error", "Connection closing error (unknown)"
+            @emit "error", "Connection closing error (unknown)"
 
-        @trigger "closed"
+        @emit "did-close-connection"
+        return
 
 
-    #
+    ###*
     # コメントサーバのスレッドID変更を監視するリスナ
     # @private
-    #
-    _onLiveInfoSynced       : ->
+    ###
+    _didRefreshLiveInfo : ->
         # 時々threadIdが変わるのでその変化を監視
         @_postInfo.threadId = @_live.get("comment").thread
         return
 
 
     #
-    # コメントサーバから切断します。
-    # @private
+    # Event Handlers
     #
-    _disconnect             : ->
-        if @_connection?
-            @_connection.removeAllListeners()
-            @_connection.destroy()
-            @_connection = null
 
-        @trigger "disconnected"
-        @off()
-
-
-    # APIからpostkeyを取得します。
+    ###*
     # @private
-    # @param {number} maxRetry 最大取得試行回数
-    # @return {Promise} 取得出来た時にpostkeyと共にresolveされ、
-    #    失敗した時は、rejectされます。
-    _fetchPostKey           : (retry) ->
-        self        = @
-        dfd         = Promise.defer()
-        threadId    = @_live.get("comment").thread
-        url         = sprintf NicoUrl.Live.GET_POSTKEY, threadId
-        postKey     = ""
-
-        retry = if _.isNumber(retry) then Math.min(Math.abs(retry), 5) else 5
-
-        request.get
-            url     : url
-            jar     : @_live.getSession().getCookieJar()
-            , (err, res, body) ->
-                if err?
-                    console.error "CommentProvider[%s]: Failed to retrive postKey.", self._live.id
-
-                    if maxRetry is 0
-                        dfd.reject "Reached to max retry count."
-                        return
-
-                    # ネットにつながってそうなときはリトライする。
-                    setTimeout ->
-                        self
-                            ._fetchPostKey maxRetry - 1
-                            .then (key) ->
-                                dfd.resolve key
-                        , 400
-
-                # 通信成功
-                if res.statusCode is 200
-                    # 正常に通信できた時
-                    postKey = /^postkey=(.*)\s*/.exec body
-                    postKey = postKey[1] if postKey?
-
-                if postKey isnt ""
-                    # ポストキーがちゃんと取得できれば
-                    self._postInfo.postKey = postKey
-                    console.info "CommentProvider[%s]: postKey update successful.", self._live.id
-                    dfd.resolve postKey
-                else
-                    console.error "CommentProvider[%s]: Failed to retrive postKey.", self._live.id, arguments
-                    dfd.reject()
-
-                return
-
-        return dfd.promise
+    # @propery {Number} status
+    ###
+    _onDidReceivePostResult : (listener) ->
+        @on "did-receive-post-result", listener
 
 
-    # このインスタンスが保持しているNicoLiveInfoオブジェクトを取得します。
-    # @return {NicoLiveInfo}
-    getLiveInfo             : ->
-        return @_live
+    ###*
+    # Fire on received and processed thread info and comments first
+    # @event CommentProvider#did-process-first-response
+    # @param {Array.<NicoLiveComment>}
+    ###
+    onDidProcessFirstResponse : (listener) ->
+        @on "did-process-first-response", listener
 
 
-    # コメントを投稿します。
-    # @param {string} msg 投稿するコメント
-    # @param {string} command コマンド(184, bigなど)
-    # @return {Promise} 投稿に成功すればresolveされ、
-    # 失敗すればエラーメッセージとともにrejectされます。
-    postComment             : (msg, command) ->
-        self        = this
-        dfd         = Promise.defer()
-        timeoutId   = null
-        postInfo    = null
-        err         = null
-
-        if typeof msg isnt "string" || msg.replace(/\s/g, "") is ""
-            dfd.reject "空コメントは投稿できません。"
-            return dfd.promise
-
-        unless @_connection?
-            dfd.reject "コメントサーバと接続していません。"
-            return dfd.promise
-
-        # PostKeyを取得してコメントを送信
-        @_fetchPostKey()
-            .then ->
-                # 取得成功
-                # 送信する情報を集める
-                postInfo =
-                    userId      : self._live.get("user").id
-                    isPremium   : self._live.get("user").isPremium|0
-
-                    comment     : msg
-                    command     : command || ""
-
-                    threadId    : self._postInfo.threadId
-                    postKey     : self._postInfo.postKey
-                    ticket      : self._postInfo.ticket
-
-                # 投稿結果の受信イベントをリスニング
-                self.once "_chatresult", (result) ->
-                    clearTimeout timeoutId
-
-                    if result.status is CHAT_RESULT.SUCCESS
-                        dfd.resolve()
-                        return
-
-                    switch result.status
-                        when CHAT_RESULT.LOCKED
-                            dfd.reject "コメント投稿がロックされています。"
-                        else
-                            dfd.reject "投稿に失敗しました"
-
-                # 規定時間内に応答がなければタイムアウトとする
-                timeoutId = setTimeout ->
-                    dfd.reject "タイムアウトしました。"
-                , SEND_TIMEOUT
-
-                # コメントを投稿
-                self._connection.write COMMANDS.post(postInfo) + "\0"
-
-            # 通信失敗
-            , (err) ->
-                dfd.reject err
-
-        return dfd.promise
+    ###*
+    # Fire on raw response received
+    # @event CommentProvider#did-receive-data
+    # @params {String}  data
+    ###
+    onDidReceiveData : (listener) ->
+        @on "did-receive-data", listener
 
 
-    # このインスタンスを破棄します。
-    dispose                 : ->
-        @_live = null
-        @_postInfo = null
-        @_disconnect()
-        @off()
-
-        DisposeHelper.wrapAllMembers @
-
-    # Backbone.Collectionのいくつかのメソッドを無効化
-    create                  : _.noop
-    fetch                   : _.noop
-    sync                    : _.noop
+    ###*
+    # Fire on comment received
+    # @event CommentProvider#did-receive-comment
+    # @params {NicoLiveComment} comment
+    ###
+    onDidReceiveComment : (listener) ->
+        @on "did-receive-comment", listener
 
 
-module.exports = CommentProvider
-module.exports.ChatResult = _.cloneCHAT_RESULT
+    ###*
+    # Fire on error raised on Connection
+    # @event CommentProvider#did-error
+    # @params {Error} error
+    ###
+    onDidError : (listener) ->
+        @on "did-error", listener
+
+
+    ###*
+    # Fire on connection closed
+    # @event CommentProvider#did-close-connection
+    ###
+    onDidCloseConnection : (listener) ->
+        @on "did-close-connection", listener
+
+
+    ###*
+    # Fire on live  ended
+    # @event CommentProvider#did-end-live
+    ###
+    onDidEndLive : (listener) ->
+        @on "did-end-live", listener

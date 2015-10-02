@@ -3,18 +3,18 @@ EventEmitter3 = require "eventemitter3"
 
 module.exports =
 class Emitter extends EventEmitter3
-    eventObservers : null
+    _eventObservers : null
     disposed : false
 
     constructor : ->
         super
-        @eventObservers = new CompositeDisposable
+        @_eventObservers = new CompositeDisposable
 
     dispose : ->
-        @eventObservers.dispose()
+        @_eventObservers.dispose()
 
         @_events = null
-        @eventObservers = null
+        @_eventObservers = null
         @disposed = true
         return
 
@@ -30,7 +30,7 @@ class Emitter extends EventEmitter3
         super
 
         disposer = new Disposable => @off(event, fn, context, false)
-        @eventObservers.add disposer
+        @_eventObservers.add disposer
         disposer
 
     ###*
@@ -45,7 +45,7 @@ class Emitter extends EventEmitter3
         super
 
         disposer = new Disposable => @off(event, fn, context, true)
-        @eventObservers.add disposer
+        @_eventObservers.add disposer
         disposer
 
 

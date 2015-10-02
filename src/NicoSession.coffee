@@ -51,10 +51,10 @@ class NicoSession
     relogin : ->
         Request.post
             resolveWithFullResponse : true
-            followAllRedirects      : true
-            url     : NicoUrl.Auth.LOGIN
-            jar     : @_cookie
-            form    :
+            followAllRedirects : true
+            url : NicoUrl.Auth.LOGIN
+            jar : @_cookie
+            form :
                 mail_tel : user
                 password : passwordStore.get(@)
         .then (res) ->
@@ -160,13 +160,13 @@ module.exports.login = (user, password) ->
                 get     : ->
                     store = NicoSession.services.get(@)
                     store or NicoSession.services.set(@, store = {})
-                    # store.live ?= new NicoLiveAPI @
+                    store.live ?= new NicoLiveAPI @
 
             video   :
                 get     : ->
                     store = NicoSession.services.get(@)
                     store or NicoSession.services.set(@, store = {})
-                    # store.video ?= new NicoVideoAPI @
+                    store.video ?= new NicoVideoAPI @
 
             mylist  :
                 get     : ->

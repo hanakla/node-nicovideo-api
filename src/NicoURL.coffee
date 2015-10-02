@@ -20,15 +20,19 @@ exports.Live =
     GET_POSTKEY: "http://live.nicovideo.jp/api/getpostkey?thread=%s"
 
     #  パラメータ: 放送ID, 動画ID
-    NSEN_REQUEST: "http://live.nicovideo.jp/api/nsenrequest?v=%s&id=%s"
-    #  パラメータ: 放送ID
-    NSEN_REQUEST_CANCEL: "http://live.nicovideo.jp/api/nsenrequest?v=%s&mode=cancel"
-    #  パラメータ: 放送ID
-    NSEN_REQUEST_SYNC: "http://live.nicovideo.jp/api/nsenrequest?v=%s&mode=requesting"
-    #  パラメータ: 放送ID
-    NSEN_GOOD: "http://ow.live.nicovideo.jp/api/nsengood?v=%s"
-    #  パラメータ: 放送ID
-    NSEN_SKIP: "http://ow.live.nicovideo.jp/api/nsenskip?v=%s"
+    # GET
+    #   v       : LiveID
+    #   id      : Request movie ID (if request)
+    #   mode    : "cancel", "requesting", or none
+    NSEN_REQUEST: "http://live.nicovideo.jp/api/nsenrequest"
+
+    # GET
+    #   v   : LiveID
+    NSEN_GOOD: "http://ow.live.nicovideo.jp/api/nsengood"
+
+    # GET
+    #   v   : LiveID
+    NSEN_SKIP: "http://ow.live.nicovideo.jp/api/nsenskip"
 
 
 exports.Video =
