@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>src/live/NicoLiveInfo.coffee</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="icon" href="../assets/favicon.ico">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="hd" class="yui3-g header">
+        <div class="yui3-u-3-4">
+                <h1><img src="../assets/css/logo.png" title="" width="117" height="52"></h1>
+        </div>
+        <div class="yui3-u-1-4 version">
+            <em>API Docs for: </em>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+                    <h2 class="off-left">APIs</h2>
+                    <div id="api-tabview" class="tabview">
+                        <ul class="tabs">
+                            <li><a href="#api-classes">Classes</a></li>
+                            <li><a href="#api-modules">Modules</a></li>
+                        </ul>
+                
+                        <div id="api-tabview-filter">
+                            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+                        </div>
+                
+                        <div id="api-tabview-panel">
+                            <ul id="api-classes" class="apis classes">
+                                <li><a href="../classes/CommentProvider.html">CommentProvider</a></li>
+                                <li><a href="../classes/MyListItem.html">MyListItem</a></li>
+                                <li><a href="../classes/MyListMeta.html">MyListMeta</a></li>
+                                <li><a href="../classes/NicoMyListApi.html">NicoMyListApi</a></li>
+                                <li><a href="../classes/NicoVideoApi.html">NicoVideoApi</a></li>
+                                <li><a href="../classes/NicoVideoInfo.html">NicoVideoInfo</a></li>
+                                <li><a href="../classes/NsenChannel.html">NsenChannel</a></li>
+                            </ul>
+                
+                
+                            <ul id="api-modules" class="apis modules">
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+                    Show:
+                    <label for="api-show-inherited">
+                        <input type="checkbox" id="api-show-inherited" checked>
+                        Inherited
+                    </label>
+            
+                    <label for="api-show-protected">
+                        <input type="checkbox" id="api-show-protected">
+                        Protected
+                    </label>
+            
+                    <label for="api-show-private">
+                        <input type="checkbox" id="api-show-private">
+                        Private
+                    </label>
+                    <label for="api-show-deprecated">
+                        <input type="checkbox" id="api-show-deprecated">
+                        Deprecated
+                    </label>
+            
+                </div>
+            
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+<h1 class="file-heading">File: src/live/NicoLiveInfo.coffee</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+###
+# ニコニコ生放送の配信情報
+#
+# Properties
+#   stream:     -- 放送の基礎情報
+#       liveId:         string -- 放送ID
+#       title:          string -- 放送タイトル
+#       description:    string -- 放送の説明
+#
+#       watchCount:     number -- 視聴数
+#       commentCount:   number -- コメント数
+#
+#       baseTime:       Date -- 生放送の時間の関わる計算の&quot;元になる時間&quot;
+#       startTime:      Date -- 放送の開始時刻
+#       openTime:       Date -- 放送の開場時間
+#       endTime:        Date -- 放送の終了時刻（放送中であれば終了予定時刻）
+#
+#       isOfficial:     boolean -- 公式配信か
+#       isNsen:         boolean -- Nsenのチャンネルか
+#       nsenType:       string -- Nsenのチャンネル種別（&quot;nsen/***&quot;の***の部分）
+#
+#       contents:       Array&lt;Object&gt;
+#           id:             string -- メイン画面かサブ画面か
+#           startTime:      number -- 再生開始時間
+#           disableAudio:   boolean -- 音声が無効にされているか
+#           disableVideo:   boolean -- 映像が無効にされているか
+#           duration:       number|null -- 再生されているコンテンツの長さ（秒数）
+#           title:          string|null -- 再生されているコンテンツのタイトル
+#           content:        string -- 再生されているコンテンツのアドレス（動画の場合は&quot;smile:動画ID&quot;）
+#
+#   owner:      -- 配信者の情報
+#       userId:         number -- ユーザーID
+#       name:           string -- ユーザー名
+#
+#   user:       -- 自分自身の情報
+#       id:             number -- ユーザーID
+#       name:           string -- ユーザー名
+#       isPremium:      boolean -- プレミアムアカウントか
+#
+#   rtmp:       -- 配信に関する情報。詳細不明
+#       isFms:          boolean
+#       port:           number
+#       url:            string
+#       ticket:         string
+#
+#   comment:    -- コメントサーバーの情報
+#       addr:           string -- サーバーアドレス
+#       port:           number -- サーバーポート
+#       thread:         number -- この放送と対応するスレッドID
+#
+# @class NicoLiveInfo
+###
+
+_ = require &quot;lodash&quot;
+__ = require &quot;lodash-deep&quot;
+Cheerio = require &quot;cheerio&quot;
+Request = require &quot;request-promise&quot;
+{sprintf} = require &quot;sprintf&quot;
+
+APIEndpoints = require &quot;../APIEndpoints&quot;
+NicoURL = require &quot;../NicoURL&quot;
+NicoException = &quot;../NicoException&quot;
+Emitter = require &quot;../Emitter&quot;
+CommentProvider = require &quot;./CommentProvider&quot;
+
+module.exports =
+class NicoLiveInfo extends Emitter
+
+    ###*
+    # @propery {Object}
+    ###
+    @defaults :
+        stream      :
+            liveId      : null
+            title       : null
+            description : null
+
+            watchCount  : -1
+            commentCount    : -1
+
+            baseTime    : null
+            openTime    : null
+            startTime   : null
+            endTime     : null
+
+            isOfficial  : false
+            isNsen      : false
+            nsenType    : null
+
+            contents    : {
+                #  id:string,
+                #  startTime:number,
+                #  disableAudio:boolean,
+                #  disableVideo:boolean,
+                #  duration:number|null,
+                #  title:string|null,
+                #  content:string
+            }
+
+        owner       :
+            userId      : -1
+            name        : null
+
+        user        :
+            id          : -1
+            name        : null
+            isPremium   : null
+
+        rtmp        :
+            isFms       : null
+            port        : null
+            url         : null
+            ticket      : null
+
+        comment     :
+            addr        : null
+            port        : -1
+            thread      : null
+
+        _hasError   : true
+
+    ###*
+    # @static
+    # @return {Promise}
+    ###
+    @instanceFor : (liveId, session) -&gt;
+        if typeof liveId isnt &quot;string&quot; or liveId is &quot;&quot;
+            throw new TypeError(&quot;liveId must bea string&quot;)
+
+        live = new NicoLiveInfo(liveId, session)
+        live.fetch().then -&gt; Promise.resolve(live)
+
+
+    ###*
+    # マイリストが最新の内容に更新された時に発火します
+    # @event MyList#did-refresh
+    # @property {NicoLiveInfo}  live
+    ###
+
+    ###*
+    # @private
+    # @property {CommentProvider}   _commentProvider
+    ###
+    _commentProvider : null
+
+    ###*
+    # @private
+    # @property {NicoSession}   _session
+    ###
+    _session : null
+
+    ###*
+    # @private
+    # @property {Object}    _attr
+    ###
+    _attr : null
+
+    ###*
+    # @property {String}    id
+    ###
+
+
+    ###*
+    # @param {NicoSession}  session 認証チケット
+    # @param {string}       liveId  放送ID
+    ###
+    constructor     : (liveId, @_session) -&gt;
+        super
+
+        Object.defineProperties @,
+            id :
+                value : liveId
+
+
+    ###*
+    # 公式放送か調べます。
+    # @return {boolean}
+    ###
+    isOfficialLive : -&gt;
+        !!@get(&quot;stream&quot;).isOfficial
+
+
+    ###*
+    # Nsenのチャンネルか調べます。
+    # @return {boolean}
+    ###
+    isNsenLive : -&gt;
+        !!@get(&quot;stream&quot;).isNsen
+
+
+    ###*
+    # 放送が終了しているか調べます。
+    # @return {boolean}
+    ###
+    isEnded         : -&gt;
+        @get(&quot;isEnded&quot;) is true
+
+
+    ###*
+    # @param {String}   path
+    ###
+    get : (path) -&gt;
+        __.deepGet @_attr, path
+
+
+    ###*
+    # この放送に対応するCommentProviderオブジェクトを取得します。
+    # @param {Object} options 接続設定
+    # @param {Number} [options.firstGetComments] 接続時に取得するコメント数
+    # @param {Number} [options.timeoutMs] タイムアウトまでのミリ秒
+    # @param {Boolean} [options.connect=true] trueを指定するとコネクション確立後にresolveします
+    # @return {Promise}
+    ###
+    commentProvider  : (options = {
+        connect: true
+    }) -&gt;
+        unless @_commentProvider?
+            return CommentProvider.instanceFor(@, options).then (provider) =&gt;
+                @_commentProvider = provider
+                provider.onDidEndLive @_didEndLive.bind(@)
+
+                if options.connect
+                    provider.connect(options)
+                else
+                    Promise.resolve provider
+
+        Promise.resolve @_commentProvider
+
+
+    ###*
+    # APIから取得した情報をパースします。
+    # @private
+    # @param {String}   res     API受信結果
+    ###
+    parse           : (res) -&gt;
+        $res    = Cheerio.load res
+        $root   = $res &quot;:root&quot;
+        $stream = $res &quot;stream&quot;
+        $user   = $res &quot;user&quot;
+        $rtmp   = $res &quot;rtmp&quot;
+        $ms     = $res &quot;ms&quot;
+        props     = null
+
+        if $root.attr(&quot;status&quot;) isnt &quot;ok&quot;
+            errorCode = $res(&quot;error code&quot;).text()
+            throw new NicoException
+                message: &quot;Failed to parse live info (#{errorCode})&quot;
+                code : errorCode
+                response : res
+
+        props =
+            stream  :
+                liveId      : $stream.find(&quot;id&quot;).text()
+                title       : $stream.find(&quot;title&quot;).text()
+                description : $stream.find(&quot;description&quot;).text()
+
+                watchCount  : $stream.find(&quot;watch_count&quot;).text()|0
+                commentCount: $stream.find(&quot;comment_count&quot;)|0
+
+                baseTime    : new Date(($stream.find(&quot;base_time&quot;).text()|0) * 1000)
+                openTime    : new Date(($stream.find(&quot;open_time&quot;).text()|0) * 1000)
+                startTime   : new Date(($stream.find(&quot;start_time&quot;).text()|0) * 1000)
+                endTime     : new Date(($stream.find(&quot;end_time&quot;)|0) * 1000)
+
+                isOfficial  : $stream.find(&quot;provider_type&quot;).text() is &quot;official&quot;
+                isNsen      : $res(&quot;ns&quot;).length &gt; 0
+                nsenType    : $res(&quot;ns nstype&quot;).text() or null
+
+                contents    : _.map $stream.find(&quot;contents_list contents&quot;), (el) -&gt;
+                    $content = Cheerio el
+                    {
+                        id              : $content.attr(&quot;id&quot;)
+                        startTime       : new Date(($content.attr(&quot;start_time&quot;)|0) * 1000)
+                        disableAudio    : ($content.attr(&quot;disableAudio&quot;)|0) is 1
+                        disableVideo    : ($content.attr(&quot;disableVideo&quot;)|0) is 1
+                        duration        : $content.attr(&quot;duration&quot;)|0 ? null # ついてない時がある
+                        title           : $content.attr(&quot;title&quot;) ? null      # ついてない時がある
+                        content         : $content.text()
+                    }
+
+            # 放送者情報
+            owner   :
+                userId      : $stream.find(&quot;owner_id&quot;).text()|0
+                name        : $stream.find(&quot;owner_name&quot;).text()
+
+            # ユーザー情報
+            user    :
+                id          : $user.find(&quot;user_id&quot;).text()|0
+                name        : $user.find(&quot;nickname&quot;).text()
+                isPremium   : $user.find(&quot;is_premium&quot;).text() is &quot;1&quot;
+
+            # RTMP情報
+            rtmp    :
+                isFms       : $rtmp.attr(&quot;is_fms&quot;) is &quot;1&quot;
+                port        : $rtmp.attr(&quot;rtmpt_port&quot;)|0
+                url         : $rtmp.find(&quot;url&quot;).text()
+                ticket      : $rtmp.find(&quot;ticket&quot;).text()
+
+            # コメントサーバー情報
+            comment :
+                addr        : $ms.find(&quot;addr&quot;).text()
+                port        : $ms.find(&quot;port&quot;).text()|0
+                thread      : $ms.find(&quot;thread&quot;).text()|0
+
+            _hasError: $res(&quot;getplayerstatus&quot;).attr(&quot;status&quot;) isnt &quot;ok&quot;
+
+        props
+
+
+    ###*
+    # 番組情報を最新の状態に同期します。
+    # @return {Promise}
+    ###
+    fetch :  -&gt;
+        APIEndpoints.live.getPlayerStatus(@_session, {liveId : @id})
+        .then (res) =&gt;
+            # check errors
+            if res.statusCode is 503
+                return Promise.reject new Error(sprintf(&quot;Live[%s]: Nicovideo has in maintenance.&quot;, @id))
+
+            @_attr = @parse(res.body)
+            @emit &quot;did-refresh&quot;, @
+
+            Promise.resolve()
+
+    ###*
+    # 現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。
+    ###
+    dispose : -&gt;
+        @_commentProvider?.dispose()
+        @_commentProvider = null
+        delete NicoLiveInfo._cache[@id]
+        super
+
+
+    #
+    # Event Listeners
+    #
+
+    _didEndLive : -&gt;
+        @_attr.isEnded = true
+        return
+
+
+    #
+    # Event Handlers
+    #
+    onDidRefresh : (listener) -&gt;
+        @on &quot;did-refresh&quot;, listener
+
+    </pre>
+</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>
