@@ -20,6 +20,7 @@ Request = require "request-promise"
 QueryString = require "querystring"
 
 NicoUrl = require "../NicoURL"
+NicoException = require "../NicoException"
 MyListItem = require "./MyListItem"
 
 module.exports =
@@ -123,17 +124,25 @@ class MyList extends Emitter
             resolveWithFullResponse : true
             url     : sprintf(@_urlSet.LIST, @id)
             jar     : @_session.cookie
-        .catch (err) ->
-            Promise.reject sprintf("MyList[id:%s]: Failed to fetch contents (Connection error: %s)", id, err)
+
+        .catch (e) ->
+            Promise.reject new NicoException
+                message     : "Failed to fetch items (Connection error: #{e.message})"
+                previous    : e
 
         .then (res) =>
             try
                 json = JSON.parse res.body
             catch e
-                return Promise.reject sprintf("MyList[id:%s]: Failed to response parsing as JSON", id)
+                return Promise.reject new NicoException
+                    message     : "Failed to parse response"
+                    response    : res.body
+                    previous    : e
 
-            if json.status isnt "ok"
-                return Promise.reject sprintf("MyList[id:%s]: Failed to fetch contents (unknown)", id)
+            return if json.status isnt "ok"
+                Promise.reject new NicoException
+                    message     : "Failed to fetch contents (unknown)"
+                    response    : res.body
 
             @items = []
             _.each json.mylistitem.reverse(), (item) =>
@@ -173,8 +182,8 @@ class MyList extends Emitter
         id      = null
 
         # movieが文字列じゃない上に、オブジェクトじゃないとか、idプロパティがない場合
-        if not _.isString(movie) and movie.id?
-            return Promise.reject "動画IDが正しくありません"
+        if not typeof movie isnt "string" and not movie.id?
+            return Promise.reject new TypeError("Invalid type for argument 1(movie)")
         else
             id = if _.isString(movie) then movie else movie.id
 
@@ -205,12 +214,12 @@ class MyList extends Emitter
             catch e
                 return Promise.reject "Mylist[%s]: Failed to add item (JSON parse error)"
 
-            if result.status is "ok"
-                Promise.resolve {response: json}
-            else
-                e = new Error(sprintf("MyList[%s]: Failed to add item (reason: %s)", @id, result.error.description))
-                e.response = result
-                Promise.reject e
+            return if result.status isnt "ok"
+                Promise.reject new NicoException
+                    message     : result.error.description
+                    response    : result
+
+            Promise.resolve {response: result}
 
 
     ###*

@@ -59,9 +59,9 @@ class MyListMeta
     # @param {Object}   metaInfo    Result of mylistgroup/list API
     ###
     @parse : (metaInfo) ->
-        if metaInfo is "default"
+        if metaInfo is "home"
             attr = _.defaults
-                id: "default"
+                id: "home"
                 name: "とりあえずマイリスト"
                 public : false
             , MyListMeta.defaults
@@ -119,7 +119,7 @@ class MyListMeta
     #   "とりあえずマイリスト"ならtrueを返します。
     ###
     isDefaultList   : ->
-        @attr("id") is "default"
+        @attr("id") is "home"
 
 
     ###*

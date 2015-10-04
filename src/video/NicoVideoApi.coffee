@@ -4,6 +4,7 @@ NicoVideoInfo   = require "./NicoVideoInfo"
 # ニコニコ動画APIへのアクセスを担当するクラス
 # @class NicoVideoApi
 ###
+module.exports = 
 class NicoVideoApi
     @NicoVideoInfo  = NicoVideoInfo
 
@@ -31,6 +32,3 @@ class NicoVideoApi
     ###
     getVideoInfo    : (movieId) ->
         NicoVideoInfo.fetch movieId, @_session
-
-
-module.exports = NicoVideoApi

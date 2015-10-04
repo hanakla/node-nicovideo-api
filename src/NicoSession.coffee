@@ -1,11 +1,14 @@
 {Emitter} = require "event-kit"
 cheerio = require "cheerio"
 Request = require "request-promise"
+{SerializeCookieStore} = require "tough-cookie-serialize"
 
 NicoUrl = require "./NicoURL"
+NicoException = require "./NicoException"
 NicoLiveAPI = require "./live/NicoLiveApi"
 NicoVideoAPI = require "./video/NicoVideoApi"
 NicoMyListAPI = require "./mylist/NicoMyListApi"
+NicoUserAPI = require "./user/NicoUserAPI"
 
 passwordStore = new WeakMap
 
@@ -44,118 +47,8 @@ class NicoSession
     ###
 
 
-    ###*
-    # 再ログインします。
-    # @return {Promise}
-    ###
-    relogin : ->
-        Request.post
-            resolveWithFullResponse : true
-            followAllRedirects : true
-            url : NicoUrl.Auth.LOGIN
-            jar : @_cookie
-            form :
-                mail_tel : user
-                password : passwordStore.get(@)
-        .then (res) ->
-            return Promise.reject("Nicovideo has in maintenance.") if res.statusCode is 503
-
-
-    ###*
-    # ログアウトします。
-    # @method logout
-    # @return {Promise}
-    ###
-    logout         : ->
-        Request.post
-            resolveWithFullResponse : true
-            url : NicoUrl.Auth.LOGOUT
-            jar : @_cookie
-        .then (res) =>
-            return Promise.reject("Nicovideo has in maintenance.") if res.statusCode is 503
-
-
-    ###*
-    # セッションが有効であるか調べます。
-    # @method isActive
-    # @return {Promise}
-    #   ネットワークエラー時にrejectされます
-    # - Resolve: (state: Boolean)
-    ###
-    isActive        : ->
-        # ログインしてないと使えないAPIを叩く
-        Request.get
-            resolveWithFullResponse : true
-            url : NicoUrl.Auth.LOGINTEST
-            jar : @getCookieJar()
-        , (res) ->
-            $res = cheerio.load body
-            $err = $res.find "error code"
-
-            Promise.resolve($err.length is 0)
-
-
-    ###*
-    # このインスタンスを破棄します。
-    # @method dispose
-    ###
-
-###*
-# ニコニコ動画のログインセッションを確立します。
-# @param {String}   user        ログインユーザーID
-# @param {String}   password    ログインパスワード
-# @return {Promise}
-###
-module.exports.login = (user, password) ->
-    cookie = Request.jar()
-
-    Request.post
-        resolveWithFullResponse : true
-        followAllRedirects      : true
-        url     : NicoUrl.Auth.LOGIN
-        jar     : cookie
-        form    :
-            mail_tel : user
-            password : password
-    .then (res) =>
-        defer = Promise.defer()
-
-        if res.statusCode is 503
-            defer.reject "Nicovideo has in maintenance."
-            return
-
-        # try get cookie
-        # console.log self._cookie
-        cookie._jar.store
-        .findCookie "nicovideo.jp", "/", "user_session", (err, cookie) ->
-            if cookie?
-                defer.resolve cookie.value
-            else if err?
-                defer.reject "Authorize failed"
-            else
-                defer.reject "Authorize failed (reason unknown)"
-
-            return
-
-        defer.promise
-
-    .then (sessionId) ->
-        session = new NicoSession
-        session.sessionId = sessionId
-
-        passwordStore.set(session, password)
-
-        Object.defineProperties session,
-            _user :
-                value : user
-
-            cookie :
-                value : cookie
-
-            sessionId :
-                configurable : true
-                value : sessionId
-
+    constructor : ->
+        Object.defineProperties @,
             live    :
                 get     : ->
                     store = NicoSession.services.get(@)
@@ -174,4 +67,153 @@ module.exports.login = (user, password) ->
                     store or NicoSession.services.set(@, store = {})
                     store.mylist ?= new NicoMyListAPI @
 
-        Promise.resolve(session)
+            user    :
+                get     : ->
+                    store = NicoSession.services.get(@)
+                    store or NicoSession.services.set(@, store = {})
+                    store.user ?= new NicoUserAPI @
+
+    ###*
+    # 再ログインします。
+    # @return {Promise}
+    ###
+    relogin : (user, password) ->
+        Request.post
+            resolveWithFullResponse : true
+            followAllRedirects : true
+            url : NicoUrl.Auth.LOGIN
+            jar : @cookie
+            form :
+                mail_tel : user ? @_user
+                password : password ? passwordStore.get(@)
+        .then (res) ->
+            return Promise.reject("Nicovideo has in maintenance.") if res.statusCode is 503
+
+
+    ###*
+    # ログアウトします。
+    # @method logout
+    # @return {Promise}
+    ###
+    logout         : ->
+        Request.post
+            resolveWithFullResponse : true
+            url : NicoUrl.Auth.LOGOUT
+            jar : @cookie
+        .then (res) =>
+            return Promise.reject("Nicovideo has in maintenance.") if res.statusCode is 503
+
+
+    ###*
+    # セッションが有効であるか調べます。
+    # @method isActive
+    # @return {Promise}
+    #   ネットワークエラー時にrejectされます
+    # - Resolve: (state: Boolean)
+    ###
+    isActive        : ->
+        # ログインしてないと使えないAPIを叩く
+        Request.get
+            resolveWithFullResponse : true
+            url : NicoUrl.Auth.LOGINTEST
+            jar : @cookie
+        .then (res) ->
+            $res = cheerio res.body
+            $err = $res.find "error code"
+
+            Promise.resolve($err.length is 0)
+
+    toJSON : ->
+        JSON.parse @cookie._jar.store.toString()
+
+
+    ###*
+    # このインスタンスを破棄します。
+    # @method dispose
+    ###
+
+module.exports =
+    ###*
+    # @return {Promise}
+    ###
+    fromJSON : (object, user = null, password = null) ->
+        defer = Promise.defer()
+
+        store = new SerializeCookieStore()
+        store.fromString(JSON.stringify(object))
+        cookie = Request.jar(store)
+
+        session = new NicoSession
+        password? and Store.set(session, password)
+
+        user? and Object.defineProperty session, "_user", {value : user}
+        Object.defineProperty session, "cookie", {value : cookie}
+
+        store.findCookie "nicovideo.jp", "/", "user_session", (err, cookie) ->
+            return if err? or (not cookie?)
+                defer.reject new NicoException
+                    message : "Cookie 'user_session' not found."
+
+            session._sessionId = cookie.value
+            defer.resolve session
+
+        defer.promise
+
+
+    ###*
+    # ニコニコ動画のログインセッションを確立します。
+    # @param {String}   user        ログインユーザーID
+    # @param {String}   password    ログインパスワード
+    # @return {Promise}
+    ###
+    login : (user, password) ->
+        cookie = Request.jar(new SerializeCookieStore)
+
+        Request.post
+            resolveWithFullResponse : true
+            followAllRedirects      : true
+            url     : NicoUrl.Auth.LOGIN
+            jar     : cookie
+            form    :
+                mail_tel : user
+                password : password
+        .then (res) =>
+            defer = Promise.defer()
+
+            if res.statusCode is 503
+                defer.reject "Nicovideo has in maintenance."
+                return
+
+            # try get cookie
+            # console.log self._cookie
+            cookie._jar.store
+            .findCookie "nicovideo.jp", "/", "user_session", (err, cookie) ->
+                if cookie?
+                    defer.resolve cookie.value
+                else if err?
+                    defer.reject "Authorize failed"
+                else
+                    defer.reject "Authorize failed (reason unknown)"
+
+                return
+
+            defer.promise
+
+        .then (sessionId) ->
+            session = new NicoSession
+            session.sessionId = sessionId
+
+            passwordStore.set(session, password)
+
+            Object.defineProperties session,
+                _user :
+                    value : user
+
+                cookie :
+                    value : cookie
+
+                sessionId :
+                    configurable : true
+                    value : sessionId
+
+            Promise.resolve(session)

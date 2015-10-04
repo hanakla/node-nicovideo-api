@@ -13,8 +13,9 @@ exports.Auth =
     LOGINTEST   : "http://live.nicovideo.jp/api/getplayerstatus/nsen/vocaloid"
 
 exports.Live =
-    #  URL + 放送ID
-    GET_PLAYER_STATUS: "http://live.nicovideo.jp/api/getplayerstatus/%s"
+    #  GET
+    # /:liveId
+    GET_PLAYER_STATUS: "http://live.nicovideo.jp/api/getplayerstatus/"
 
     #  パラメータ: コメントスレッドID
     GET_POSTKEY: "http://live.nicovideo.jp/api/getpostkey?thread=%s"
@@ -36,8 +37,9 @@ exports.Live =
 
 
 exports.Video =
-    #  URL + 動画ID
-    GET_VIDEO_INFO: "http://ext.nicovideo.jp/api/getthumbinfo/%s"
+    #  GET
+    #  /:movieId
+    GET_VIDEO_INFO: "http://ext.nicovideo.jp/api/getthumbinfo/"
 
 exports.MyList =
     FETCH_TOKEN: "http://www.nicovideo.jp/my/mylist"
@@ -86,3 +88,9 @@ exports.MyList =
         #   id_list[0][]    : MyList Item ID Array
         #   token           : MyList control token
         MOVE: "http://www.nicovideo.jp/api/deflist/move"
+
+exports.User =
+    # GET
+    #   user_id     : UserID
+    #   __format    : Response format("xml" or "json")
+    INFO : "http://api.ce.nicovideo.jp/api/v1/user.info"

@@ -39,6 +39,7 @@ Request = require "request-promise"
 
 Emitter = require "../Emitter"
 NicoUrl     = require "../NicoURL"
+NicoException = require "../NicoException"
 NicoLiveComment = require "./NicoLiveComment"
 
 
@@ -124,10 +125,22 @@ class CommentProvider extends Emitter
         return @_live
 
 
+    ###*
+    # @private
+    ###
     _canContinue : ->
         if @disposed
             throw new Error("CommentProvider has been disposed")
         return
+
+
+    ###*
+    # [Method for testing] Stream given xml data as socket received data.
+    # @private
+    # @param {String} xml
+    ###
+    _pourXMLData : (xml) ->
+        @_didReceiveData(xml)
 
 
     ###*
@@ -292,22 +305,34 @@ class CommentProvider extends Emitter
                         defer.resolve()
 
                     when chatResults.THREAD_ID_ERROR
-                        defer.reject new Error("Failed to post comment. (reason: thread id error)")
+                        defer.reject new NicoException
+                            message : "Failed to post comment. (reason: thread id error)"
+                            code : status
 
                     when chatResults.TICKET_ERROR
-                        defer.reject new Error("Failed to post comment. (reason: ticket error)")
+                        defer.reject new NicoException
+                            message : "Failed to post comment. (reason: ticket error)"
+                            code : status
 
                     when chatResults.DIFFERENT_POSTKEY, chatResults._DIFFERENT_POSTKEY
-                        defer.reject new Error("Failed to post comment. (reason: postkey is defferent)")
+                        defer.reject new NicoException
+                            message : "Failed to post comment. (reason: postkey is defferent)"
+                            code : status
 
                     when chatResults.LOCKED
-                        defer.reject new Error("Your posting has been locked.")
+                        defer.reject new NicoException
+                            message : "Your posting has been locked."
+                            code : status
 
                     when chatResults.CONTINUOUS_POST
-                        defer.reject new Error("Can not post continuous the same comment.")
+                        defer.reject new NicoException
+                            message : "Can not post continuous the same comment."
+                            code : status
 
                     else
-                        defer.reject new Error("Failed to post comment. (status: #{status})")
+                        defer.reject new NicoException
+                            message : "Failed to post comment. (status: #{status})"
+                            code : status
 
                 return
 
@@ -337,13 +362,14 @@ class CommentProvider extends Emitter
 
     ###*
     # コメント受信処理
+    # @param {String} xml
     ###
-    _didReceiveData : (data) ->
-        @emit "did-receive-data", data
+    _didReceiveData : (xml) ->
+        @emit "did-receive-data", xml
 
         comments = []
 
-        $elements = Cheerio.load(data)(":root")
+        $elements = Cheerio.load(xml)(":root")
         $elements.each (i, element) =>
             $element = Cheerio(element)
 
@@ -355,7 +381,7 @@ class CommentProvider extends Emitter
                     # console.info "CommentProvider[%s]: Receive thread info", @_live.get("id")
 
                 when "chat"
-                    comment = NicoLiveComment.fromRawXml($element, @_live.get("user.id"))
+                    comment = NicoLiveComment.fromRawXml($element.toString(), @_live.get("user.id"))
                     comments.push comment
                     @emit "did-receive-comment", comment
 
@@ -368,7 +394,10 @@ class CommentProvider extends Emitter
                     # Did receive post result
                     status = $element.attr "status"
                     status = status | 0
+
+                    comment = NicoLiveComment.fromRawXml($element.find("chat").toString(), @_live.get("user.id"))
                     @emit "did-receive-post-result", {status}
+                    @emit "did-receive-comment", comment
 
             return
 

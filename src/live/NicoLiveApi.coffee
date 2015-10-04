@@ -53,9 +53,15 @@ class NicoLiveApi
 
         return Promise.resolve(@_nsenChannelInstances[channel]) if @_nsenChannelInstances[channel]?
 
-        @getLiveInfo(channel).then (live) =>
-            instance = new NsenChannel(live, @_session)
+        @getLiveInfo(channel)
+        .then (live) =>
+            NsenChannel.instanceFor(live, @_session)
+
+        .then (instance) =>
             @_nsenChannelInstances[channel] = instance
+            instance.onWillDispose =>
+                delete @_nsenChannelInstances[channel]
+
             Promise.resolve instance
 
 

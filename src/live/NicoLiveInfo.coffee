@@ -50,12 +50,15 @@
 _ = require "lodash"
 __ = require "lodash-deep"
 Cheerio = require "cheerio"
-Emitter =require "../Emitter"
 Request = require "request-promise"
 {sprintf} = require "sprintf"
 
+APIEndpoints = require "../APIEndpoints"
 NicoURL = require "../NicoURL"
+NicoException = "../NicoException"
+Emitter = require "../Emitter"
 CommentProvider = require "./CommentProvider"
+
 
 # UPDATE_INTERVAL = 60000
 
@@ -245,10 +248,11 @@ class NicoLiveInfo extends Emitter
         props     = null
 
         if $root.attr("status") isnt "ok"
-            msg = $res("error code").text()
-
-            console.error "Live[%s]: Failed live info fetch. (%s)", @id, msg
-            @trigger "error", msg, @
+            errorCode = $res("error code").text()
+            throw new NicoException
+                message: "Failed to parse live info (#{errorCode})"
+                code : errorCode
+                response : res
 
         props =
             stream  :
@@ -268,13 +272,13 @@ class NicoLiveInfo extends Emitter
                 isNsen      : $res("ns").length > 0
                 nsenType    : $res("ns nstype").text() or null
 
-                contents    : $stream.find("contents_list contents").map () ->
-                    $content = Cheerio @
-                    return {
+                contents    : _.map $stream.find("contents_list contents"), (el) ->
+                    $content = Cheerio el
+                    {
                         id              : $content.attr("id")
                         startTime       : new Date(($content.attr("start_time")|0) * 1000)
-                        disableAudio    : ($content.attr("disableAudio")|0) isnt 1
-                        disableVideo    : ($content.attr("disableVideo")|0) isnt 1
+                        disableAudio    : ($content.attr("disableAudio")|0) is 1
+                        disableVideo    : ($content.attr("disableVideo")|0) is 1
                         duration        : $content.attr("duration")|0 ? null # ついてない時がある
                         title           : $content.attr("title") ? null      # ついてない時がある
                         content         : $content.text()
@@ -314,20 +318,14 @@ class NicoLiveInfo extends Emitter
     # @return {Promise}
     ###
     fetch :  ->
-        url = sprintf NicoURL.Live.GET_PLAYER_STATUS, @id
-
-        # getPlayerStatusの結果を取得
-        Request.get
-            resolveWithFullResponse : true
-            url : url
-            jar : @_session.cookie
+        APIEndpoints.live.getPlayerStatus(@_session, {liveId : @id})
         .then (res) =>
             # check errors
             if res.statusCode is 503
                 return Promise.reject new Error(sprintf("Live[%s]: Nicovideo has in maintenance.", @id))
 
             @_attr = @parse(res.body)
-            @emit "did-refresh", {live: @}
+            @emit "did-refresh", @
 
             Promise.resolve()
 

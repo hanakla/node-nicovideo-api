@@ -33,6 +33,7 @@
 
 _ = require "lodash"
 __ = require "lodash-deep"
+Ent = require "ent"
 Emitter = require "../Emitter"
 
 sprintf = require("sprintf").sprintf
@@ -98,7 +99,7 @@ class MyListItem extends Emitter
             movie       :
                 id          : item.video_id
 
-                title       : item.title
+                title       : Ent.decode(item.title)
                 length      : item.length_seconds|0 # 秒数
                 thumbnail   : item.thumbnail_url
 

@@ -1,4 +1,4 @@
 module.exports =
 class NicoException extends Error
-    constructor : (@message, @code) ->
+    constructor : ({@message, @code, @response, @previous}) ->
         super(@message)

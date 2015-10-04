@@ -50,7 +50,7 @@ class NicoLiveComment
     # ニコ生サーバーから配信されてくる以下のような形式のコメント（１行）を第１引数に渡してください。
     #   <chat thread="##" vpos="##" date="##" date_usec="##" user_id="##" premium="#" locale="**">コメント内容</chat>
     #
-    # @param {string} xml ニコ生コメントサーバーから受信したXMLコメントデータ
+    # @param {String} xml ニコ生コメントサーバーから受信したXMLコメントデータ
     # @param {Number} loggedUserId 現在ログイン中のユーザーのID
     # @return {NicoLiveComment}
     ###
@@ -65,7 +65,7 @@ class NicoLiveComment
             comment : $xml.text().replace(REGEXP_GT, ">").replace(REGEXP_LT, "<")
             vpos    : $xml.attr("vpos")|0
 
-            isMyPost: ($xml.attr("yourpost") is "1" or $xml.attr("user_id")|0 is loggedUserId)
+            isMyPost: ($xml.attr("yourpost") is "1" or (($xml.attr("user_id")|0) is loggedUserId))
 
             user    :
                 id          : $xml.attr("user_id")|0
@@ -97,7 +97,7 @@ class NicoLiveComment
         userid      = @get("user.id")
         accountType = @get("user.accountType")
 
-        (userid in [900000000, 0]) or (accountType is NicoLiveComment.AccountTypes.ADMIN)
+        (userid is 900000000) or (accountType is NicoLiveComment.AccountTypes.ADMIN)
 
 
     isPostByDistributor : ->

@@ -5,9 +5,10 @@ Request = require "request-promise"
 cheerio = require "cheerio"
 {sprintf} = require("sprintf")
 deepFreeze = require "deep-freeze"
+Ent = require "ent"
 
-NicoURL     = require "../NicoURL"
-_instances  = {}
+APIEndpoints = require "../APIEndpoints"
+NicoException = require "../NicoException"
 
 
 ###*
@@ -28,18 +29,13 @@ class NicoVideoInfo
         return defer.reject "Fetch failed. Movie id not specified." unless movieId?
 
         # getThumbInfoの結果を取得
-        Request.get
-            resolveWithFullResponse : true
-            url : sprintf NicoURL.Video.GET_VIDEO_INFO, @_id
-            jar : session.cookie
-        .catch(defer.reject)
-        .then  (res) ->
+        APIEndpoints.video.getMovieInfo(session, {movieId})
+        .then (res) ->
             if res.statusCode is 503
                 defer.reject("Nicovideo has in maintenance.")
 
-            info = new NicoVideoInfo
-            info._id = movieId
-            info.attributes = deepFreeze(NicoVideoInfo.parseResponse(res.body))
+            info = new NicoVideoInfo(movieId)
+            info._attr = deepFreeze(NicoVideoInfo.parseResponse(res.body))
 
             defer.resolve(info)
 
@@ -54,12 +50,10 @@ class NicoVideoInfo
         $res = cheerio.load resBody
 
         if $res(":root").attr("status") isnt "ok"
-            errCode = $res "error code"
-            errMsg = $res("error description").text()
-            # console.error "VideoInfo[%s]: 動画情報の取得に失敗しました。 (%s)", @id, errMsg
-
-            return isDeleted: (errCode is "DELETED")
-
+            errorMessage = $res("error description").text()
+            throw new NicoException
+                message : "Failed to fetch movie info (#{errorMessage})"
+                code    : $res "error code"
 
         $resThumb = $res "thumb"
 
@@ -71,9 +65,9 @@ class NicoVideoInfo
             h = length.pop() | 0
             return s + (m * 60) + (h * 3600)
 
-        val =
+        {
             id          : $resThumb.find("video_id").text()
-            title       : $resThumb.find("title").text()
+            title       : Ent.decode($resThumb.find("title").text())
             description : $resThumb.find("description").text()
             length      : length    # 秒数
 
@@ -87,38 +81,28 @@ class NicoVideoInfo
                 mylist      : $resThumb.find("mylist_counter").text() | 0
 
             tags        : do ->
-                tags = []
+                tagList = []
 
-                _.each $resThumb.find("tags"), (tags) ->
-                    $tags = cheerio(tags)
+                for tags in $resThumb.find("tags")
+                    $tags = cheerio tags
                     domain = $tags.attr("domain")
 
-                    _.each $tags.find("tag"), (tag) ->
-                        $t = cheerio(tag)
-
-                        tags.push
-                            name        : $t.text()
-                            isCategory  : $t.attr("category") is "1"
-                            isLocked    : $t.attr("lock") is "1"
+                    for tag in $tags.find("tag")
+                        $tag = cheerio tag
+                        tagList.push {
+                            name        : $tag.text()
+                            isCategory  : $tag.attr("category") is "1"
+                            isLocked    : $tag.attr("lock") is "1"
                             domain      : domain
+                        }
 
-                tags
-
-                # _.map $resThumb.find("tags[domain='jp'] tag"), (tag) ->
-                #     $t = cheerio(tag)
-                #     return {
-                #         name        : $t.text()
-                #         isCategory  : $t.attr("category") is "1"
-                #         isLocked    : $t.attr("lock") is "1"
-                #         domain      : "jp"
-                #     }
+                tagList
 
             user        :
                 id          : $resThumb.find("user_id").text() | 0
                 name        : $resThumb.find("user_nickname").text()
                 icon        : $resThumb.find("user_icon_url").text()
-
-        return val
+        }
 
 
     @defaults    :
@@ -140,11 +124,9 @@ class NicoVideoInfo
             icon            : null  # URL
 
     ###*
-    # @private
-    # @property _id
+    # @property id
     # @type String
     ###
-    _id         : null
 
     ###*
     # @property {Object}        attributes
@@ -169,7 +151,7 @@ class NicoVideoInfo
     # @property {String}        attributes.user.name            ユーザー名
     # @property {String}        attributes.user.icon            ユーザーアイコンのURL
     ###
-    attributes  : {}
+    _attr : {}
 
     ###*
     # @class NicoVideoInfo
@@ -182,7 +164,7 @@ class NicoVideoInfo
         # キャッシュに対応する動画情報インスタンスがなければ、新規作成してキャッシュ
         # return VideoInfo._cache[movieId] if VideoInfo._cache[movieId]?
 
-        @attributes = _.cloneDeep(NicoVideoInfo.defaults)
+        # @_attr = _.cloneDeep(NicoVideoInfo.defaults)
 
         Object.defineProperties @,
             id :
@@ -201,4 +183,4 @@ class NicoVideoInfo
     # @param {String}       path        属性名(Ex. "id", "title", "user.id")
     ###
     get             : (path) ->
-        return __.deepGet @attributes, path
+        return __.deepGet @_attr, path
