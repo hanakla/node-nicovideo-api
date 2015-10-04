@@ -1,34 +1,7 @@
 ###*
 # 放送中の番組のコメントの取得と投稿を行うクラスです。
-#
-# NicoLiveInfo#commentProviderメソッドを通じてインスタンスを取得します。
-# Backbone.Collectionを継承しています。
-#
-# Methods:
-#  - getLiveInfo(): LiveInfo
-#       配信情報オブジェクトを取得します。
-#  - postComment(msg: string, command: string): Promise
-#       コメントを投稿します。
-#       投稿に成功すればresolveされ、失敗すれば投稿結果オブジェクトとともにrejectされます。
-#       投稿結果オブジェクトは以下の形式のオブジェクトです。
-#       {code:number, message:string} -- code:エラーコード, message:エラーメッセージ
-#
-# Events:
-#  - receive: (rawXMLComment: string)
-#       コメントサーバーからレスポンスを受け取った際に発火します。
-#  - add: (model:NicoLiveComment)
-#       コメントを受信した際に発火します。
-#  - error: (error:Error)
-#       コネクションエラーが発生した際に発火します。
-#  - ended: (live: NicoLiveInfo)
-#       配信が終了した際に発火します。
-#  - disconnected:()
-#       コメントサーバから切断した時に発火します。
-#  - closed:()
-#       コメントサーバーから切断された際に発火します。
-#
+# @class CommentProvider
 ###
-SEND_TIMEOUT = 3000
 
 _ = require "lodash"
 Cheerio = require "cheerio"
@@ -105,6 +78,7 @@ class CommentProvider extends Emitter
     isFirstResponseProsessed : false
 
     ###*
+    # @constructor
     # @param {NicoLiveInfo} _live
     ###
     constructor : (@_live) ->
@@ -119,6 +93,7 @@ class CommentProvider extends Emitter
 
     ###*
     # このインスタンスが保持しているNicoLiveInfoオブジェクトを取得します。
+    # @method getLiveInfo
     # @return {NicoLiveInfo}
     ###
     getLiveInfo : ->
@@ -127,6 +102,7 @@ class CommentProvider extends Emitter
 
     ###*
     # @private
+    # @method _canContinue
     ###
     _canContinue : ->
         if @disposed
@@ -137,6 +113,7 @@ class CommentProvider extends Emitter
     ###*
     # [Method for testing] Stream given xml data as socket received data.
     # @private
+    # @method _pourXMLData
     # @param {String} xml
     ###
     _pourXMLData : (xml) ->
@@ -149,6 +126,7 @@ class CommentProvider extends Emitter
     # 既に接続済みの場合は接続を行いません。
     # 再接続する場合は `CommentProvider#reconnect`を利用してください。
     #
+    # @method connect
     # @fires CommentProvider#did-connect
     # @param {Object} [options]
     # @param {Number} [options.firstGetComments=100] 接続時に取得するコメント数
@@ -201,6 +179,7 @@ class CommentProvider extends Emitter
 
 
     ###*
+    # @method reconnect
     # @param {Object} options 接続設定（connectメソッドと同じ）
     # @return {Promise}
     ###
@@ -214,6 +193,7 @@ class CommentProvider extends Emitter
 
     ###*
     # コメントサーバから切断します。
+    # @method disconnect
     # @fires CommentProvider#did-disconnect
     ####
     disconnect : ->
@@ -230,10 +210,9 @@ class CommentProvider extends Emitter
 
     ###*
     # APIからpostkeyを取得します。
-    #
     # @private
-    # @return {Promise} 取得出来た時にpostkeyと共にresolveされ、
-    #    失敗した時は、rejectされます。
+    # @method _ferchPostKey
+    # @return {Promise}
     ###
     _fetchPostKey : ->
         @_canContinue()
@@ -264,11 +243,11 @@ class CommentProvider extends Emitter
 
     ###*
     # コメントを投稿します。
+    # @method postComment
     # @param {String} msg 投稿するコメント
     # @param {String|Array.<String>} [command] コマンド(184, bigなど)
     # @param {Number} [timeoutMs]
-    # @return {Promise} 投稿に成功すればresolveされ、
-    #   失敗すればエラーメッセージとともにrejectされます。
+    # @return {Promise}
     ###
     postComment : (msg, command = "", timeoutMs = 3000) ->
         @_canContinue()
@@ -346,8 +325,10 @@ class CommentProvider extends Emitter
 
             defer.promise
 
+
     ###*
     # インスタンスを破棄します。
+    # @method dispose
     ###
     dispose : ->
         @_live = null
@@ -362,6 +343,8 @@ class CommentProvider extends Emitter
 
     ###*
     # コメント受信処理
+    # @private
+    # @method _didReceiveData
     # @param {String} xml
     ###
     _didReceiveData : (xml) ->
@@ -410,6 +393,8 @@ class CommentProvider extends Emitter
 
     ###*
     # コネクション上のエラー処理
+    # @private
+    # @method _didErrorOnSocket
     ###
     _didErrorOnSocket : (error) ->
         @emit "did-error", error
@@ -419,6 +404,7 @@ class CommentProvider extends Emitter
     ###*
     # コネクションが閉じられた時の処理
     # @private
+    # @method _didCloseSocket
     ###
     _didCloseSocket  : (hadError) ->
         if hadError
@@ -431,6 +417,7 @@ class CommentProvider extends Emitter
     ###*
     # コメントサーバのスレッドID変更を監視するリスナ
     # @private
+    # @method _didRefreshLiveInfo
     ###
     _didRefreshLiveInfo : ->
         # 時々threadIdが変わるのでその変化を監視
@@ -444,7 +431,14 @@ class CommentProvider extends Emitter
 
     ###*
     # @private
-    # @propery {Number} status
+    # @event CommentProvider#did-receive-post-result
+    # @param {Number} status
+    ###
+    ###*
+    # @private
+    # @method _onDidReceivePostResult
+    # @param {Function} listener
+    # @return {Disposable}
     ###
     _onDidReceivePostResult : (listener) ->
         @on "did-receive-post-result", listener
@@ -455,6 +449,11 @@ class CommentProvider extends Emitter
     # @event CommentProvider#did-process-first-response
     # @param {Array.<NicoLiveComment>}
     ###
+    ###*
+    # @method onDidProcessFirstResponse
+    # @param {Function} listener
+    # @return {Disposable}
+    ###
     onDidProcessFirstResponse : (listener) ->
         @on "did-process-first-response", listener
 
@@ -463,6 +462,11 @@ class CommentProvider extends Emitter
     # Fire on raw response received
     # @event CommentProvider#did-receive-data
     # @params {String}  data
+    ###
+    ###*
+    # @method onDidReceiveData
+    # @param {Function} listener
+    # @return {Disposable}
     ###
     onDidReceiveData : (listener) ->
         @on "did-receive-data", listener
@@ -473,6 +477,11 @@ class CommentProvider extends Emitter
     # @event CommentProvider#did-receive-comment
     # @params {NicoLiveComment} comment
     ###
+    ###*
+    # @method onDidReceiveComment
+    # @param {Function} listener
+    # @return {Disposable}
+    ###
     onDidReceiveComment : (listener) ->
         @on "did-receive-comment", listener
 
@@ -482,6 +491,11 @@ class CommentProvider extends Emitter
     # @event CommentProvider#did-error
     # @params {Error} error
     ###
+    ###*
+    # @method onDidError
+    # @param {Function} listener
+    # @return {Disposable}
+    ###
     onDidError : (listener) ->
         @on "did-error", listener
 
@@ -490,6 +504,11 @@ class CommentProvider extends Emitter
     # Fire on connection closed
     # @event CommentProvider#did-close-connection
     ###
+    ###*
+    # @method onDidCloseConnection
+    # @param {Function} listener
+    # @return {Disposable}
+    ###
     onDidCloseConnection : (listener) ->
         @on "did-close-connection", listener
 
@@ -497,6 +516,11 @@ class CommentProvider extends Emitter
     ###*
     # Fire on live  ended
     # @event CommentProvider#did-end-live
+    ###
+    ###*
+    # @method onDidEndLive
+    # @param {Function} listener
+    # @return {Disposable}
     ###
     onDidEndLive : (listener) ->
         @on "did-end-live", listener

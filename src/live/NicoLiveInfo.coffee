@@ -1,4 +1,6 @@
 ###
+# ニコニコ生放送の配信情報
+#
 # Properties
 #   stream:     -- 放送の基礎情報
 #       liveId:         string -- 放送ID
@@ -45,6 +47,8 @@
 #       addr:           string -- サーバーアドレス
 #       port:           number -- サーバーポート
 #       thread:         number -- この放送と対応するスレッドID
+#
+# @class NicoLiveInfo
 ###
 
 _ = require "lodash"
@@ -59,17 +63,7 @@ NicoException = "../NicoException"
 Emitter = require "../Emitter"
 CommentProvider = require "./CommentProvider"
 
-
-# UPDATE_INTERVAL = 60000
-
-#
-# # 定期的にデータを取得しに行く
-# setInterval ->
-#     _updateEventer.trigger "intervalSync"
-# , UPDATE_INTERVAL
-
-
-
+module.exports =
 class NicoLiveInfo extends Emitter
 
     ###*
@@ -353,6 +347,3 @@ class NicoLiveInfo extends Emitter
     #
     onDidRefresh : (listener) ->
         @on "did-refresh", listener
-
-
-module.exports = NicoLiveInfo

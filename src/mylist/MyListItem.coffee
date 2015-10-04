@@ -1,6 +1,5 @@
 ###*
 # マイリストの項目モデルです。
-# Backbone.Modelを継承しています。
 #
 # Properties
 #  getメソッドを通じて第１階層まで取得できます。
@@ -29,6 +28,8 @@
 #          - view       : number    -- 再生数
 #          - comments   : number    -- コメント数
 #          - mylist     : number    -- マイリスト数
+#
+# @class MyListItem
 ###
 
 _ = require "lodash"
@@ -39,10 +40,6 @@ Emitter = require "../Emitter"
 sprintf = require("sprintf").sprintf
 deepFreeze = require "deep-freeze"
 
-###*
-# マイリスト内のアイテムを表すクラスです。
-# @class MyListItem
-###
 module.exports =
 class MyListItem extends Emitter
     ###*
@@ -70,7 +67,7 @@ class MyListItem extends Emitter
     ###*
     # MylistAPIの取得結果の一部からMyListItemのオブジェクトを生成します。
     # @static
-    # @method fromApiJSON
+    # @method fronApiResponse
     # @param {Object}   itemInfo
     # @param {MyList}   mylist
     ###

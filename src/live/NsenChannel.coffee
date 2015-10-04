@@ -1,3 +1,7 @@
+###*
+# @class NsenChannel
+###
+
 _ = require "lodash"
 Emitter = require "../Emitter"
 Cheerio = require "cheerio"
