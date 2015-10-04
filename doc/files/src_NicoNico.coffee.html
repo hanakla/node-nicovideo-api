@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>src/NicoNico.coffee</title>
+    <title>src/niconico.coffee</title>
     <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
     <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
     <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
@@ -38,12 +38,15 @@
                 
                         <div id="api-tabview-panel">
                             <ul id="api-classes" class="apis classes">
+                                <li><a href="../classes/CommentProvider.html">CommentProvider</a></li>
+                                <li><a href="../classes/MyListItem.html">MyListItem</a></li>
+                                <li><a href="../classes/MyListMeta.html">MyListMeta</a></li>
                                 <li><a href="../classes/NicoMyListApi.html">NicoMyListApi</a></li>
-                                <li><a href="../classes/NicoNico.html">NicoNico</a></li>
-                                <li><a href="../classes/NicoSession.html">NicoSession</a></li>
                                 <li><a href="../classes/NicoVideoApi.html">NicoVideoApi</a></li>
                                 <li><a href="../classes/NicoVideoInfo.html">NicoVideoInfo</a></li>
+                                <li><a href="../classes/NsenChannel.html">NsenChannel</a></li>
                             </ul>
+                
                 
                             <ul id="api-modules" class="apis modules">
                             </ul>
@@ -79,29 +82,22 @@
             <div class="apidocs">
                 <div id="docs-main">
                     <div class="content">
-<h1 class="file-heading">File: src/NicoNico.coffee</h1>
+<h1 class="file-heading">File: src/niconico.coffee</h1>
 
 <div class="file">
     <pre class="code prettyprint linenums">
-NicoSession     = require &quot;./NicoSession&quot;
-NicoLive        = require &quot;./api/live/NicoLiveApi&quot;
-NicoMyList      = require &quot;./api/mylist/NicoMyListApi&quot;
-NicoVideo       = require &quot;./api/video/NicoVideoApi&quot;
+NicoSession = require &quot;./NicoSession&quot;
+deepFreeze = require &quot;deep-freeze&quot;
 
-###*
-# ニコニコ動画APIのハンドラクラス
-# 通常、&#x60;NicoNico.login&#x60;メソッドを利用して初期化します。
-#
-# @class NicoNico
-###
-class NicoNico
-    @Session    = NicoSession
-    @Live       = NicoLive
-    @MyList     = NicoMyList
-    @Video      = NicoVideo
+module.exports =
+    ###*
+    # @return {Promise}
+    ###
+    restoreSession : (json) -&gt;
+        NicoSession.fromJSON(json)
 
     ###*
-    # ニコニコ動画へログインし、ハンドラを取得します。
+    # ニコニコ動画へログインし、セッションを取得します。
     #
     # @static
     # @method login
@@ -109,98 +105,24 @@ class NicoNico
     # @param {String}   password    ログインパスワード
     # @return {Promise}
     ###
-    @login = (user, password) -&gt;
-        new Promise (resolve, reject) -&gt;
-            nico = new Nico user, password
-            nico.session._login()
-                .then -&gt; resolve nico
-                .catch (err) -&gt; reject err
+    login : (user, password) -&gt;
+        NicoSession.login(user, password)
 
 
-    ###*
-    # @private
-    # @property _session
-    # @type NicoSession
-    ###
-    _session     : null
+    Nsen : deepFreeze
+        RequestError  :
+            NO_LOGIN        : &quot;not_login&quot;
+            CLOSED          : &quot;nsen_close&quot;
+            REQUIRED_TAG    : &quot;nsen_tag&quot;
+            TOO_LONG        : &quot;nsen_long&quot;
+            REQUESTED       : &quot;nsen_requested&quot;
 
-    ###*
-    # @private
-    # @property _live
-    # @type NicoLive
-    ###
-    _live        : null # Lazy initialize
-
-    ###*
-    # @private
-    # @property _video
-    # @type NicoVideo
-    ###
-    _video       : null # Lazy initialize
-
-    ###*
-    # @private
-    # @property _mylist
-    # @type NicoMyList
-    ###
-    _mylist      : null # Lazy initialize
-
-
-    ###*
-    # @property session
-    # @type NicoSession
-    ###
-
-    ###*
-    # @property live
-    # @type NicoLive
-    ###
-
-    ###*
-    # @property video
-    # @type NicoVideo
-    ###
-
-    ###*
-    # @property mylist
-    # @type NicoMyList
-    ###
-
-
-
-    ###*
-    # @class NicoNico
-    # @constructor
-    # @param {String}       user        ユーザーID
-    # @param {String}       password    ログインパスワード
-    ###
-    constructor     : (user, password) -&gt;
-        @_session = new NicoSession user, password
-
-        Object.defineProperties @,
-            session :
-                get     : -&gt; @_session
-            live    :
-                get     : -&gt; @_live ?= new NicoLive @_session
-            video   :
-                get     : -&gt; @_video ?= new NicoVideo @_session
-            mylist  :
-                get     : -&gt; @_mylist ?= new NicoMyList @_session
-
-
-    ###*
-    # インスタンスに紐付いているオブジェクトを破棄し、利用不能にします。
-    # @method dispose
-    ###
-    dispose         : -&gt;
-        @_session?.dispose()
-        @_live?.dispose()
-        @_video?.dispose()
-        @_mylist?.dispose()
-        return
-
-
-module.exports = NicoNico
+        Gage :
+            BLUE    : 0
+            GREEN   : 1
+            YELLOW  : 2
+            ORANGE  : 3
+            RED     : 4
 
     </pre>
 </div>

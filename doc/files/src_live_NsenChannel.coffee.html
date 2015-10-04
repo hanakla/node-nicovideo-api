@@ -38,12 +38,15 @@
                 
                         <div id="api-tabview-panel">
                             <ul id="api-classes" class="apis classes">
+                                <li><a href="../classes/CommentProvider.html">CommentProvider</a></li>
+                                <li><a href="../classes/MyListItem.html">MyListItem</a></li>
+                                <li><a href="../classes/MyListMeta.html">MyListMeta</a></li>
                                 <li><a href="../classes/NicoMyListApi.html">NicoMyListApi</a></li>
-                                <li><a href="../classes/NicoNico.html">NicoNico</a></li>
-                                <li><a href="../classes/NicoSession.html">NicoSession</a></li>
                                 <li><a href="../classes/NicoVideoApi.html">NicoVideoApi</a></li>
                                 <li><a href="../classes/NicoVideoInfo.html">NicoVideoInfo</a></li>
+                                <li><a href="../classes/NsenChannel.html">NsenChannel</a></li>
                             </ul>
+                
                 
                             <ul id="api-modules" class="apis modules">
                             </ul>
@@ -84,170 +87,93 @@
 <div class="file">
     <pre class="code prettyprint linenums">
 ###*
-# Nsenのチャンネルと対応するモデルです。
-# リクエストの送信とキャンセル、再生中の動画の取得と監視ができます。
-#
-# TODO:
-#  WaitListの取得
-#
-# Methods
-#   - getLiveInfo()         : NicoLiveInfo
-#       現在接続中の配信のNicoLiveInfoオブジェクトを取得します。
-#   - getCurrentVideo()     : NicoVideoInfo|null
-#       現在再生中の動画情報を取得します。
-#   - getChannelType()      : string
-#       チャンネルの種別を取得します。（nsen/***の&quot;***&quot;の部分だけ）
-#   - isSkipRequestable()   : boolean
-#       今現在、スキップリクエストを送ることができるか検証します。
-#   - pushRequest(movie: NicoVideoInfo)
-#       リクエストを送信します。
-#   - cancelRequest()
-#       リクエストをキャンセルします。
-#   - pushGood()
-#       Goodを送信します。
-#   - pushSkip()
-#       SkipRequestを送信します。
-#   - moveToNextLive()
-#       次の配信情報を受け取っていれば、次の配信へ移動します。
-#
-# Events
-#  - streamChanged: (newLive: NicoLiveInfo)
-#      午前４時以降、インスタンス内部で参照している放送が切り変わった時に発火します。
-#  - videochanged: (video:NicoVideoInfo|null, beforeVideo:NicoVideoInfo|null)
-#      再生中の動画が変わった時に発火します。
-#      第２引数に変更後の動画の情報が渡され、第３引数には変更前の動画の情報が渡されます。
-#
-#  - sendRequest:(video:NicoVideoInfo)
-#      リクエストが完了した時に発火します。第２引数にリクエストされた動画の情報が渡されます。
-#  - cancelRequest:(video:NicoVideoInfo)
-#      リクエストがキャンセルされた時に発火します。第２引数にキャンセルされた動画の情報が渡されます。
-#
-#  - sendGood:()
-#       Goodが送信された時に発火します。
-#  - sendSkip:()
-#       SkipRequestが送信された時に発火します。
-#
-#  - receiveGood:()
-#       誰かがGoodを送信した時に発火します。
-#  - receiveMylist:()
-#       誰かが動画をマイリストに追加した時に発火します。
-#
-#  - skipAvailable:()
-#       スキップリクエストが送信可能になった時に発火します。
-#
-#  - closing: (liveId:string)
-#       午前４時くらいから送られ始める、更新リクエストを受け取った時に発火します。
-#       第１引数は移動先の放送IDです。
-#
-#  - ended:()
-#       配信が終了した時に発火します。
+# @class NsenChannel
 ###
-_               = require &quot;lodash&quot;
-Backbone        = require &quot;backbone&quot;
-cheerio         = require &quot;cheerio&quot;
-request         = require &quot;request&quot;
-sprintf         = require(&quot;sprintf&quot;).sprintf
 
-NicoVideoApi    = require &quot;../video/NicoVideoApi&quot;
-NicoLiveApi     = require &quot;../live/NicoLiveApi&quot;
-NicoVideoInfo   = require &quot;../video/NicoVideoInfo&quot;
-NicoLiveInfo    = require &quot;./NicoLiveInfo&quot;
-NicoUrl         = require &quot;../NicoURL&quot;
+_ = require &quot;lodash&quot;
+Emitter = require &quot;../Emitter&quot;
+Cheerio = require &quot;cheerio&quot;
+deepFreeze = require &quot;deep-freeze&quot;
+Request = require &quot;request-promise&quot;
+{sprintf} = require(&quot;sprintf&quot;)
+{CompositeDisposable} = require &quot;event-kit&quot;
+QueryString = require &quot;querystring&quot;
 
-NsenChannels    = require &quot;./NsenChannels&quot;
-DisposeHelper   = require &quot;../../helper/disposeHelper&quot;
+APIEndpoints = require &quot;../APIEndpoints&quot;
+NicoException = require &quot;../NicoException&quot;
+NicoLiveInfo = require &quot;./NicoLiveInfo&quot;
+NsenChannels = require &quot;./NsenChannels&quot;
 
-NSEN_URL_REQUEST        = NicoUrl.Live.NSEN_REQUEST
-NSEN_URL_REQUEST_CANCEL = NicoUrl.Live.NSEN_REQUEST_CANCEL
-NSEN_URL_REQUEST_SYNC   = NicoUrl.Live.NSEN_REQUEST_SYNC
-NSEN_URL_GOOD           = NicoUrl.Live.NSEN_GOOD
-NSEN_URL_SKIP           = NicoUrl.Live.NSEN_SKIP
-
-
-###*
-# コメント種別判定パターン
-# @const {Object.&lt;string, RegExp&gt;
-###
-CommentRegExp =
-    good        : /^\/nspanel show goodClick/i,
-    mylist      : /^\/nspanel show mylistClick/i,
-    reset       : /^\/reset (lv[0-9]*)/i,
-    videoChange : /^\/play smile:((?:sm|nm)[1-9][0-9]*) main/,
-
-###*
-# 各チャンネル毎のインスタンス
-# @type {Object.&lt;string, NsenChannel&gt;
-###
-_instances = {}
-
-
-###*
-# Nsenチャンネルのハンドラです。
-# チャンネル上で発生するイベントを検知して通知します。
-# @constructor
-# @param {NicoLiveInfo liveInfo Nsenの配信を指すLiveInfoオブジェクト
-###
-class NsenChannel
-    _.extend @::, Backbone.Events
+module.exports =
+class NsenChannel extends Emitter
 
     ###*
     # Nsenリクエスト時のエラーコード
-    # @const {Object.&lt;string, string&gt;
+    # @const {Object.&lt;String, String&gt;
     ###
-    @RequestErrors  :
-        not_login       : &quot;ログインしていません。&quot;
-        nsen_close      : &quot;現在リクエストを受け付けていません。&quot;
-        nsen_tag        : &quot;リクエストに必要なタグが登録されていません。&quot;
-        nsen_long       : &quot;動画が長過ぎます。&quot;
-        nsen_requested  : &quot;リクエストされたばかりです。&quot;
+    @RequestError  : deepFreeze
+        NO_LOGIN : &quot;not_login&quot;
+        CLOSED : &quot;nsen_close&quot;
+        REQUIRED_TAG : &quot;nsen_tag&quot;
+        TOO_LONG : &quot;nsen_long&quot;
+        REQUESTED : &quot;nsen_requested&quot;
+
+    # &quot;ログインしていません。&quot;
+    # &quot;現在リクエストを受け付けていません。&quot;
+    # &quot;リクエストに必要なタグが登録されていません。&quot;
+    # &quot;動画が長過ぎます。&quot;
+    # &quot;リクエストされたばかりです。&quot;
+
+    @Gage : deepFreeze
+        BLUE : 0
+        GREEN : 1
+        YELLOW : 2
+        ORANGE : 3
+        RED : 4
+
 
     @Channels       : NsenChannels
 
-    @_cache         : {}
+
+    ###*
+    # @return Promise
+    ###
+    @instanceFor : (live, session) -&gt;
+        nsen = new NsenChannel(live, session)
+        nsen._attachLive(live)
+        Promise.resolve nsen
+
 
 
     ###*
     # @private
-    # @type {NicoLiveInfo}
+    # @property {NicoLiveInfo} _live
     ###
     _live           : null
 
     ###*
     # @private
-    # @type {CommentProvider}
+    # @property {CommentProvider} _commentProvider
     ###
     _commentProvider : null
 
     ###*
     # @private
-    # @type {NicoVideoApi}
-    ###
-    _videoApi       : null
-
-    ###*
-    # @private
-    # @type {NicoLiveApi}
-    ###
-    _liveApi        : null
-
-    ###*
-    # @private
-    # @type {NicoSession}
+    # @property {NicoSession} _session
     ###
     _session         : null
-
 
     ###*
     # 再生中の動画情報
     # @private
-    # @type {NicoLiveInfo}
+    # @property {NicoLiveInfo} _playingMovie
     ###
     _playingMovie   : null
 
     ###*
     # 最後にリクエストした動画情報
     # @private
-    # @type {NicoVideoInfo}
+    # @property {NicoVideoInfo} _requestedMovie
     ###
     _requestedMovie : null
 
@@ -255,220 +181,111 @@ class NsenChannel
     # 最後にスキップした動画のID。
     # 比較用なので動画IDだけ。
     # @private
-    # @type {string}
+    # @property {String} _lastSkippedMovieId
     ###
     _lastSkippedMovieId : null
 
     ###*
     # （午前４時遷移時の）移動先の配信のID
-    # @type {string}
+    # @property {String} _nextLiveId
     ###
     _nextLiveId     : null
 
 
-    _acceptVideoChangeDetectionFromComments : false
+    ###*
+    # @param {NicoLiveInfo} liveInfo
+    # @param {NicoSession} _session
+    ###
+    constructor     : (liveInfo, @_session) -&gt;
+        if liveInfo not instanceof NicoLiveInfo
+            throw new TypeError &quot;Passed object not instance of NicoLiveInfo.&quot;
 
-    constructor     : (liveInfo) -&gt;
-        if !liveInfo instanceof NicoLiveInfo
-            throw new Error &quot;Passed object not instance of NicoLiveInfo.&quot;
+        if liveInfo.isNsenLive() is false
+            throw new TypeError &quot;This live is not Nsen live streaming.&quot;
 
-        if liveInfo.isNsen() is false
-            throw new Error &quot;This live is not Nsen live streaming.&quot;
+        super
 
-        # インスタンス重複チェック
-        nsenType = liveInfo.get(&quot;stream&quot;).nsenType
-        if NsenChannel._cache[nsenType]? and not @_nextLiveId?
-            return NsenChannel._cache[nsenType]
-        else
-            NsenChannel._cache[nsenType] = @
+        Object.defineProperties @,
+            id  :
+                get : -&gt; @getChannelType()
 
-        _.bindAll this
-            , &quot;_onCommentAdded&quot;
-            , &quot;_onLiveInfoUpdated&quot;
-            , &quot;_onDetectionClosing&quot;
-            , &quot;_onLiveClosed&quot;
-            , &quot;_onVideoChanged&quot;
-
-        # 必要なオブジェクトを取得
-        @_live              = liveInfo
-        @_session           = liveInfo.getSession()
-        @_commentProvider   = liveInfo.commentProvider()
-
-        # イベントリスニング
-        @_live
-            .on &quot;sync&quot;, @_onLiveInfoUpdated
-            .on &quot;ended&quot;, @_onLiveClosed
-
-        @_commentProvider
-            .on &quot;add&quot;, @_onCommentAdded
-
-        @
-            .on &quot;videochanged&quot;, @_onVideoChanged # 再生中の動画が変わった時
-            .on &quot;closing&quot;, @_onDetectionClosing # 配信終了前イベントが発された時
-
-        _instances[nsenType] = this
-
-        # 少し時間をおいてコメントからの動画変更検出を有効にする
-        # （こうしないと過去ログからドバーッと動画変更履歴を検出してしまう）
-        self = this
-        setTimeout () -&gt;
-            self._acceptVideoChangeDetectionFromComments = true
-        , 1000
-
-        @_onLiveInfoUpdated()
-        @fetch()
+        @onDidChangeMovie @_didChangeMovie
+        @onWillClose @_willClose
 
 
     ###*
-    # コメントを受信した時のイベントリスナ。
-    #
-    # 制御コメントの中からNsen内イベントを通知するコメントを取得して
-    # 関係するイベントを発火させます。
-    # @param {LiveComment} comment
+    # @return {Promise}
     ###
-    _onCommentAdded     : (comment) -&gt;
-        if comment.isControl() || comment.isDistributorPost()
-            com = comment.get &quot;comment&quot;
+    _attachLive : (liveInfo) -&gt;
+        @_channelSubscriptions?.dispose()
+        @_live = null
+        @_commentProvider = null
 
-            if CommentRegExp.good.test(com)
-                # 誰かがGood押した
-                @trigger &quot;receiveGood&quot;
-                return
+        @_channelSubscriptions = sub = new CompositeDisposable
+        @_live = liveInfo
 
-            if CommentRegExp.mylist.test(com)
-                # 誰かがマイリスに追加した
-                @trigger &quot;receiveMylist&quot;
-                return
+        sub.add liveInfo.onDidRefresh =&gt;
+            @_didLiveInfoUpdated()
 
-            if CommentRegExp.reset.test(com)
-                # ページ移動リクエストを受け付けた
-                liveId = CommentRegExp.reset.exec com
+        liveInfo.commentProvider({connect: true})
+        .then (provider) =&gt;
+            @_commentProvider = provider
 
-                if liveId?[1]?
-                    @trigger &quot;closing&quot;, liveId[1]
+            # if provider.isFirstResponseProsessed is no
+            #     sub.add provider.onDidProcessFirstResponse (comments) =&gt;
+            #         comments.forEach (comment) =&gt;
+            #             @_didCommentReceived comment, {ignoreVideoChanged: true}
+            #
+            #         sub.add provider.onDidReceiveComment (comment) =&gt;
+            #             @_didCommentReceived(comment)
+            #
+            # else
+            sub.add provider.onDidReceiveComment (comment) =&gt;
+                @_didCommentReceived(comment)
 
-            if CommentRegExp.videoChange.test(com)
+            sub.add provider.onDidEndLive =&gt; @_onLiveClosed()
 
-                # 動画の再生リクエストを受け付けた
-                if @_acceptVideoChangeDetectionFromComments is true
-                    videoId = CommentRegExp.videoChange.exec com
-
-                    if videoId?[1]?
-                        @_onVideoChangeDetected videoId[1]
-
-
-    ###*
-    # 配信情報が更新された時に実行される
-    # 再生中の動画などのデータを取得する
-    # @param {NicoLiveInfo} live
-    ###
-    _onLiveInfoUpdated      : () -&gt;
-        content = @_live.get(&quot;stream&quot;).contents[0]
-        videoId = content &amp;&amp; content.content.match(/^smile:((?:sm|nm)[1-9][0-9]*)/)
-
-        unless videoId?[1]?
-           console.info &quot;NsenChannel[%s]: Playing movie is unknown.&quot;, @_live.get(&quot;stream&quot;).nsenType
-           @_onVideoChangeDetected null
-           return
-
-        if not @_playingMovie? or @_playingMovie.id isnt videoId
-            # 直前の再生中動画と異なれば情報を更新
-            @_onVideoChangeDetected videoId[1]
-
-
-    ###*
-    # 再生中の動画の変更を検知した時に呼ばれるメソッド
-    # @param {string} videoId
-    ###
-    _onVideoChangeDetected  : (videoId) -&gt;
-        self = @
-        beforeVideo = @_playingMovie
-
-        if not videoId?
-            @trigger &quot;videochanged&quot;, null, beforeVideo
-            @_playingMovie = null
-            return
-
-        @_getVideoApi().getVideoInfo videoId
-            .then (video) -&gt;
-                self._playingMovie = video
-                self.trigger &quot;videochanged&quot;, video, beforeVideo
-
-        return
-
-
-    ###*
-    # チャンネルの内部放送IDの変更を検知するリスナ
-    # @param {string} nextLiveId
-    ###
-    _onDetectionClosing     : (nextLiveId) -&gt;
-        @_nextLiveId = nextLiveId
-
-
-    ###*
-    # 放送が終了した時のイベントリスナ
-    ###
-    _onLiveClosed   : () -&gt;
-        @trigger &quot;ended&quot;
-
-        # 放送情報を差し替え
-        @moveToNextLive()
-
-
-    ###*
-    # 再生中の動画が変わった時のイベントリスナ
-    ###
-    _onVideoChanged     : () -&gt;
-        @_lastSkippedMovieId = null
-        @trigger &quot;skipAvailable&quot;
-
-
-    ###*
-    # ニコニコ動画APIオブジェクトを取得します。
-    # @private
-    # @return {NicoVideoApi}
-    ###
-    _getVideoApi        : -&gt;
-        if not @_videoApi?
-            @_videoApi = new NicoVideoApi @_session
-
-        return @_videoApi
-
-
-    ###*
-    # 生放送APIオブジェクトを取得します。
-    # @private
-    # @return {NicoLiveApi}
-    ###
-    _getLiveApi         : -&gt;
-        if not @_liveApi?
-            @_liveApi = new NicoLiveApi @_session
-
-        return @_liveApi
+            @_didLiveInfoUpdated()
+            @fetch()
 
 
     ###*
     # チャンネルの種類を取得します。
-    # @return {string} &quot;vocaloid&quot;, &quot;toho&quot;など
+    # @return {String} &quot;vocaloid&quot;, &quot;toho&quot;など
     ###
-    getChannelType  : () -&gt;
-        return @_live.get(&quot;stream&quot;).nsenType
+    getChannelType  : -&gt;
+        @_live.get(&quot;stream.nsenType&quot;)
 
 
     ###*
     # 現在接続中の放送のNicoLiveInfoオブジェクトを取得します。
     # @return {NicoLiveInfo}
     ###
-    getLiveInfo     : () -&gt;
-        return @_live
+    getLiveInfo     : -&gt;
+        @_live
+
+
+    ###*
+    # 現在利用しているCommentProviderインスタンスを取得します。
+    # @return {CommentProvider?}
+    ###
+    commentProvider : -&gt;
+        @_commentProvider
 
 
     ###*
     # 現在再生中の動画情報を取得します。
     # @return {NicoVideoInfo?}
     ###
-    getCurrentVideo     : () -&gt;
+    getCurrentVideo     : -&gt;
         return @_playingMovie
+
+
+    ###*
+    # @return {NicoVideoInfo?}
+    ###
+    getRequestedMovie : -&gt;
+        @_requestedMovie
 
 
     ###*
@@ -477,107 +294,191 @@ class NsenChannel
     # 状態の変更を確認するようにします。
     # @return {boolean
     ###
-    isSkipRequestable   : () -&gt;
+    isSkipRequestable   : -&gt;
         video = @getCurrentVideo()
         return (video isnt null) and (@_lastSkippedMovieId isnt video.id)
+
+
+    ###*
+    # @private
+    # @param {String} command NicoLive command with &quot;/&quot; prefix
+    # @param {Array.&lt;String&gt;} params command params
+    ###
+    _processLiveCommands : (command, params = [], options = {}) -&gt;
+        switch command
+            when &quot;/prepare&quot;
+                @emit &quot;will-change-movie&quot;
+
+            when &quot;/play&quot;
+                break if options.ignoreVideoChanged
+
+                [source, view, title] = params
+                videoId = /smile:((?:sm|nm)[1-9][0-9]*)/.exec(source)
+
+                if videoId?[1]?
+                    @_didDetectMovieChange videoId[1]
+                    # @emit &quot;did-change-movie&quot;, videoId[1]
+
+            when &quot;/reset&quot;
+                [nextLiveId] = params
+                @_nextLiveId = nextLiveId
+                @emit &quot;will-close&quot;, nextLiveId
+
+            when &quot;/nspanel&quot;
+                [operation, entity] = params
+                @_processNspanelCommand(operation, entity)
+
+            when &quot;/nsenrequest&quot;
+                [state] = params # &quot;on&quot;, &quot;lot&quot;
+                @emit &quot;did-receive-request-state&quot;, state
+
+
+    ###*
+    # Processing /nspanel command
+    # @private
+    # @param {String} op
+    # @param {String} entity
+    ###
+    _processNspanelCommand : (op, entity) -&gt;
+        return if op isnt &quot;show&quot;
+
+        panelState = QueryString.parse(entity)
+
+        switch true
+            when panelState.goodClick?
+                @emit &quot;did-receive-good&quot;
+                return
+
+            when panelState.mylistClick?
+                @emit &quot;did-receive-add-mylist&quot;
+                return
+
+        if panelState.dj?
+            @emit &quot;did-receive-tvchan-message&quot;, panelState.dj
+            return
+
+        @emit &quot;did-change-panel-state&quot;, {
+            goodBtn     : panelState.goodBtn is &quot;1&quot;
+            mylistBtn   : panelState.mylistBtn is &quot;1&quot;
+            skipBtn     : panelState.skipBtn is &quot;1&quot;
+            title       : panelState.title
+            view        : panelState.view | 0
+            comment     : panelState.comment | 0
+            mylist      : panelState.mylist | 0
+            uploadDate  : new Date(panelState.date)
+            playlistLen : panelState.playlistLen | 0
+            corner      : panelState.corner isnt &quot;0&quot;
+            gage        : panelState.gage | 0
+            tv          : panelState.tv | 0
+        }
+
+        return
 
 
     ###*
     # サーバー側の情報とインスタンスの情報を同期します。
     # @return {Promise}
     ###
-    fetch               : () -&gt;
-        unless @_live?
-            console.info &quot;NsenChannel: LiveInfo not binded.&quot;
-            return Promise.reject &quot;LiveInfo not binded.&quot;
-
+    fetch               : -&gt;
+        return unless @_live?
+            Promise.reject new NicoException
+                message: &quot;LiveInfo not attached.&quot;
 
         # リクエストした動画の情報を取得
-        self    = @
-        dfd     = Promise.defer()
-        liveId  = @_live.get(&quot;stream&quot;).liveId
-        url     = sprintf NSEN_URL_REQUEST_SYNC, liveId
+        liveId = @_live.get(&quot;stream&quot;).liveId
 
-        request.get
-            url     : url
-            jar     : @_session.getCookieJar()
-            , (err, res, body) -&gt;
-                $res = cheerio.load(body)(&quot;:root&quot;)
+        @_live.fetch()
 
-                if err?
-                    dfd.reject err
-                    return
+        .then =&gt;
+            APIEndpoints.nsen.syncRequest(@_session, {liveId})
 
-                if $res.attr(&quot;status&quot;) is &quot;ok&quot;
-                    # リクエストの取得に成功したら動画情報を同期
-                    videoId = $res.find(&quot;id&quot;).text()
+        .catch (e) =&gt;
+            Promise.reject new NicoException
+                message     : &quot;Failed to fetch Nsen request status. (#{e.message})&quot;
+                previous    : e
 
-                    # 直前にリクエストした動画と内容が異なれば
-                    # 新しい動画に更新
-                    if not self._requestedMovie? or self._requestedMovie.id isnt videoId
-                        self._getVideoApi().getVideoInfo videoId
-                            .then (movie) -&gt;
-                                self._requestedMovie = movie
-                                self.trigger &quot;sendRequest&quot;, movie
-                                dfd.resolve()
-                                return
-                            .catch (msg) -&gt;
-                                dfd.reject msg
-                                return
+        .then (res) =&gt;
+            $res = Cheerio.load(res.body)(&quot;:root&quot;)
 
-        return dfd.promise
+            status = $res.attr(&quot;status&quot;)
+            errorCode = $res.find(&quot;error code&quot;).text()
+
+            return if status isnt &quot;ok&quot; and errorCode isnt &quot;unknown&quot;
+                Promise.reject new NicoException
+                    message     : &quot;Failed to fetch Nsen request status. (#{errorCode})&quot;
+                    code        : errorCode
+                    response    : res.body
+
+            return if errorCode is &quot;unknown&quot; and @_requestedMovie?
+                @_requestedMovie = null
+                @emit &quot;did-cancel-request&quot;
+                Promise.resolve()
+
+            # リクエストの取得に成功したら動画情報を同期
+            videoId = $res.find(&quot;id&quot;).text()
+
+            # 直前にリクエストした動画と内容が異なれば
+            # 新しい動画に更新
+            if not @_requestedMovie? or @_requestedMovie.id isnt videoId
+                @_session.video.getVideoInfo(videoId)
+
+        .then (movie) =&gt;
+            return unless movie?
+
+            @_requestedMovie = movie
+            @emit &quot;did-send-request&quot;, movie
+            Promise.resolve()
 
 
     ###*
+    # コメントサーバーに再接続します。
+    ###
+    reconnect : -&gt;
+        @_commentProvider.reconnect()
+
+
+    dispose         : -&gt;
+        @emit &quot;will-dispose&quot;
+        @_live = null
+        @_commentProvider = null
+        @_channelSubscriptions.dispose()
+        super
+
+
+
+    #
+    # Nsen control methods
+    #
+
+    ###*
     # リクエストを送信します。
-    # @param    {NicoVideoInfo} movie
-    #   リクエストする動画のNicoVideoInfoオブジェクト
-    # @return   {Promise}
-    #   リクエストに成功したらresolveされます。
-    #   リクエストに失敗した時、Errorオブジェクトつきでrejectされます。
+    # @param {NicoVideoInfo|String} movie リクエストする動画の動画IDかNicoVideoInfoオブジェクト
+    # @return {Promise}
     ###
     pushRequest     : (movie) -&gt;
-        if not NicoVideoInfo.isInstance movie
-            return
+        promise = if typeof movie is &quot;string&quot;
+            @_session.video.getVideoInfo(movie)
+        else
+            Promise.resolve(movie)
 
-        self    = @
-        dfd     = Promise.defer()
-        liveId  = @_live.get(&quot;stream&quot;).liveId
-        movieId = movie.id
-        url     = sprintf NSEN_URL_REQUEST, liveId, movieId
+        promise.then (movie) =&gt;
+            movieId = movie.id
+            liveId = @_live.get(&quot;stream.liveId&quot;)
 
-        # NsenAPIにリクエストを送信する
-        request.get
-            url     : url
-            jar     : @_session.getCookieJar()
-            , (err, res, body) -&gt;
-                # 通信エラー
-                if err?
-                    console.error &quot;NsenChannel[%s]: Failed to request pushing. (%s)&quot;, self.id, err
-                    dfd.reject sprintf &quot;Failed to request pushing. (%s)&quot;, err
-                    return
+            Promise.all([APIEndpoints.nsen.request(@_session, {liveId, movieId}), movie])
 
-                # 送信に成功したら、正しくリクエストされたか確認する
-                $res    = cheerio.load(body)(&quot;:root&quot;)
-                result  = $res.attr(&quot;status&quot;) is &quot;ok&quot;
+        .then ([res, movie]) =&gt;
+            $res = Cheerio.load(res.body)(&quot;:root&quot;)
 
-                if result
-                    # リクエスト成功
-                    self._requestedMovie = movie
-                    self.trigger &quot;requested&quot;, movie
-                    dfd.resolve()
-                 else
-                    # リクエスト失敗
-                    # エラーメッセージを取得
-                    errCode = $res.find(&quot;error code&quot;).text()
-                    reason = NsenChannel.RequestErrors[errCode]
+            return unless $res.attr(&quot;status&quot;) is &quot;ok&quot;
+                Promise.reject new NicoException
+                    message     : &quot;Failed to push request&quot;
+                    code        : $res.find(&quot;error code&quot;).text()
+                    response    : res
 
-                    if not reason?
-                        reason = errCode
-
-                    dfd.reject sprintf(&quot;NsenChannel[%s]: %s&quot;, self.id, reason)
-
-        return dfd.promise
+            @_requestedMovie = movie
+            @emit &quot;did-send-request&quot;, movie
+            Promise.resolve()
 
 
     ###*
@@ -587,33 +488,25 @@ class NsenChannel
     #   (事前にリクエストが送信されていない場合もresolveされます。）
     #   リクエストに失敗した時、エラーメッセージつきでrejectされます。
     ###
-    cancelRequest   : () -&gt;
+    cancelRequest   : -&gt;
         if not @_requestedMovie
-            return Promise.reject(&quot;リクエストした動画はありません&quot;).promise
+            return Promise.resolve()
 
-        self    = @
-        dfr     = Promise.defer()
         liveId  = @_live.get(&quot;stream&quot;).liveId
-        url     = sprintf NSEN_URL_REQUEST_CANCEL, liveId
 
-        # NsenAPIにリクエストキャンセルを送信
-        request.get
-            url     : url
-            jar     : @_session.getCookieJar()
-            , (err, res, body) -&gt;
-                $res = cheerio.load(body)(&quot;:root&quot;)
+        APIEndpoints.nsen.cancelRequest(@_session, {liveId})
+        .then (res) =&gt;
+            $res = Cheerio.load(res.body)(&quot;:root&quot;)
 
-                if err?
-                    console.error &quot;&quot;
+            return if $res.attr(&quot;status&quot;) isnt &quot;ok&quot;
+                Promise.reject new NicoException
+                    message     : &quot;Failed to cancel request&quot;
+                    code        : $res.find(&quot;error code&quot;).text()
+                    response    : res.body
 
-                if $res.attr &quot;status&quot; is &quot;ok&quot;
-                    self.trigger &quot;cancelRequest&quot;, self._requestedMovie
-                    self._requestedMovie = null
-                    dfr.resolve()
-                else
-                    dfr.reject $res.find(&quot;error code&quot;).text()
-
-        return dfr.promise
+            @emit &quot;did-cancel-request&quot;, @_requestedMovie
+            @_requestedMovie = null
+            Promise.resolve()
 
 
     ###*
@@ -623,29 +516,21 @@ class NsenChannel
     #   失敗した時、エラーメッセージつきでrejectされます。
     ###
     pushGood        : -&gt;
-        self    = @
-        dfr     = Promise.defer()
         liveId  = @_live.get(&quot;stream&quot;).liveId
 
-        request.get
-            url     : sprintf NSEN_URL_GOOD, liveId
-            jar     : @_session.getCookieJar()
-        , (err, res, body) -&gt;
-                if err?
-                    dfr.reject err
+        APIEndpoints.nsen.sendGood(@_session, {liveId})
+        .then (res) =&gt;
+            $res = Cheerio.load(res.body)(&quot;:root&quot;)
 
-                $res = cheerio.load(body)(&quot;:root&quot;)
-                result = $res.attr(&quot;status&quot;) is &quot;ok&quot;
+            return if $res.attr(&quot;status&quot;) isnt &quot;ok&quot;
+                Promise.reject new NicoException
+                    message     : &quot;Failed to push good&quot;
+                    code        : $res.find(&quot;error code&quot;).text()
+                    response    : res.body
 
-                if result
-                    self.trigger &quot;sendGood&quot;
-                    dfr.resolve()
-                 else
-                    dfr.reject $res.find(&quot;error code&quot;).text()
+            @emit &quot;did-push-good&quot;
+            Promise.resolve()
 
-                return
-
-        return dfr.promise
 
 
     ###*
@@ -655,33 +540,39 @@ class NsenChannel
     #   失敗した時、エラーメッセージつきでrejectされます。
     ###
     pushSkip        : -&gt;
-        self    = @
-        dfr     = Promise.defer()
         liveId  = @_live.get(&quot;stream&quot;).liveId
         movieId = @getCurrentVideo()?.id?
 
         if ! @isSkipRequestable()
             return Promise.reject &quot;Skip request already sended.&quot;
 
-        request.get
-            url     : sprintf NSEN_URL_SKIP, liveId
-            jar     : @_session.getCookieJar()
-        , (err, res, body) -&gt;
-            if err?
-                dfr.reject err
-
-            $res = cheerio.load(body).find(&quot;:root&quot;)
-            status = $res.attr(&quot;status&quot;) is &quot;ok&quot;
+        APIEndpoints.nsen.sendSkip(@_session, {liveId})
+        .then (res) =&gt;
+            $res = Cheerio.load(res.body).find(&quot;:root&quot;)
 
             # 通信に失敗
-            if status
-                self._lastSkippedMovieId = movieId
-                self.trigger &quot;sendSkip&quot;
-                dfr.resolve()
-             else
-                dfr.reject $res.find(&quot;error code&quot;).text()
+            return if $res.attr(&quot;status&quot;) isnt &quot;ok&quot;
+                Promise.reject new NicoException
+                    message     : &quot;Failed to push skip&quot;
+                    code        : $res.find(&quot;error code&quot;).text()
+                    response    : res.body
 
-        return dfr.promise
+            @_lastSkippedMovieId = movieId
+            @emit &quot;did-push-skip&quot;
+            Promise.resolve()
+
+
+    ###*
+    # コメントを投稿します。
+    # @param {String} msg 投稿するコメント
+    # @param {String|Array.&lt;String&gt;} [command] コマンド(184, bigなど)
+    # @param {Number} [timeoutMs]
+    # @return {Promise} 投稿に成功すればresolveされ、
+    #   失敗すればエラーメッセージとともにrejectされます。
+    ###
+    postComment : (msg, command = &quot;&quot;, timeoutMs = 3000) -&gt;
+        @_commentProvider?.postComment(msg, command, timeoutMs)
+
 
 
     ###*
@@ -689,70 +580,232 @@ class NsenChannel
     # @return {Promise}
     #   移動に成功すればresolveされ、それ以外の時にはrejectされます。
     ###
-    moveToNextLive      : () -&gt;
-        if @_nextLiveId?
-            return Promise.reject()
+    moveToNextLive      : -&gt;
+        return Promise.reject() unless @_nextLiveId?
 
-        self    = @
-        dfd     = Promise.defer()
-        liveId  = @_nextLiveId
+        liveId = @_nextLiveId
+        return unless liveId?
+            Promise.reject new NicoException
+                message : &quot;Next liveId is unknown.&quot;
 
         # 放送情報を取得
-        @_getLiveApi.getLiveInfo liveId
-            .then (liveInfo) -&gt;
-                # 放送情報の取得に成功した
-
-                # イベントリスニングを停止
-                self._live
-                    .off &quot;sync&quot;, self._onLiveInfoUpdated
-                    .off &quot;closed&quot;, self._onLiveClosed
-
-                self._commentProvider
-                    .off &quot;add&quot;, self._onCommentAdded
-
-                # オブジェクトを破棄
-                self._live? and self._live.dispose()
-                self._live = null
-                self._commentProvider = null
-
-                # 新しい番組情報に切り替え
-                self._live = liveInfo
-                self._commentProvider = liveInfo.getCommentProvider()
-
-                # イベントリスニング開始
-                self._live
-                    .on &quot;sync&quot;, self._onLiveInfoUpdated
-                    .on &quot;closed&quot;, self._onLiveClosed
-
-                self._commentProvider
-                    .on &quot;add&quot;, self._onCommentAdded
-
-                self._nextLiveId = null
-
-                # 配信変更イベントを発生させる。
-                self.trigger &quot;streamChanged&quot;, liveInfo
-                console.info &quot;NsenChannel[nsne/%s]: Live stream changed&quot;, self.getChannelType()
-                dfd.resolve()
-
-                self.fetch()
-            .catch (err) -&gt;
-                # 放送情報の取得に失敗
-                dfd.reject err
-
-        return dfd.promise
+        @_session.live.getLiveInfo(liveId)
+        .then (liveInfo) =&gt;
+            @_attachLive(liveInfo)
+            @emit &quot;did-change-stream&quot;, liveInfo
+            @fetch()
 
 
-    dispose         : -&gt;
-        @_live
-            .off &quot;sync&quot;, @_onLiveInfoUpdated
-            .off &quot;ended&quot;, @_onLiveClosed
 
-        @_commentProvider
-            .off &quot;add&quot;, @_onCommentAdded
-        @off()
-        DisposeHelper.wrapAllMembers @
+    #
+    # Event Listeners
+    #
 
-module.exports = NsenChannel
+    ###*
+    # コメントを受信した時のイベントリスナ。
+    #
+    # 制御コメントの中からNsen内イベントを通知するコメントを取得して
+    # 関係するイベントを発火させます。
+    # @param {LiveComment} comment
+    ###
+    _didCommentReceived     : (comment, options = {ignoreVideoChanged : false}) -&gt;
+        if comment.isControlComment() or comment.isPostByDistributor()
+            [command, params...] = comment.comment.split(&quot; &quot;)
+            @_processLiveCommands command, params, options
+
+        @emit &quot;did-receive-comment&quot;, comment
+        return
+
+
+    ###*
+    # 配信情報が更新された時に実行される
+    # 再生中の動画などのデータを取得する
+    # @param {NicoLiveInfo} live
+    ###
+    _didLiveInfoUpdated      : -&gt;
+        content = @_live.get(&quot;stream&quot;).contents[0]?.content
+        videoId = content and content.match(/^smile:((?:sm|nm)[1-9][0-9]*)/)
+
+        unless videoId?[1]?
+           @_didDetectMovieChange null
+           return
+
+        if (not @_playingMovie?) or @_playingMovie.id isnt videoId
+            @_didDetectMovieChange videoId[1]
+
+
+    ###*
+    # 再生中の動画の変更を検知した時に呼ばれるメソッド
+    # @private
+    # @param {String} videoId 次に再生される動画のID
+    ###
+    _didDetectMovieChange  : (videoId) -&gt;
+        return if @_videoInfoFetcher?
+
+        beforeVideo = @_playingMovie
+
+        if videoId is null
+            @emit &quot;did-change-movie&quot;, null, beforeVideo
+            @_playingMovie = null
+            return
+
+        return if beforeVideo?.id is videoId
+
+        @_videoInfoFetcher = @_session.video.getVideoInfo(videoId).then (video) =&gt;
+            @_playingMovie = video
+            @_videoInfoFetcher = null
+            @emit &quot;did-change-movie&quot;, video, beforeVideo
+            return
+
+        return
+
+
+    ###*
+    # チャンネルの内部放送IDの変更を検知するリスナ
+    # @param {String} nextLiveId
+    ###
+    _willClose     : (nextLiveId) -&gt;
+        @_nextLiveId = nextLiveId
+
+
+    ###*
+    # 放送が終了した時のイベントリスナ
+    ###
+    _onLiveClosed   : -&gt;
+        @emit &quot;ended&quot;
+
+        # 放送情報を差し替え
+        @moveToNextLive()
+
+
+    ###*
+    # 再生中の動画が変わった時のイベントリスナ
+    ###
+    _didChangeMovie     : -&gt;
+        @_lastSkippedMovieId = null
+        @emit &quot;did-available-skip&quot;
+
+
+
+
+    #
+    # Event Handlers
+    #
+
+    ###*
+    # @event NsenChannel#did-receive-comment
+    # @param {NicoLiveComment} comment
+    ###
+    onDidReceiveComment : (listener) -&gt;
+        @on &quot;did-receive-comment&quot;, listener
+
+
+    ###*
+    # @event NsenChannel#did-receive-good
+    ###
+    onDidReceiveGood : (listener) -&gt;
+        @on &quot;did-receive-good&quot;, listener
+
+
+    ###*
+    # @event NsenChannel#did-receive-add-mylist
+    ###
+    onDidReceiveAddMylist : (listener) -&gt;
+        @on &quot;did-receive-add-mylist&quot;, listener
+
+
+    ###*
+    # @event NsenChannel#did-push-good
+    ###
+    onDidPushGood : (listener) -&gt;
+        @on &quot;did-push-good&quot;, listener
+
+
+    ###*
+    # @event NsenChannel#did-push-skip
+    ###
+    onDidPushSkip : (listener) -&gt;
+        @on &quot;did-push-skip&quot;, listener
+
+
+    ###*
+    # @event NsenChannel#did-send-request
+    # @param {NicoVideoInfo} movie
+    ###
+    onDidSendRequest : (listener) -&gt;
+        @on &quot;did-send-request&quot;, listener
+
+
+    ###*
+    # @event NsenChannel#did-cancel-request
+    # @param {NicoVideoInfo}
+    ###
+    onDidCancelRequest : (listener) -&gt;
+        @on &quot;did-cancel-request&quot;, listener
+
+
+    ###*
+    # @event NsenChannel#did-change-movie
+    # @param {NicoVideoInfo} nextMovie
+    # @param {NicoVideoInfo} beforeMovie
+    ###
+    onDidChangeMovie : (listener) -&gt;
+        @on &quot;did-change-movie&quot;, listener
+
+
+    ###*
+    # @event NsenChannel#did-available-skip
+    ###
+    onDidAvailableSkip : (listener) -&gt;
+        @on &quot;did-available-skip&quot;, listener
+
+
+    ###*
+    # @event NsenChannel#will-close
+    # @param {String} nextLiveId
+    ###
+    onWillClose : (listener) -&gt;
+        @on &quot;will-close&quot;, listener
+
+
+    ###*
+    # @event NsenChannel#did-receive-request-state
+    # @param {String} newState
+    ###
+    onDidReceiveRequestState : (listener) -&gt;
+        @on &quot;did-receive-request-state&quot;, listener
+
+    ###*
+    # @event NsenChannel#did-change-panel-state
+    # @property {Boolean} goodBtn
+    # @property {Boolean} mylistBtn
+    # @property {Boolean} skipBtn
+    # @property {String} title
+    # @property {Number} view
+    # @property {Number} comment
+    # @property {Number} mylist
+    # @property {Date} uploadDate
+    # @property {Number} playlistLen
+    # @property {Boolean} corner
+    # @property {Number} gage
+    # @property {Number} tv
+    ###
+    onDidChangePanelState : (listener) -&gt;
+        @on &quot;did-change-panel-state&quot;, listener
+
+
+    ###*
+    # @event NsenChannel#did-receive-tvchan-message
+    # @param {String} message
+    ###
+    onDidReceiveTvchanMessage : (listener) -&gt;
+        @on &quot;did-receive-tvchan-message&quot;, listener
+
+    ###*
+    # @event NsenChannel#will-dispose
+    ###
+    onWillDispose : (listener) -&gt;
+        @on &quot;will-dispose&quot;, listener
 
     </pre>
 </div>

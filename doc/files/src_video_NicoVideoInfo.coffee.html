@@ -38,12 +38,15 @@
                 
                         <div id="api-tabview-panel">
                             <ul id="api-classes" class="apis classes">
+                                <li><a href="../classes/CommentProvider.html">CommentProvider</a></li>
+                                <li><a href="../classes/MyListItem.html">MyListItem</a></li>
+                                <li><a href="../classes/MyListMeta.html">MyListMeta</a></li>
                                 <li><a href="../classes/NicoMyListApi.html">NicoMyListApi</a></li>
-                                <li><a href="../classes/NicoNico.html">NicoNico</a></li>
-                                <li><a href="../classes/NicoSession.html">NicoSession</a></li>
                                 <li><a href="../classes/NicoVideoApi.html">NicoVideoApi</a></li>
                                 <li><a href="../classes/NicoVideoInfo.html">NicoVideoInfo</a></li>
+                                <li><a href="../classes/NsenChannel.html">NsenChannel</a></li>
                             </ul>
+                
                 
                             <ul id="api-modules" class="apis modules">
                             </ul>
@@ -83,16 +86,17 @@
 
 <div class="file">
     <pre class="code prettyprint linenums">
-_           = require &quot;lodash&quot;
-# Backbone    = require &quot;backbone&quot;
-EventEmitter2 = require(&quot;eventemitter2&quot;).EventEmitter2
-request     = require &quot;request&quot;
-cheerio     = require &quot;cheerio&quot;
-sprintf     = require(&quot;sprintf&quot;).sprintf
+_  = require &quot;lodash&quot;
+__ = require &quot;lodash-deep&quot;
 
-NicoURL     = require &quot;../NicoURL&quot;
-DisposeHelper   = require &quot;../../helper/disposeHelper&quot;
-_instances  = {}
+Request = require &quot;request-promise&quot;
+cheerio = require &quot;cheerio&quot;
+{sprintf} = require(&quot;sprintf&quot;)
+deepFreeze = require &quot;deep-freeze&quot;
+Ent = require &quot;ent&quot;
+
+APIEndpoints = require &quot;../APIEndpoints&quot;
+NicoException = require &quot;../NicoException&quot;
 
 
 ###*
@@ -106,16 +110,87 @@ _instances  = {}
 # @class NicoVideoInfo
 # @extends EventEmitter2
 ###
-class NicoVideoInfo extends EventEmitter2
-    @_cache     : {}
+module.exports =
+class NicoVideoInfo
+    @fetch : (movieId, session) -&gt;
+        defer = Promise.defer()
+        return defer.reject &quot;Fetch failed. Movie id not specified.&quot; unless movieId?
 
+        # getThumbInfoの結果を取得
+        APIEndpoints.video.getMovieInfo(session, {movieId})
+        .then (res) -&gt;
+            if res.statusCode is 503
+                defer.reject(&quot;Nicovideo has in maintenance.&quot;)
+
+            info = new NicoVideoInfo(movieId)
+            info._attr = deepFreeze(NicoVideoInfo.parseResponse(res.body))
+
+            defer.resolve(info)
+
+        defer.promise
 
     ###*
-    # オブジェクトがNicoVideoInfoのインスタンスか検証します。
-    # @param {Object} obj
+    # @private
+    # @param {String}   resBody     getThumbInfoAPIから取得したXML
+    # @return {Object}
     ###
-    @isInstance : (obj) -&gt;
-        return obj instanceof VideoInfo
+    @parseResponse : (resBody) -&gt;
+        $res = cheerio.load resBody
+
+        if $res(&quot;:root&quot;).attr(&quot;status&quot;) isnt &quot;ok&quot;
+            errorMessage = $res(&quot;error description&quot;).text()
+            throw new NicoException
+                message : &quot;Failed to fetch movie info (#{errorMessage})&quot;
+                code    : $res &quot;error code&quot;
+
+        $resThumb = $res &quot;thumb&quot;
+
+        # 動画の秒単位の長さを出しておく
+        length = do (length) -&gt;
+            length = $resThumb.find(&quot;length&quot;).text().split(&quot;:&quot;)
+            s = length.pop() | 0
+            m = length.pop() | 0
+            h = length.pop() | 0
+            return s + (m * 60) + (h * 3600)
+
+        {
+            id          : $resThumb.find(&quot;video_id&quot;).text()
+            title       : Ent.decode($resThumb.find(&quot;title&quot;).text())
+            description : $resThumb.find(&quot;description&quot;).text()
+            length      : length    # 秒数
+
+            movieType   : $resThumb.find(&quot;movie_type&quot;).text()# &quot;flv&quot;とか
+            thumbnail   : $resThumb.find(&quot;thumbnail_url&quot;).text()
+            isDeleted   : false
+
+            count       :
+                view        : $resThumb.find(&quot;view_counter&quot;).text() | 0
+                comments    : $resThumb.find(&quot;comment_num&quot;).text() | 0
+                mylist      : $resThumb.find(&quot;mylist_counter&quot;).text() | 0
+
+            tags        : do -&gt;
+                tagList = []
+
+                for tags in $resThumb.find(&quot;tags&quot;)
+                    $tags = cheerio tags
+                    domain = $tags.attr(&quot;domain&quot;)
+
+                    for tag in $tags.find(&quot;tag&quot;)
+                        $tag = cheerio tag
+                        tagList.push {
+                            name        : $tag.text()
+                            isCategory  : $tag.attr(&quot;category&quot;) is &quot;1&quot;
+                            isLocked    : $tag.attr(&quot;lock&quot;) is &quot;1&quot;
+                            domain      : domain
+                        }
+
+                tagList
+
+            user        :
+                id          : $resThumb.find(&quot;user_id&quot;).text() | 0
+                name        : $resThumb.find(&quot;user_nickname&quot;).text()
+                icon        : $resThumb.find(&quot;user_icon_url&quot;).text()
+        }
 
 
     @defaults    :
@@ -136,33 +211,10 @@ class NicoVideoInfo extends EventEmitter2
             name            : null
             icon            : null  # URL
 
-
     ###*
-    # データが同期された時に発火します。
-    # @event sync
-    # @param {NicoVideoInfo} info
-    ###
-
-    ###*
-    # データの同期に失敗した時に発火します。
-    # @event error
-    # @param {NicoVideoInfo}    info
-    # @param {String}           err     エラーメッセージ
-    ###
-
-    ###*
-    # @private
-    # @property _session
-    # @type NicoSession
-    ###
-    _session    : null
-
-    ###*
-    # @private
-    # @property _id
+    # @property id
     # @type String
     ###
-    _id         : null
 
     ###*
     # @property {Object}        attributes
@@ -177,7 +229,7 @@ class NicoVideoInfo extends EventEmitter2
     # @property {Number}        attributes.stats.view           再生数
     # @property {Object}        attributes.stats.comments       コメント数
     # @property {Object}        attributes.stats.mylist         マイリスト数
-    # @property {Array.&lt;Object&gt;} attributes.tags         タグ情報
+    # @property {Array&lt;Object&gt;} attributes.tags         タグ情報
     # @property {String}        attributes.tags[n].name         タグ名
     # @property {Boolean}       attributes.tags[n].isCategory   カテゴリタグか
     # @property {String}        attributes.tags[n].isLocked     ロックされているか
@@ -187,24 +239,24 @@ class NicoVideoInfo extends EventEmitter2
     # @property {String}        attributes.user.name            ユーザー名
     # @property {String}        attributes.user.icon            ユーザーアイコンのURL
     ###
-    attributes  : {}
+    _attr : {}
 
     ###*
     # @class NicoVideoInfo
     # @constructor
     # @param {String}       movieId     動画ID
-    # @param {NicoSession}  session     セッション
+    # @param {NicoSession} _session     セッション
     ###
-    constructor     : (movieId, session) -&gt;
+    constructor     : (movieId, @_session) -&gt;
         # 指定された動画の動画情報インスタンスがキャッシュされていればそれを返す
         # キャッシュに対応する動画情報インスタンスがなければ、新規作成してキャッシュ
         # return VideoInfo._cache[movieId] if VideoInfo._cache[movieId]?
 
-        @_id = movieId
-        @_session = session
-        @attributes = _.cloneDeep(NicoVideoInfo.defaults)
+        # @_attr = _.cloneDeep(NicoVideoInfo.defaults)
 
-        super
+        Object.defineProperties @,
+            id :
+                value : movieId
 
     ###*
     # 動画が削除されているか調べます。
@@ -216,143 +268,10 @@ class NicoVideoInfo extends EventEmitter2
 
     ###*
     # 属性を取得します。
-    # @param {String}       attr        属性名(Ex. &quot;id&quot;, &quot;title&quot;, &quot;user.id&quot;)
+    # @param {String}       path        属性名(Ex. &quot;id&quot;, &quot;title&quot;, &quot;user.id&quot;)
     ###
-    get             : (attr) -&gt;
-        attr = attr.split &quot;.&quot;
-        ptr = @attributes
-
-        while name = attr.pop()
-            ptr = ptr[name]
-
-            unless _.isObject(ptr) and attr.length is 0
-                ptr = null
-                break
-
-        return ptr
-
-
-    ###*
-    # 最新の情報を取得します。
-    # @method fetch
-    # @return {Promise}
-    # - resolve : (void)
-    # - reject : (message: String)
-    ###
-    fetch           : -&gt;
-        return new Promise (resolve, reject) =&gt;
-            return reject &quot;Fetch failed. Movie id not specified.&quot; unless @id?
-            # console.error &quot;[VideoInfo] Fetch failed. Movie id not specified.&quot;
-
-
-            # getThumbInfoの結果を取得
-            request.get
-                url     : sprintf NicoURL.Video.GET_VIDEO_INFO, @_id
-                jar     : @_session.getCookieJar()
-            , (err, res, body) =&gt;
-                if err?
-                    # console.error &quot;VideoInfo[id:%s]: Failed to fetch movie info.&quot;, self.id
-
-                    if res.statusCode is 503
-                        errMsg = &quot;Nicovideo has in maintenance.&quot;
-                    else
-                        errMsg = err
-
-                    reject errMsg
-                    @emit &quot;error&quot;, @, errMsg
-
-
-                @attributes = @parse(body)
-
-                resolve()
-                @emit &quot;sync&quot;, @
-                return
-
-
-    ###*
-    # @private
-    # @param {String}       getThumbInfoAPIから取得したXML
-    # @return {Object}
-    ###
-    _parse           : (res) -&gt;
-        $res = cheerio.load res
-
-        if $res(&quot;:root&quot;).attr(&quot;status&quot;) isnt &quot;ok&quot;
-            errCode = $res &quot;error code&quot;
-            errMsg = $res(&quot;error description&quot;).text()
-            # console.error &quot;VideoInfo[%s]: 動画情報の取得に失敗しました。 (%s)&quot;, @id, errMsg
-
-            return isDeleted: (errCode is &quot;DELETED&quot;)
-
-
-        $resThumb = $res &quot;thumb&quot;
-
-        # 動画の秒単位の長さを出しておく
-        length = do (length) -&gt;
-            length = $resThumb.find(&quot;length&quot;).text().split(&quot;:&quot;)
-            s = length.pop() | 0
-            m = length.pop() | 0
-            h = length.pop() | 0
-            return s + (m * 60) + (h * 3600)
-
-        val =
-            id          : $resThumb.find(&quot;video_id&quot;).text()
-            title       : $resThumb.find(&quot;title&quot;).text()
-            description : $resThumb.find(&quot;description&quot;).text()
-            length      : length    # 秒数
-
-            movieType   : $resThumb.find(&quot;movie_type&quot;).text()# &quot;flv&quot;とか
-            thumbnail   : $resThumb.find(&quot;thumbnail_url&quot;).text()
-            isDeleted   : false
-
-            count       :
-                view        : $resThumb.find(&quot;view_counter&quot;).text() | 0
-                comments    : $resThumb.find(&quot;comment_num&quot;).text() | 0
-                mylist      : $resThumb.find(&quot;mylist_counter&quot;).text() | 0
-
-            tags        : do -&gt;
-                tags = []
-
-                _.each $resThumb.find(&quot;tags&quot;), (tags) -&gt;
-                    $tags = cheerio(tags)
-                    domain = $tags.attr(&quot;domain&quot;)
-
-                    _.each $tags.find(&quot;tag&quot;), (tag) -&gt;
-                        $t = cheerio(tag)
-
-                        tags.push
-                            name        : $t.text()
-                            isCategory  : $t.attr(&quot;category&quot;) is &quot;1&quot;
-                            isLocked    : $t.attr(&quot;lock&quot;) is &quot;1&quot;
-                            domain      : domain
-
-                return tags
-
-                # _.map $resThumb.find(&quot;tags[domain=&#x27;jp&#x27;] tag&quot;), (tag) -&gt;
-                #     $t = cheerio(tag)
-                #     return {
-                #         name        : $t.text()
-                #         isCategory  : $t.attr(&quot;category&quot;) is &quot;1&quot;
-                #         isLocked    : $t.attr(&quot;lock&quot;) is &quot;1&quot;
-                #         domain      : &quot;jp&quot;
-                #     }
-
-            user        :
-                id          : $resThumb.find(&quot;user_id&quot;).text() | 0
-                name        : $resThumb.find(&quot;user_nickname&quot;).text()
-                icon        : $resThumb.find(&quot;user_icon_url&quot;).text()
-
-        return val
-
-
-    ###*
-    # インスタンスを破棄します。
-    ###
-    dispose : -&gt;
-        DisposeHelper.offAllEvents @
-        DisposeHelper.wrapAllMembers @
-
-module.exports = VideoInfo
+    get             : (path) -&gt;
+        return __.deepGet @_attr, path
 
     </pre>
 </div>

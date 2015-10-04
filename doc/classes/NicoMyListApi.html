@@ -38,12 +38,15 @@
                 
                         <div id="api-tabview-panel">
                             <ul id="api-classes" class="apis classes">
+                                <li><a href="../classes/CommentProvider.html">CommentProvider</a></li>
+                                <li><a href="../classes/MyListItem.html">MyListItem</a></li>
+                                <li><a href="../classes/MyListMeta.html">MyListMeta</a></li>
                                 <li><a href="../classes/NicoMyListApi.html">NicoMyListApi</a></li>
-                                <li><a href="../classes/NicoNico.html">NicoNico</a></li>
-                                <li><a href="../classes/NicoSession.html">NicoSession</a></li>
                                 <li><a href="../classes/NicoVideoApi.html">NicoVideoApi</a></li>
                                 <li><a href="../classes/NicoVideoInfo.html">NicoVideoInfo</a></li>
+                                <li><a href="../classes/NsenChannel.html">NsenChannel</a></li>
                             </ul>
+                
                 
                             <ul id="api-modules" class="apis modules">
                             </ul>
@@ -84,7 +87,7 @@
 
 
         <div class="foundat">
-            Defined in: <a href="../files/src_mylist_NicoMyListApi.coffee.html#l42"><code>src&#x2F;mylist&#x2F;NicoMyListApi.coffee:42</code></a>
+            Defined in: <a href="../files/src_mylist_NicoMyListApi.coffee.html#l38"><code>src&#x2F;mylist&#x2F;NicoMyListApi.coffee:38</code></a>
         </div>
 
 
@@ -92,15 +95,72 @@
 
 
 <div class="box intro">
-    <p>マイリストの操作を担当するクラスです。</p>
+    <p>ニコニコ動画のマイリスト操作APIのラッピングを行います。
+（参考: <a href="http://efcl.info/wiki/niconicoapi/%EF%BC%89">http://efcl.info/wiki/niconicoapi/）</a></p>
 
 </div>
 
+    <div class="constructor">
+        <h2>Constructor</h2>
+<div id="method_NicoMyListApi" class="method item">
+    <h3 class="name"><code>NicoMyListApi</code></h3>
+
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+                <li class="arg">
+                        <code>session</code>
+                </li>
+            </ul><span class="paren">)</span>
+        </div>
+
+
+
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_mylist_NicoMyListApi.coffee.html#l38"><code>src&#x2F;mylist&#x2F;NicoMyListApi.coffee:38</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        
+    </div>
+
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+                <li class="param">
+                        <code class="param-name">session</code>
+                        <span class="type">NicoSession</span>
+
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                </li>
+            </ul>
+        </div>
+
+
+
+</div>
+    </div>
 
 <div id="classdocs" class="tabview">
     <ul class="api-class-tabs">
         <li class="api-class-tab index"><a href="#index">Index</a></li>
 
+            <li class="api-class-tab methods"><a href="#methods">Methods</a></li>
             <li class="api-class-tab properties"><a href="#properties">Properties</a></li>
     </ul>
 
@@ -108,6 +168,24 @@
         <div id="index" class="api-class-tabpanel index">
             <h2 class="off-left">Item Index</h2>
 
+                <div class="index-section methods">
+                    <h3>Methods</h3>
+
+                    <ul class="index-list methods">
+                            <li class="index-item method">
+                                <a href="#method_fetchMyList">fetchMyList</a>
+
+                            </li>
+                            <li class="index-item method">
+                                <a href="#method_fetchMyListsIndex">fetchMyListsIndex</a>
+
+                            </li>
+                            <li class="index-item method">
+                                <a href="#method_fetchToken">fetchToken</a>
+
+                            </li>
+                    </ul>
+                </div>
 
                 <div class="index-section properties">
                     <h3>Properties</h3>
@@ -121,151 +199,272 @@
                                 <a href="#property__token">_token</a>
 
                             </li>
-                            <li class="index-item property">
-                                <a href="#property_{Object.&lt;string, RegExp&gt;">{Object.&lt;string, RegExp&gt;</a>
-
-                            </li>
-                            <li class="index-item property">
-                                <a href="#property_{Object.&lt;string, string&gt;">{Object.&lt;string, string&gt;</a>
-
-                            </li>
                     </ul>
                 </div>
 
 
         </div>
 
+            <div id="methods" class="api-class-tabpanel">
+                <h2 class="off-left">Methods</h2>
+
+<div id="method_fetchMyList" class="method item">
+    <h3 class="name"><code>fetchMyList</code></h3>
+
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+                <li class="arg">
+                        <code>id</code>
+                </li>
+            </ul><span class="paren">)</span>
+        </div>
+
+        <span class="returns-inline">
+            <span class="type">Promise(MyList, string)</span>
+        </span>
+
+
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_mylist_NicoMyListApi.coffee.html#l113"><code>src&#x2F;mylist&#x2F;NicoMyListApi.coffee:113</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        <p>MyListインスタンスを取得します。</p>
+
+    </div>
+
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+                <li class="param">
+                        <code class="param-name">id</code>
+                        <span class="type">MyListItemIndex | Number</span>
+
+
+                    <div class="param-description">
+                        <p>MyListItemIndexかマイリストIDを渡します。</p>
+
+                    </div>
+
+                </li>
+            </ul>
+        </div>
+
+        <div class="returns">
+            <h4>Returns:</h4>
+
+            <div class="returns-description">
+                        <span class="type">Promise(MyList, string)</span>:
+                    <p>取得できればMyListオブジェクトと共にresolveされ、
+そうでなければエラーメッセージと共にrejectされます</p>
+
+            </div>
+        </div>
+
+
+</div>
+<div id="method_fetchMyListsIndex" class="method item">
+    <h3 class="name"><code>fetchMyListsIndex</code></h3>
+
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+                <li class="arg">
+                        <code>withoutHome</code>
+                </li>
+            </ul><span class="paren">)</span>
+        </div>
+
+        <span class="returns-inline">
+            <span class="type">Promise</span>
+        </span>
+
+
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_mylist_NicoMyListApi.coffee.html#l77"><code>src&#x2F;mylist&#x2F;NicoMyListApi.coffee:77</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        <p>マイリストの一覧を取得します。</p>
+
+    </div>
+
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+                <li class="param">
+                        <code class="param-name">withoutHome</code>
+                        <span class="type">Boolean</span>
+
+
+                    <div class="param-description">
+                        <p>trueを指定すると&quot;とりあえずマイリスト&quot;を一覧から除外します。</p>
+
+                    </div>
+
+                </li>
+            </ul>
+        </div>
+
+        <div class="returns">
+            <h4>Returns:</h4>
+
+            <div class="returns-description">
+                        <span class="type">Promise</span>:
+                    <ul>
+<li>resolve : (mylists: Array.<MyListItemIndex>)</li>
+<li>reject : (message: String)</li>
+</ul>
+
+            </div>
+        </div>
+
+
+</div>
+<div id="method_fetchToken" class="method item">
+    <h3 class="name"><code>fetchToken</code></h3>
+
+        <span class="paren">()</span>
+
+        <span class="returns-inline">
+            <span class="type">Promise</span>
+        </span>
+
+
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_mylist_NicoMyListApi.coffee.html#l49"><code>src&#x2F;mylist&#x2F;NicoMyListApi.coffee:49</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        <p>マイリストを操作するための認証トークンを取得します。</p>
+
+    </div>
+
+
+        <div class="returns">
+            <h4>Returns:</h4>
+
+            <div class="returns-description">
+                        <span class="type">Promise</span>:
+            </div>
+        </div>
+
+
+</div>
+            </div>
 
             <div id="properties" class="api-class-tabpanel">
                 <h2 class="off-left">Properties</h2>
 
-                    <div id="property__session" class="property item private">
-                        <h3 class="name"><code>_session</code></h3>
-                        <span class="type"><a href="../classes/NicoSession.html" class="crosslink">NicoSession</a></span>
-                    
-                    
-                            <span class="flag private">private</span>
-                    
-                    
-                    
-                        <div class="meta">
-                                    <p>
-                                    Defined in
-                            <a href="../files/src_mylist_NicoMyListApi.coffee.html#l50"><code>src&#x2F;mylist&#x2F;NicoMyListApi.coffee:50</code></a>
-                            </p>
-                    
-                    
-                        </div>
-                    
-                        <div class="description">
-                            
-                        </div>
-                    
-                    
-                    
-                    </div>
-                    <div id="property__token" class="property item private">
-                        <h3 class="name"><code>_token</code></h3>
-                        <span class="type">Object</span>
-                    
-                    
-                            <span class="flag private">private</span>
-                    
-                    
-                    
-                        <div class="meta">
-                                    <p>
-                                    Defined in
-                            <a href="../files/src_mylist_NicoMyListApi.coffee.html#l56"><code>src&#x2F;mylist&#x2F;NicoMyListApi.coffee:56</code></a>
-                            </p>
-                    
-                    
-                        </div>
-                    
-                        <div class="description">
-                            <p>認証トークン</p>
-                    
-                        </div>
-                    
-                    
-                    
-                            <h4>Sub-properties:</h4>
-                    
-                            <ul class="params-list">
-                                <li class="param">
-                                        <code class="param-name">timestamp</code>
-                                        <span class="type">Number</span>
-                    
-                                    <div class="param-description">
-                                        <p>トークンを取得した時間（ミリ秒）</p>
-                    
-                                    </div>
-                    
-                                </li>
-                                <li class="param">
-                                        <code class="param-name">toke</code>
-                                        <span class="type">String</span>
-                    
-                                    <div class="param-description">
-                                        <p>マイリスト操作用トークン</p>
-                    
-                                    </div>
-                    
-                                </li>
-                            </ul>
-                    </div>
-                    <div id="property_{Object.&lt;string, RegExp&gt;" class="property item">
-                        <h3 class="name"><code>{Object.&lt;string, RegExp&gt;</code></h3>
-                        <span class="type">Unknown</span>
-                    
-                    
-                    
-                            <span class="flag final">final</span>
-                    
-                    
-                        <div class="meta">
-                                    <p>
-                                    Defined in
-                            <a href="../files/src_live_NsenChannel.coffee.html#l82"><code>src&#x2F;live&#x2F;NsenChannel.coffee:82</code></a>
-                            </p>
-                    
-                    
-                        </div>
-                    
-                        <div class="description">
-                            <p>コメント種別判定パターン</p>
-                    
-                        </div>
-                    
-                    
-                    
-                    </div>
-                    <div id="property_{Object.&lt;string, string&gt;" class="property item">
-                        <h3 class="name"><code>{Object.&lt;string, string&gt;</code></h3>
-                        <span class="type">Unknown</span>
-                    
-                    
-                    
-                            <span class="flag final">final</span>
-                    
-                    
-                        <div class="meta">
-                                    <p>
-                                    Defined in
-                            <a href="../files/src_live_NsenChannel.coffee.html#l108"><code>src&#x2F;live&#x2F;NsenChannel.coffee:108</code></a>
-                            </p>
-                    
-                    
-                        </div>
-                    
-                        <div class="description">
-                            <p>Nsenリクエスト時のエラーコード</p>
-                    
-                        </div>
-                    
-                    
-                    
-                    </div>
+<div id="property__session" class="property item private">
+    <h3 class="name"><code>_session</code></h3>
+    <span class="type">NicoSession</span>
+
+
+        <span class="flag private">private</span>
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_mylist_NicoMyListApi.coffee.html#l24"><code>src&#x2F;mylist&#x2F;NicoMyListApi.coffee:24</code></a>
+        </p>
+
+
+    </div>
+
+    <div class="description">
+        
+    </div>
+
+
+
+</div>
+<div id="property__token" class="property item private">
+    <h3 class="name"><code>_token</code></h3>
+    <span class="type">Object</span>
+
+
+        <span class="flag private">private</span>
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_mylist_NicoMyListApi.coffee.html#l29"><code>src&#x2F;mylist&#x2F;NicoMyListApi.coffee:29</code></a>
+        </p>
+
+
+    </div>
+
+    <div class="description">
+        <p>認証トークン</p>
+
+    </div>
+
+
+
+        <h4>Sub-properties:</h4>
+
+        <ul class="params-list">
+            <li class="param">
+                    <code class="param-name">timestamp</code>
+                    <span class="type">Number</span>
+
+                <div class="param-description">
+                    <p>トークンを取得した時間（ミリ秒）</p>
+
+                </div>
+
+            </li>
+            <li class="param">
+                    <code class="param-name">token</code>
+                    <span class="type">String</span>
+
+                <div class="param-description">
+                    <p>マイリスト操作用トークン</p>
+
+                </div>
+
+            </li>
+        </ul>
+</div>
             </div>
 
 

@@ -38,12 +38,15 @@
                 
                         <div id="api-tabview-panel">
                             <ul id="api-classes" class="apis classes">
+                                <li><a href="../classes/CommentProvider.html">CommentProvider</a></li>
+                                <li><a href="../classes/MyListItem.html">MyListItem</a></li>
+                                <li><a href="../classes/MyListMeta.html">MyListMeta</a></li>
                                 <li><a href="../classes/NicoMyListApi.html">NicoMyListApi</a></li>
-                                <li><a href="../classes/NicoNico.html">NicoNico</a></li>
-                                <li><a href="../classes/NicoSession.html">NicoSession</a></li>
                                 <li><a href="../classes/NicoVideoApi.html">NicoVideoApi</a></li>
                                 <li><a href="../classes/NicoVideoInfo.html">NicoVideoInfo</a></li>
+                                <li><a href="../classes/NsenChannel.html">NsenChannel</a></li>
                             </ul>
+                
                 
                             <ul id="api-modules" class="apis modules">
                             </ul>
@@ -83,40 +86,25 @@
 
 <div class="file">
     <pre class="code prettyprint linenums">
-###*
-# ニコニコ生放送APIラッパークラスエントランス
-# TODO Manage LiveInfo and NsenChannel instances for support dispose.
-###
-NicoLiveInfo    = require &quot;./NicoLiveInfo&quot;
-NicoLiveComment = require &quot;./NicoLiveComment&quot;
-CommentProvider = require &quot;./CommentProvider&quot;
-NsenChannel     = require &quot;./NsenChannel&quot;
+_ = require &quot;lodash&quot;
+NicoLiveInfo = require &quot;./NicoLiveInfo&quot;
+NsenChannels = require &quot;./NsenChannels&quot;
+NsenChannel = require &quot;./NsenChannel&quot;
 
-DisposeHelper   = require &quot;../../helper/disposeHelper&quot;
 
+module.exports =
 class NicoLiveApi
-    @CommentProvider    = CommentProvider
-    @NicoLiveInfo       = NicoLiveInfo
-    @NicoLiveComment    = NicoLiveComment
-    @NsenChannel        = NsenChannel
-
-
     _session        : null
 
     _nsenChannelInstances   : null
     _nicoLiveInstances      : null
 
     ###*
-    # @param {NicoSession} session NicoSession object
+    # @param {NicoSession} _session
     ###
-    constructor     : (session) -&gt;
-        @_session = session
-        @_nsenChannelInstances  = []
-        @_nicoLiveInstances     = []
-
-
-    _getSession     : -&gt;
-        @_session
+    constructor     : (@_session) -&gt;
+        @_nsenChannelInstances  = {}
+        @_nicoLiveInstances     = {}
 
     ###*
     # 指定された放送の情報を取得します。
@@ -124,33 +112,45 @@ class NicoLiveApi
     # 番組情報が取得できればNicoLiveInfoオブジェクトとともにresolveされます。
     # 取得中にエラーが発生した場合、エラーメッセージとともにrejectされます。
     #
-    # @param    {string}   liveId  放送ID
-    # @return   {Promise} Promiseオブジェクト
+    # @param {string}   liveId  放送ID
+    # @return {Promise}
     ###
     getLiveInfo     : (liveId) -&gt;
-
         if typeof liveId isnt &quot;string&quot; or liveId is &quot;&quot;
-            throw new Error(&quot;liveIdは文字列である必要があります。&quot;)
+            throw new TypeError(&quot;liveId must bea string&quot;)
 
-        dfr         = Promise.defer()
-        liveInfo    = new NicoLiveInfo @_session, liveId
-        liveInfo.initThen -&gt;
-            dfr.resolve liveInfo
-        @_nicoLiveInstances.push liveInfo
+        return Promise.resolve(@_nicoLiveInstances[liveId]) if @_nicoLiveInstances[liveId]?
 
-        return dfr.promise
+        NicoLiveInfo.instanceFor(liveId, @_session)
+        .then (liveInfo) =&gt;
+            @_nicoLiveInstances[liveId] = liveInfo
+            Promise.resolve liveInfo
 
 
     ###*
-    # NicoLiveInfoオブジェクトからNsenChannelのインスタンスを取得します。
+    # NsenChannelのインスタンスを取得します。
     #
-    # @param {NicoLiveInfo} liveInfo
-    # @return {NsenChannel}
+    # @param {String} channel
+    # @return {Promise}
     ###
-    getNsenChannelHandlerFor : (liveInfo) -&gt;
-        instance = new NsenChannel liveInfo
-        @_nsenChannelInstances.push instance
-        return instance
+    getNsenChannelHandlerFor : (channel) -&gt;
+        isValidChannel = _.select(NsenChannels, {&#x27;id&#x27;: channel}).length is 1
+
+        unless isValidChannel
+            throw new RangeError(&quot;Invalid Nsen channel: #{channel}&quot;)
+
+        return Promise.resolve(@_nsenChannelInstances[channel]) if @_nsenChannelInstances[channel]?
+
+        @getLiveInfo(channel)
+        .then (live) =&gt;
+            NsenChannel.instanceFor(live, @_session)
+
+        .then (instance) =&gt;
+            @_nsenChannelInstances[channel] = instance
+            instance.onWillDispose =&gt;
+                delete @_nsenChannelInstances[channel]
+
+            Promise.resolve instance
 
 
     ###*
@@ -164,9 +164,6 @@ class NicoLiveApi
             instance.dispose();
 
         DisposeHelper.wrapAllMembers @
-
-
-module.exports = NicoLiveApi
 
     </pre>
 </div>

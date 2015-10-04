@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>src/video/NicoVideoApi.coffee</title>
+    <title>src/user/NicoUser.coffee</title>
     <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
     <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
     <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
@@ -82,44 +82,90 @@
             <div class="apidocs">
                 <div id="docs-main">
                     <div class="content">
-<h1 class="file-heading">File: src/video/NicoVideoApi.coffee</h1>
+<h1 class="file-heading">File: src/user/NicoUser.coffee</h1>
 
 <div class="file">
     <pre class="code prettyprint linenums">
-NicoVideoInfo   = require &quot;./NicoVideoInfo&quot;
+__ = require &quot;lodash-deep&quot;
+deepFreeze = require &quot;deep-freeze&quot;
 
-###*
-# ニコニコ動画APIへのアクセスを担当するクラス
-# @class NicoVideoApi
-###
-module.exports = 
-class NicoVideoApi
-    @NicoVideoInfo  = NicoVideoInfo
+APIEndpoints = require &quot;../APIEndpoints&quot;
+NicoException = require &quot;../NicoException&quot;
+
+module.exports =
+class NicoUser
+    ###*
+    # @return {Promise}
+    ###
+    @instance : (userId, session) -&gt;
+        return if userId is 0
+            Promise.resolve(@makeAnonymousUser())
+
+        APIEndpoints.user.info(session, {userId})
+        .then (res) =&gt;
+            try
+                result = JSON.parse res.body
+                data = result.nicovideo_user_response
+            catch e
+                Promise.reject new NicoException
+                    message  : &quot;Failed to parse user info response.&quot;
+                    response : res
+                    previous : e
+
+            return if data[&quot;@status&quot;] isnt &quot;ok&quot;
+                Promise.reject new NicoException
+                    message     : data.error.description
+                    code        : data.error.code
+                    response    : result
+
+            props = deepFreeze @parseResponse(result)
+            user = new NicoUser(props)
+
+            Promise.resolve(user)
+
 
     ###*
-    # @private
-    # @property _session
-    # @type NicoSession
+    # @param {Object} res
     ###
-    _session        : null
+    @parseResponse : (res) -&gt;
+        data = res.nicovideo_user_response
+        user = data.user
+
+        {
+            id              : user.id | 0
+            name            : user.nickname
+            thumbnailURL    : user.thumbnail_url
+            additionals     : data.additionals
+            vita            :
+                userSecret      : data.vita_option.user_secret | 0
+        }
+
+
+    @makeAnonymousUser : -&gt;
+        props = deepFreeze
+            id              : 0
+            name            : &quot;&quot;
+            thumbnailURL    : &quot;http://uni.res.nimg.jp/img/user/thumb/blank.jpg&quot;
+            additionals     : &quot;&quot;
+            vita            :
+                userSecret      : 0
+
+        user = new NicoUser(props)
+
 
     ###*
-    # @class NicoVideoApi
-    # @param {NicoSession}      session
+    # @param {Object} props
     ###
-    constructor     : (@_session) -&gt;
+    constructor : (props) -&gt;
+        Object.defineProperties @,
+            id :
+                value : props.id
+            _props :
+                value : props
 
-    ###*
-    # 動画情報(NicoVideoInfo）を取得します。
-    #
-    # 動画情報が用意できれば取得したNicoVideoInfoオブジェクトと一緒にresolveされます。
-    #
-    # @param    {string}    movieId 情報を取得したい動画ID
-    # @return   {Promise}
-    # - resolve : (info: NicoVideoInfo)
-    ###
-    getVideoInfo    : (movieId) -&gt;
-        NicoVideoInfo.fetch movieId, @_session
+
+    get : (key) -&gt;
+        __.deepGet(@_props, key)
 
     </pre>
 </div>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>src/video/NicoVideoApi.coffee</title>
+    <title>src/Emitter.coffee</title>
     <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
     <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
     <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
@@ -82,44 +82,83 @@
             <div class="apidocs">
                 <div id="docs-main">
                     <div class="content">
-<h1 class="file-heading">File: src/video/NicoVideoApi.coffee</h1>
+<h1 class="file-heading">File: src/Emitter.coffee</h1>
 
 <div class="file">
     <pre class="code prettyprint linenums">
-NicoVideoInfo   = require &quot;./NicoVideoInfo&quot;
+{CompositeDisposable, Disposable} = require &quot;event-kit&quot;
+EventEmitter3 = require &quot;eventemitter3&quot;
 
-###*
-# ニコニコ動画APIへのアクセスを担当するクラス
-# @class NicoVideoApi
-###
-module.exports = 
-class NicoVideoApi
-    @NicoVideoInfo  = NicoVideoInfo
+module.exports =
+class Emitter extends EventEmitter3
+    _eventObservers : null
+    disposed : false
 
-    ###*
-    # @private
-    # @property _session
-    # @type NicoSession
-    ###
-    _session        : null
+    constructor : -&gt;
+        super
+        @_eventObservers = new CompositeDisposable
 
-    ###*
-    # @class NicoVideoApi
-    # @param {NicoSession}      session
-    ###
-    constructor     : (@_session) -&gt;
+    dispose : -&gt;
+        @_eventObservers.dispose()
+
+        @_events = null
+        @_eventObservers = null
+        @disposed = true
+        return
 
     ###*
-    # 動画情報(NicoVideoInfo）を取得します。
-    #
-    # 動画情報が用意できれば取得したNicoVideoInfoオブジェクトと一緒にresolveされます。
-    #
-    # @param    {string}    movieId 情報を取得したい動画ID
-    # @return   {Promise}
-    # - resolve : (info: NicoVideoInfo)
+    # @param {String} event     listening event name
+    # @param {Function} fn      listener
+    # @param {Object?} context  binding context to listener
     ###
-    getVideoInfo    : (movieId) -&gt;
-        NicoVideoInfo.fetch movieId, @_session
+    on : (event, fn, context = @) -&gt;
+        if @disposed
+            throw new Error(&quot;Emitter has been disposed&quot;)
+
+        super
+
+        disposer = new Disposable =&gt; @off(event, fn, context, false)
+        @_eventObservers.add disposer
+        disposer
+
+    ###*
+    # @param {String} event     listening event name
+    # @param {Function} fn      listener
+    # @param {Object?} context  binding context to listener
+    ###
+    once : (event, fn, context = @) -&gt;
+        if @disposed
+            throw new Error(&quot;Emitter has been disposed&quot;)
+
+        super
+
+        disposer = new Disposable =&gt; @off(event, fn, context, true)
+        @_eventObservers.add disposer
+        disposer
+
+
+    ###*
+    # @param {String} event     unlistening event name
+    # @param {Function?} fn      unlistening listener
+    # @param {Object?} context  binded context to listener
+    # @param {Boolean?} once    unlistening once listener
+    ###
+    off : (event, fn, context, once) -&gt;
+        return if @disposed
+
+        unless fn?
+            @removeAllListeners()
+            return
+
+        super
+        return
+
+    removeAllListeners : (event) -&gt;
+        return if @disposed
+        super
+
+    @::addListener = @::on
+    @::removeListener = @::off
 
     </pre>
 </div>

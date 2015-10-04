@@ -38,12 +38,15 @@
                 
                         <div id="api-tabview-panel">
                             <ul id="api-classes" class="apis classes">
+                                <li><a href="../classes/CommentProvider.html">CommentProvider</a></li>
+                                <li><a href="../classes/MyListItem.html">MyListItem</a></li>
+                                <li><a href="../classes/MyListMeta.html">MyListMeta</a></li>
                                 <li><a href="../classes/NicoMyListApi.html">NicoMyListApi</a></li>
-                                <li><a href="../classes/NicoNico.html">NicoNico</a></li>
-                                <li><a href="../classes/NicoSession.html">NicoSession</a></li>
                                 <li><a href="../classes/NicoVideoApi.html">NicoVideoApi</a></li>
                                 <li><a href="../classes/NicoVideoInfo.html">NicoVideoInfo</a></li>
+                                <li><a href="../classes/NsenChannel.html">NsenChannel</a></li>
                             </ul>
+                
                 
                             <ul id="api-modules" class="apis modules">
                             </ul>
@@ -83,215 +86,149 @@
 
 <div class="file">
     <pre class="code prettyprint linenums">
-###*
-# ニコニコ動画のマイリスト操作APIのラッピングを行います。
-# （参考: http://efcl.info/wiki/niconicoapi/）
-#
-# Methods
-# - fetchListsIndex(withoutDefList: boolean?): Promise
-#       マイリストの一覧情報を取得します。
-#
-#       withoutDefListにtrueを指定すると&quot;とりあえずマイリスト&quot;を一覧から除外します。
-#       取得に成功したら{Array.&lt;MyListItemIndex&gt;}をresolveし、
-#       失敗した時はエラーメッセージとともにrejectされます。
-#
-# - fetchMyList(id: MyListItemIndex|number?): Promise
-#       指定されたMyListItemIndexまたはidと対応する、MyListインスタンスを取得します。
-#       取得できればMyListオブジェクトと共にresolveされ、
-#       そうでなければエラーメッセージと共にrejectされます
-#
-# Events
-#   (none)
-#
-# Properties
-#   (none)
-#
-# TODO Manage MyList instances for support dispose.
-###
-_           = require &quot;lodash&quot;
-request     = require &quot;request&quot;
+_ = require &quot;lodash&quot;
+Request = require &quot;request-promise&quot;
 
 NicoUrl     = require &quot;../NicoURL&quot;
 MyListMeta  = require &quot;./MyListMeta&quot;
 MyList      = require &quot;./MyList&quot;
 
-DisposeHelper   = require &quot;../helper/disposeHelper&quot;
-
-# 一分以上経過したらトークンを取得する
-FETCH_INTERVAL = 60 * 1000
+# 30秒以上経過したらトークンを取得する
+FETCH_INTERVAL = 30 * 1000
 
 # トークン抽出用パターン
-TOKEN_REGEXP = /NicoAPI.token = &quot;([0-9a-z\-]*)&quot;;/
+tokenRegexp = /NicoAPI.token = &quot;([0-9a-z\-]*)&quot;;/
 
 
 ###*
-# マイリストの操作を担当するクラスです。
+# ニコニコ動画のマイリスト操作APIのラッピングを行います。
+# （参考: http://efcl.info/wiki/niconicoapi/）
+#
+# @TODO Manage MyList instances for support dispose.
 # @class NicoMyListApi
 ###
+module.exports =
 class NicoMyListApi
-    @MyListMeta     = MyListMeta
-    @MyList         = MyList
-
     ###*
     # @private
     # @property {NicoSession} _session
     ###
-    _session     : null
 
     ###*
     # 認証トークン
     # @private
     # @property {Object} _token
     # @property {Number} _token.timestamp   トークンを取得した時間（ミリ秒）
-    # @property {String} _token.toke        マイリスト操作用トークン
+    # @property {String} _token.token       マイリスト操作用トークン
     ###
-    _token      :
-        timestamp   : null
-        token       : null
+
 
     ###*
     # @constructor
+    # @class NicoMyListApi
     # @param {NicoSession}      session
     ###
-    constructor : (session) -&gt;
-        @_session = session
-        @_token = _.clone @_token
+    constructor : (@_session) -&gt;
+        @_token =
+            timestamp   : null
+            token       : null
 
 
     ###*
     # マイリストを操作するための認証トークンを取得します。
+    # @method fetchToken
     # @return {Promise}
     ###
-    fetchToken         : -&gt;
+    fetchToken : -&gt;
         # 一定時間以内に取得したトークンがあればそれを返す
         if @_token.token? and (Date.now() - @_token.timestamp) &lt; FETCH_INTERVAL
             return Promise.resolve @_token.token
 
-        return new Promise (resolve, reject) =&gt;
-            # トークン取得
-            request.get
-                url   : NicoUrl.MyList.FETCH_TOKEN
-                jar   : @_session.getCookieJar()
-            , (err, res, body) =&gt;
-                # 通信エラー
-                return reject &quot;Mylist token fetching failed. (#{err})&quot; if err?
+        # トークン取得
+        Request.get
+            resolveWithFullResponse : true
+            url : NicoUrl.MyList.FETCH_TOKEN
+            jar : @_session.cookie
+        .then (res) =&gt;
+            # データを取得したらトークンを取り出す
+            token = tokenRegexp.exec res.body
 
-                # データを取得したらトークンを取り出す
-                token = TOKEN_REGEXP.exec body
+            if token[1]?
+                @_token.timestamp = Date.now()
+                @_token.token = token[1]
 
-                if token[1]?
-                    @_token.timestamp = Date.now()
-                    @_token.token = token[1]
-
-                    resolve token[1]
-                else
-                    reject &quot;NicoMyListApi: Failed to pick token.&quot;
-
+                Promise.resolve token[1]
+            else
+                Promise.reject &quot;NicoMyListApi: Failed to pick token.&quot;
 
 
     ###*
-    # 割り当てられている認証チケットを取得します。
-    ###
-    getSession      : -&gt;
-        return @_session
-
-
-    ###*
-    # マイリストの簡略な一覧情報を取得します。
-    # @param    {boolean} withoutDefList
+    # マイリストの一覧を取得します。
+    # @method fetchMyListsIndex
+    # @param    {boolean} withoutHome
     #   trueを指定すると&quot;とりあえずマイリスト&quot;を一覧から除外します。
     # @return   {Promise}
     # - resolve : (mylists: Array.&lt;MyListItemIndex&gt;)
     # - reject : (message: String)
     ###
-    fetchMyListsIndex     : (withoutDefList = false) -&gt;
-        self    = @
-        dfd     = Promise.defer()
-
+    fetchOwnedListIndex : (withoutHome = false) -&gt;
         # 受信したデータからインデックスを作成
-        request.get
+        Request.get
+            resolveWithFullResponse : true
             url   : NicoUrl.MyList.GET_GROUPS
-            jar   : @_session.getCookieJar()
-        , (err, res, body) -&gt;
-            if err?
-                # 通信エラー
-                dfd.reject error
-                return
-
+            jar   : @_session.cookie
+        .then (res) -&gt;
             try
-                result  = JSON.parse body
+                result  = JSON.parse res.body
                 lists   = []
 
                 if result.status isnt &quot;ok&quot;
-                    dfd.reject &quot;Failed to mylist fetch. (reason unknown)&quot;
+                    return Promise.reject &quot;Failed to fetch mylist. (reason unknown)&quot;
+
+                # とりあえずマイリスト
+                if withoutHome is false
+                    lists.push MyListMeta.instance(&quot;home&quot;)
+
+                _.each result.mylistgroup, (group) =&gt;
+                    lists.push MyListMeta.instance(group)
                     return
 
-                _.each result.mylistgroup, (group) -&gt;
-                    lists.push new MyListMeta group, self
-                    return
-
-                # とりあえずマイリストを取得
-                if withoutDefList isnt true
-                    lists.push new MyListMeta null, self
-
-                dfd.resolve lists
-
+                return Promise.resolve lists
             catch e
-                dfd.reject &quot;Failed to mylist fetch. (#{e.message})&quot;
-
-            return
-
-        return dfd.promise
+                return Promise.reject &quot;Failed to fetch mylist. (#{e.message})&quot;
 
 
     ###*
     # MyListインスタンスを取得します。
-    #
+    # @method fetchMyList
     # @param    {MyListItemIndex|number} id
     #   MyListItemIndexかマイリストIDを渡します。
     # @return   {Promise(MyList, string)}
     #   取得できればMyListオブジェクトと共にresolveされ、
     #   そうでなければエラーメッセージと共にrejectされます
     ###
-    fetchMyList     : (id = &quot;default&quot;) -&gt;
-        dfd             = Promise.defer()
-        getInstanceDfd  = Promise.defer()
+    getHandlerFor : (id = &quot;home&quot;) -&gt;
+        new Promise (resolve, reject) =&gt;
+            if id instanceof MyListMeta
+                resolve(MyList.instanceById(id, @_session))
+                return
 
-        if id instanceof MyListMeta
-            getInstanceDfd.resolve new MyList id
-        else
-            if id isnt &quot;default&quot;
-                id = id | 0
+            id = (id | 0) if id isnt &quot;home&quot;
 
-            @fetchMyListsIndex().then (metaList) -&gt;
+            @fetchOwnedListIndex(false).then (metaList) =&gt;
                 meta = _.where metaList, {id}
 
                 if meta.length is 0
-                    getInstanceDfd.reject &quot;Can&#x27;t find specified mylist.(#{id})&quot;
+                    reject &quot;Can&#x27;t find specified mylist.(#{id})&quot;
                 else
-                    getInstanceDfd.resolve new MyList meta[0]
+                    resolve(MyList.instanceById(meta[0], @_session))
 
-                return
+            return
 
-            getInstanceDfd.promise.then (instance) -&gt;
-                instance.fetch().then -&gt;
-                    dfd.resolve instance
-                    return
-                return
-
-            , -&gt;
-                dfd.reject.apply dfd, arguments
-
-        return dfd.promise
-
-
-    ###*
-    # 現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。
-    ###
-    dispose         : -&gt;
-        DisposeHelper.wrapAllMembers @, &quot;isDisposed&quot;
-
-module.exports = NicoMyListApi
+        .then (mylist) =&gt;
+            defer = Promise.defer()
+            mylist.fetch().then((-&gt; defer.resolve(mylist)), defer.reject)
+            defer.promise
 
     </pre>
 </div>

@@ -1,13 +1,16 @@
 YUI.add("yuidoc-meta", function(Y) {
    Y.YUIDoc = { meta: {
     "classes": [
+        "CommentProvider",
+        "MyListItem",
+        "MyListMeta",
         "NicoMyListApi",
-        "NicoNico",
-        "NicoSession",
         "NicoVideoApi",
-        "NicoVideoInfo"
+        "NicoVideoInfo",
+        "NsenChannel"
     ],
     "modules": [],
-    "allModules": []
+    "allModules": [],
+    "elements": []
 } };
 });

@@ -38,12 +38,15 @@
                 
                         <div id="api-tabview-panel">
                             <ul id="api-classes" class="apis classes">
+                                <li><a href="../classes/CommentProvider.html">CommentProvider</a></li>
+                                <li><a href="../classes/MyListItem.html">MyListItem</a></li>
+                                <li><a href="../classes/MyListMeta.html">MyListMeta</a></li>
                                 <li><a href="../classes/NicoMyListApi.html">NicoMyListApi</a></li>
-                                <li><a href="../classes/NicoNico.html">NicoNico</a></li>
-                                <li><a href="../classes/NicoSession.html">NicoSession</a></li>
                                 <li><a href="../classes/NicoVideoApi.html">NicoVideoApi</a></li>
                                 <li><a href="../classes/NicoVideoInfo.html">NicoVideoInfo</a></li>
+                                <li><a href="../classes/NsenChannel.html">NsenChannel</a></li>
                             </ul>
+                
                 
                             <ul id="api-modules" class="apis modules">
                             </ul>
@@ -84,8 +87,8 @@
 <div class="file">
     <pre class="code prettyprint linenums">
 ###*
-# ひとつのリストを表すのモデルです。
-# このモデルからマイリストを操作することはできません。
+#
+#
 #
 # Methods
 #   - attr(attr: string)
@@ -103,26 +106,19 @@
 # Properties
 #   attrメソッドを介して取得します。（とりあえずマイリストの場合,idとname以外設定されません。）
 #       Example. mylist.attr(&quot;id&quot;) // -&gt; マイリストIDを取得
-#
-#   - id            : number    -- マイリストID
-#   - name          : string    -- リスト名
-#   - description   : string    -- マイリストの説明
-#   - public        : boolean   -- 公開マイリストかどうか
-#   - iconId        : number    -- マイリストのアイコンID
-#   - defaultSort   : number    -- 標準のソート方法（？）
-#   - sortOrder     : number    -- ソート方式（？）
-#   - userId        : number    -- ユーザー番号
-#   - createTime    : Date      -- マイリストの作成日
-#   - updateTime    : Date      -- マイリストの更新日
 ###
-_           = require &quot;lodash&quot;
-Backbone    = require &quot;backbone&quot;
+_ = require &quot;lodash&quot;
+__ = require &quot;lodash-deep&quot;
+MyList = require &quot;./MyList&quot;
 
-MyList      = require &quot;./MyList&quot;
-
-class MyListMeta extends Backbone.Model
-    # デフォルトプロパティ
-    defaults   :
+###*
+# マイリストのメタデータを表すクラスです。
+# このモデルからマイリストを操作することはできません。
+# @class MyListMeta
+###
+module.exports =
+class MyListMeta
+    @defaults :
         id          : -1
         name        : null
         description : null
@@ -135,47 +131,66 @@ class MyListMeta extends Backbone.Model
         updateTime  : null
 
     ###*
-    #
+    # @param {Object}   metaInfo    Result of mylistgroup/list API
     ###
-    _attributes     : null
+    @instance : (metaInfo) -&gt;
+        meta = new MyListMeta
+        meta._attr = MyListMeta.parse(metaInfo)
+
+        Object.defineProperties meta,
+            id :
+                value : meta.get(&quot;id&quot;)
+
+        meta
 
     ###*
-    # @type {NicoMyListApi}
+    # @param {Object}   metaInfo    Result of mylistgroup/list API
     ###
-    _api            : null
-
-
-    ###*
-    # マイリストのメタ情報を保存しているモデル
-    # @param {Object} groupInfo
-    #   マイリスト情報（MylistAPI形式）
-    # @param {function(OmittedMyListGroup)} fnGetMyListGroup
-    #   MyListGroupインスタンスを取得するための関数。
-    # @constructor
-    ###
-    constructor : (metaInfo, mylistApi) -&gt;
-        if metaInfo
+    @parse : (metaInfo) -&gt;
+        if metaInfo is &quot;home&quot;
             attr = _.defaults
-                id          : metaInfo.id | 0
-                name        : metaInfo.name
-                description : metaInfo.description
-                public      : (metaInfo.public | 0) is 1
-                iconId      : metaInfo.icon_id | 0
-                defaultSort : metaInfo.default_sort | 0
-                sortOrder   : metaInfo.sort_order | 0
-                userId      : metaInfo.user_id | 0
-                createTime  : new Date(metaInfo.create_time * 1000)
-                updateTime  : new Date(metaInfo.update_time * 1000)
-            , @defaults
-        else
-            attr = _.defaults
-                id: &quot;default&quot;
+                id: &quot;home&quot;
                 name: &quot;とりあえずマイリスト&quot;
-                , @defaults
+                public : false
+            , MyListMeta.defaults
 
-        @_attributes = attr
-        @id = attr.id
-        @_api = mylistApi
+            return attr
+
+        attr = _.defaults
+            id          : metaInfo.id | 0
+            name        : metaInfo.name
+            description : metaInfo.description
+            public      : (metaInfo.public | 0) is 1
+            iconId      : metaInfo.icon_id | 0
+            defaultSort : metaInfo.default_sort | 0
+            sortOrder   : metaInfo.sort_order | 0
+            userId      : metaInfo.user_id | 0
+            createTime  : new Date(metaInfo.create_time * 1000)
+            updateTime  : new Date(metaInfo.update_time * 1000)
+        , MyListMeta.defaults
+
+        attr
+
+    ###*
+    # @private
+    # @property {String|Number}     _id
+    ###
+    _id : null
+
+    ###*
+    # @private
+    # @property {Number}    _attributes.id              マイリストID
+    # @property {String}    _attributes.description     マイリストの説明
+    # @property {Number}    _attributes.userId          ユーザー番号
+    # @property {Number}    _attributes.defaultSort     標準のソート方法（？）
+    # @property {Number}    _attributes.sortOrder       ソート方式（？）
+    # @property {Number}    _attributes.iconId          マイリストのアイコンID
+    # @property {String}    _attributes.name            リスト名
+    # @property {Boolean}   _attributes.public          公開マイリストかどうか
+    # @property {Date}      _attributes.createTime      マイリストの作成日
+    # @property {Date}      _attributes.updateTime      マイリストの更新日
+    ###
+    _attr : null
 
 
     ###*
@@ -183,7 +198,7 @@ class MyListMeta extends Backbone.Model
     # @param {string} attr プロパティ名
     ###
     get             : (attr) -&gt;
-        return @_attributes[attr]
+        return __.deepGet(@_attr, attr)
 
 
     ###*
@@ -192,7 +207,7 @@ class MyListMeta extends Backbone.Model
     #   &quot;とりあえずマイリスト&quot;ならtrueを返します。
     ###
     isDefaultList   : -&gt;
-        @attr(&quot;id&quot;) is &quot;default&quot;
+        @attr(&quot;id&quot;) is &quot;home&quot;
 
 
     ###*
@@ -200,7 +215,7 @@ class MyListMeta extends Backbone.Model
     # @return {Promise}
     ###
     getMyList  : -&gt;
-        return new MyList @attr(&quot;id&quot;)
+        return new MyList @get(&quot;id&quot;)
 
 
     ###*
@@ -208,9 +223,7 @@ class MyListMeta extends Backbone.Model
     # @return {Object}
     ###
     toJSON          : -&gt;
-        return _.clone @_attributes
-
-module.exports = MyListMeta
+        return _.clone @_attr
 
     </pre>
 </div>

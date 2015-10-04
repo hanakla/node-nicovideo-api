@@ -38,12 +38,15 @@
                 
                         <div id="api-tabview-panel">
                             <ul id="api-classes" class="apis classes">
+                                <li><a href="../classes/CommentProvider.html">CommentProvider</a></li>
+                                <li><a href="../classes/MyListItem.html">MyListItem</a></li>
+                                <li><a href="../classes/MyListMeta.html">MyListMeta</a></li>
                                 <li><a href="../classes/NicoMyListApi.html">NicoMyListApi</a></li>
-                                <li><a href="../classes/NicoNico.html">NicoNico</a></li>
-                                <li><a href="../classes/NicoSession.html">NicoSession</a></li>
                                 <li><a href="../classes/NicoVideoApi.html">NicoVideoApi</a></li>
                                 <li><a href="../classes/NicoVideoInfo.html">NicoVideoInfo</a></li>
+                                <li><a href="../classes/NsenChannel.html">NsenChannel</a></li>
                             </ul>
+                
                 
                             <ul id="api-modules" class="apis modules">
                             </ul>
@@ -85,7 +88,6 @@
     <pre class="code prettyprint linenums">
 ###*
 # マイリストの項目モデルです。
-# Backbone.Modelを継承しています。
 #
 # Properties
 #  getメソッドを通じて第１階層まで取得できます。
@@ -114,51 +116,75 @@
 #          - view       : number    -- 再生数
 #          - comments   : number    -- コメント数
 #          - mylist     : number    -- マイリスト数
+#
+# @class MyListItem
 ###
 
-_           = require &quot;lodash&quot;
-Backbone    = require &quot;backbone&quot;
-sprintf     = require(&quot;sprintf&quot;).sprintf
+_ = require &quot;lodash&quot;
+__ = require &quot;lodash-deep&quot;
+Ent = require &quot;ent&quot;
+Emitter = require &quot;../Emitter&quot;
 
-ItemTypes =
-    movie: 0
-    seiga: 5
+sprintf = require(&quot;sprintf&quot;).sprintf
+deepFreeze = require &quot;deep-freeze&quot;
+
+module.exports =
+class MyListItem extends Emitter
+    ###*
+    # @static
+    # @property {Object}    ItemTypes           アイテムの種類のリスト
+    # @property {Number}    ItemTypes.movie     動画
+    # @property {Number}    ItemTypes.seiga     静画
+    ###
+    @ItemTypes      : deepFreeze
+        MOVIE : 0
+        SEIGA : 5
+        BOOK : 6
+        BLOMAGA : 13
+
+    @defaults       :
+        id              : -1
+        type            : -1
+        description     : null
+        createTime      : null
+        updateTime      : null
+        watch           : 0
+
+        movie           : null
+
+    ###*
+    # MylistAPIの取得結果の一部からMyListItemのオブジェクトを生成します。
+    # @static
+    # @method fronApiResponse
+    # @param {Object}   itemInfo
+    # @param {MyList}   mylist
+    ###
+    @fromApiResponse : (itemInfo, mylist) -&gt;
+        item = new MyListItem
+        item._attr = deepFreeze(MyListItem.parse itemInfo)
+        item.list = mylist
+
+        Object.defineProperties item,
+            id :
+                value : item.get(&quot;id&quot;) | 0
 
 
-class MyListItem extends Backbone.Model
-    @ItemTypes      : ItemTypes
+    @parse : (itemInfo) -&gt;
+        item = itemInfo.item_data
 
-    @fromApiJson    : (infoObj) -&gt;
-        return new MyListItem infoObj, parse: true
+        attr =
+            id          : itemInfo.item_id|0
+            type        : itemInfo.item_type|0
+            description : itemInfo.description
+            watch       : itemInfo.watch
 
-
-    defaults    :
-        id          : -1
-        type        : -1
-        description : null
-        createTime  : null
-        updateTime  : null
-        watch       : 0
-
-        movie       : null
-
-
-    parse       : (infoObj) -&gt;
-        item = infoObj.item_data
-
-        result =
-            id          : infoObj.item_id|0
-            type        : infoObj.item_type|0
-            description : infoObj.description
-            watch       : infoObj.watch
-
-            createTime  : new Date(infoObj.create_time * 1000)
-            updateTime  : new Date(infoObj.update_time)
+            createTime  : new Date(itemInfo.create_time * 1000)
+            updateTime  : new Date(itemInfo.update_time)
 
             movie       :
                 id          : item.video_id
 
-                title       : item.title
+                title       : Ent.decode(item.title)
                 length      : item.length_seconds|0 # 秒数
                 thumbnail   : item.thumbnail_url
 
@@ -174,17 +200,53 @@ class MyListItem extends Backbone.Model
                     comments        : item.num_res|0
                     mylist          : item.mylist_counter|0
 
-        return result
+        attr
 
+    ###*
+    # @private
+    # @property {Object}    _attr
+    ###
 
-    fetch       : _.noop
-    sync        : _.noop
-    save        : _.noop
-    destroy     : _.noop
+    ###*
+    # @property {Number}    id
+    ###
 
-module.exports =
-    ItemTypes   : ItemTypes
-    fromApiJson : MyListItem.fromApiJson
+    ###*
+    # @param {String}   path
+    # @return
+    ###
+    get : (path) -&gt;
+        __.deepGet @_attr, path
+
+    ###*
+    # @return {Promise}
+    ###
+    delete : -&gt;
+        @list.deleteItem @
+
+    ###*
+    # @return {Boolean}
+    ###
+    isMovie : -&gt;
+        @get(&quot;type&quot;) is MyListItem.ItemTypes.MOVIE
+
+    ###*
+    # @return {Boolean}
+    ###
+    isSeiga : -&gt;
+        @get(&quot;type&quot;) is MyListItem.ItemTypes.SEIGA
+
+    ###*
+    # @return {Boolean}
+    ###
+    isBook : -&gt;
+        @get(&quot;type&quot;) is MyListItem.ItemTypes.BOOK
+
+    ###*
+    # @return {Boolean}
+    ###
+    isBlomaga : -&gt;
+        @get(&quot;type&quot;) is MyListItem.ItemTypes.BLOMAGA
 
     </pre>
 </div>

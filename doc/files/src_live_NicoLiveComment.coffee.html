@@ -38,12 +38,15 @@
                 
                         <div id="api-tabview-panel">
                             <ul id="api-classes" class="apis classes">
+                                <li><a href="../classes/CommentProvider.html">CommentProvider</a></li>
+                                <li><a href="../classes/MyListItem.html">MyListItem</a></li>
+                                <li><a href="../classes/MyListMeta.html">MyListMeta</a></li>
                                 <li><a href="../classes/NicoMyListApi.html">NicoMyListApi</a></li>
-                                <li><a href="../classes/NicoNico.html">NicoNico</a></li>
-                                <li><a href="../classes/NicoSession.html">NicoSession</a></li>
                                 <li><a href="../classes/NicoVideoApi.html">NicoVideoApi</a></li>
                                 <li><a href="../classes/NicoVideoInfo.html">NicoVideoInfo</a></li>
+                                <li><a href="../classes/NsenChannel.html">NsenChannel</a></li>
                             </ul>
+                
                 
                             <ul id="api-modules" class="apis modules">
                             </ul>
@@ -84,20 +87,6 @@
 <div class="file">
     <pre class="code prettyprint linenums">
 ###*
-# ニコニコ生放送のコメント情報モデル。
-# Backbone.Modelを継承しています。
-#
-# Methods
-#  - NicoLiveComment.fromPlainXml(xml: string)
-#       コメントサーバーのレスポンスからNicoLiveCommentインスタンスを生成します。
-#
-#  - isControl(): boolean
-#       コメントが運営の制御コメントか判定します。
-#  - isDistributorPost(): boolean
-#       コメントが配信者のものか判定します。
-#  - isMyPost(): boolean
-#       コメントが自分で投稿したものか判定します。
-#
 # Properties
 #  - threadId   : number  -- コメントサーバー内のスレッドID
 #  - date       : Date    -- コメント投稿日時
@@ -111,84 +100,108 @@
 #      - isPremium      : boolean       -- プレミアム会員かどうか
 #      - isAnonymous    : boolean       -- 匿名コメントかどうか
 ###
-Backbone    = require &quot;backbone&quot;
-cheerio     = require &quot;cheerio&quot;
+__ = require &quot;lodash-deep&quot;
+Cheerio = require &quot;cheerio&quot;
+deepFreeze = require &quot;deep-freeze&quot;
 
 REGEXP_LT = /&lt;/g
 REGEXP_GT = /&gt;/g
 
-noop = -&gt;
 
-class NicoLiveComment extends Backbone.Model
+class NicoLiveComment
+    @AccountTypes : deepFreeze
+        GENERAL : 0
+        PREMIUM : 1
+        DISTRIBUTOR : 3
+        ADMIN : 6
+
+    # @defaults :
+    #     threadId: null,
+    #
+    #     date    : null,
+    #     locale  : null,
+    #     command : null,
+    #     comment : null,
+    #
+    #     isMyPost: null,
+    #
+    #     user    :
+    #         id          : null,
+    #         score       : 0,
+    #         accountType : -1,
+    #         isPremium   : false,
+    #         isAnonymous : false
+
     ###*
     # 規定の形式のXMLからNicoLiveCommentモデルを生成します。
     #
     # ニコ生サーバーから配信されてくる以下のような形式のコメント（１行）を第１引数に渡してください。
     #   &lt;chat thread=&quot;##&quot; vpos=&quot;##&quot; date=&quot;##&quot; date_usec=&quot;##&quot; user_id=&quot;##&quot; premium=&quot;#&quot; locale=&quot;**&quot;&gt;コメント内容&lt;/chat&gt;
     #
-    # @param {string} xml ニコ生コメントサーバーから受信したXMLコメントデータ
+    # @param {String} xml ニコ生コメントサーバーから受信したXMLコメントデータ
+    # @param {Number} loggedUserId 現在ログイン中のユーザーのID
+    # @return {NicoLiveComment}
     ###
-    @fromRawXml     : (xml) -&gt;
-        $xml    = cheerio xml
-        obj     =
+    @fromRawXml     : (xml, loggedUserId) -&gt;
+        $xml    = Cheerio xml
+        props     =
             threadId: $xml.attr(&quot;thread&quot;)
 
-            date    : new Date($xml.attr(&quot;date&quot;)|0 * 1000)
+            date    : new Date($xml.attr(&quot;date&quot;) * 1000)
             locale  : $xml.attr(&quot;locale&quot;)
             command : $xml.attr(&quot;mail&quot;)
             comment : $xml.text().replace(REGEXP_GT, &quot;&gt;&quot;).replace(REGEXP_LT, &quot;&lt;&quot;)
+            vpos    : $xml.attr(&quot;vpos&quot;)|0
 
-            isMyPost: $xml.attr(&quot;yourpost&quot;) is &quot;1&quot;
+            isMyPost: ($xml.attr(&quot;yourpost&quot;) is &quot;1&quot; or (($xml.attr(&quot;user_id&quot;)|0) is loggedUserId))
 
             user    :
-                id          : $xml.attr(&quot;user_id&quot;)
+                id          : $xml.attr(&quot;user_id&quot;)|0
                 score       : $xml.attr(&quot;score&quot;)|0
                 accountType : $xml.attr(&quot;premium&quot;)|0
                 isPremium   : ($xml.attr(&quot;premium&quot;)|0) &gt; 0
                 isAnonymous : $xml.attr(&quot;anonymity&quot;)|0 isnt 0
 
-        # user.idを数値へ変換
-        if obj.user.id and obj.user.id.match(/^[0-9]*$/)
-            obj.user.id = obj.user.id | 0
-
-        return new NicoLiveComment obj
-
-    defaults :
-        threadId: null,
-
-        date    : null,
-        locale  : null,
-        command : null,
-        comment : null,
-
-        isMyPost: null,
-
-        user    :
-            id          : null,
-            score       : 0,
-            accountType : -1,
-            isPremium   : false,
-            isAnonymous : false
-
-    isControl           : -&gt;
-        userid      = @get(&quot;user&quot;).id
-        accountType = @get(&quot;user&quot;).accountType
-
-        return (userid is 900000000) or (userid is 0) or (accountType is 6)
+        new NicoLiveComment(props)
 
 
-    isDistributorPost   : -&gt;
-        return @get(&quot;user&quot;).accountType is 3
+    constructor : (@_attr) -&gt;
+        Object.defineProperties @,
+            command :
+                value : @get(&quot;command&quot;)
+            comment :
+                value : @get(&quot;comment&quot;)
 
 
-    isMyPost            : -&gt;
-        return @get(&quot;isMyPost&quot;)
+    get : (path) -&gt;
+        __.deepGet @_attr, path
 
-    parse   : noop
-    fetch   : noop
-    sync    : noop
-    save    : noop
-    destroy : noop
+
+    isNormalComment : -&gt;
+        not (@isControlComment() and @isDistributorPost())
+
+
+    isControlComment : -&gt;
+        userid      = @get(&quot;user.id&quot;)
+        accountType = @get(&quot;user.accountType&quot;)
+
+        (userid is 900000000) or (accountType is NicoLiveComment.AccountTypes.ADMIN)
+
+
+    isPostByDistributor : -&gt;
+        @get(&quot;user.accountType&quot;) is NicoLiveComment.AccountTypes.DISTRIBUTOR
+
+
+    isPostBySelf : -&gt;
+        @get(&quot;isMyPost&quot;)
+
+
+    isPostByAnonymous : -&gt;
+        @get(&quot;user.isAnonymous&quot;)
+
+
+    isPostByPremiumUser : -&gt;
+        @get(&quot;user.isPremium&quot;)
 
 
 module.exports = NicoLiveComment

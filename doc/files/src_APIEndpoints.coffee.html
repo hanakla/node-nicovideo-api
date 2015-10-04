@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>src/video/NicoVideoApi.coffee</title>
+    <title>src/APIEndpoints.coffee</title>
     <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
     <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
     <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
@@ -82,44 +82,114 @@
             <div class="apidocs">
                 <div id="docs-main">
                     <div class="content">
-<h1 class="file-heading">File: src/video/NicoVideoApi.coffee</h1>
+<h1 class="file-heading">File: src/APIEndpoints.coffee</h1>
 
 <div class="file">
     <pre class="code prettyprint linenums">
-NicoVideoInfo   = require &quot;./NicoVideoInfo&quot;
+Request = require &quot;request-promise&quot;
 
-###*
-# ニコニコ動画APIへのアクセスを担当するクラス
-# @class NicoVideoApi
-###
-module.exports = 
-class NicoVideoApi
-    @NicoVideoInfo  = NicoVideoInfo
+NicoURL = require &quot;./NicoURL&quot;
 
-    ###*
-    # @private
-    # @property _session
-    # @type NicoSession
-    ###
-    _session        : null
+get = (options) -&gt;
+    options.resolveWithFullResponse = true
+    Request.get(options)
 
-    ###*
-    # @class NicoVideoApi
-    # @param {NicoSession}      session
-    ###
-    constructor     : (@_session) -&gt;
+post = (options) -&gt;
+    options.resolveWithFullResponse = true
+    Request.post(options)
 
-    ###*
-    # 動画情報(NicoVideoInfo）を取得します。
-    #
-    # 動画情報が用意できれば取得したNicoVideoInfoオブジェクトと一緒にresolveされます。
-    #
-    # @param    {string}    movieId 情報を取得したい動画ID
-    # @return   {Promise}
-    # - resolve : (info: NicoVideoInfo)
-    ###
-    getVideoInfo    : (movieId) -&gt;
-        NicoVideoInfo.fetch movieId, @_session
+module.exports =
+    video :
+        ###*
+        # @param {NicoSession} session
+        # @param {String} options.movieId
+        # @return {Promise}
+        ###
+        getMovieInfo : (session, {movieId}) -&gt;
+            get
+                url : NicoURL.Video.GET_VIDEO_INFO + movieId
+                jar : session.cookie
+
+    live :
+        ###*
+        # @param {NicoSession}
+        # @param {String} options.liveId
+        ###
+        getPlayerStatus : (session, {liveId}) -&gt;
+            get
+                url : NicoURL.Live.GET_PLAYER_STATUS + liveId
+                jar : session.cookie
+
+    nsen :
+        ###*
+        # @param {NicoSession} session
+        # @param {String} options.liveId     LiveID
+        # @param {String} options.movieId    Request movie ID
+        # @return {Promise}
+        ###
+        request : (session, {liveId, movieId}) -&gt;
+            get
+                url : NicoURL.Live.NSEN_REQUEST+&quot;?v=#{liveId}&amp;id=#{movieId}&quot;
+                jar : session.cookie
+                # form :
+                #     v : liveId
+                #     id : movieId
+
+        ###*
+        # @param {NicoSession} session
+        # @param {String} options.liveId LiveID
+        # @return Promise
+        ###
+        cancelRequest : (session, {liveId}) -&gt;
+            get
+                url : NicoURL.Live.NSEN_REQUEST + &quot;?v=#{liveId}&amp;mode=cancel&quot;
+                jar : session.cookie
+                # form :
+                #     v : liveId
+                #     mode : &quot;cancel&quot;
+
+        ###*
+        # @param {NicoSession} session
+        # @param {String} options.liveId LiveID
+        # @return Promise
+        ###
+        syncRequest : (session, {liveId}) -&gt;
+            get
+                url : NicoURL.Live.NSEN_REQUEST + &quot;?v=#{liveId}&amp;mode=requesting&quot;
+                jar : session.cookie
+                # form :
+                #     v : liveId
+                #     mode : &quot;requesting&quot;
+
+        ###*
+        # @param {NicoSession} session
+        # @param {String} options.liveId LiveID
+        # @return Promise
+        ###
+        sendGood : (session, {liveId}) -&gt;
+            get
+                url : NicoURL.Live.NSEN_GOOD + &quot;?v=#{liveId}&quot;
+                jar : session.cookie
+                # form :
+                #     v : liveId
+
+        ###*
+        # @param {NicoSession} session
+        # @param {String} options.liveId LiveID
+        # @return Promise
+        ###
+        sendSkip : (session, {liveId}) -&gt;
+            get
+                url : NicoURL.Live.NSEN_SKIP + &quot;?v=#{liveId}&quot;
+                jar : session.cookie
+                # form :
+                #     v: liveId
+
+    user :
+        info : (session, {userId}) -&gt;
+            get
+                url : NicoURL.User.INFO + &quot;?__format=json&amp;user_id=#{userId}&quot;
+                jar : session.cookie
 
     </pre>
 </div>

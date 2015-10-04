@@ -4,7 +4,9 @@
         "src/live/CommentProvider.coffee": {
             "name": "src/live/CommentProvider.coffee",
             "modules": {},
-            "classes": {},
+            "classes": {
+                "CommentProvider": 1
+            },
             "fors": {},
             "namespaces": {}
         },
@@ -32,7 +34,9 @@
         "src/live/NsenChannel.coffee": {
             "name": "src/live/NsenChannel.coffee",
             "modules": {},
-            "classes": {},
+            "classes": {
+                "NsenChannel": 1
+            },
             "fors": {},
             "namespaces": {}
         },
@@ -46,14 +50,18 @@
         "src/mylist/MyListItem.coffee": {
             "name": "src/mylist/MyListItem.coffee",
             "modules": {},
-            "classes": {},
+            "classes": {
+                "MyListItem": 1
+            },
             "fors": {},
             "namespaces": {}
         },
         "src/mylist/MyListMeta.coffee": {
             "name": "src/mylist/MyListMeta.coffee",
             "modules": {},
-            "classes": {},
+            "classes": {
+                "MyListMeta": 1
+            },
             "fors": {},
             "namespaces": {}
         },
@@ -63,6 +71,20 @@
             "classes": {
                 "NicoMyListApi": 1
             },
+            "fors": {},
+            "namespaces": {}
+        },
+        "src/user/NicoUser.coffee": {
+            "name": "src/user/NicoUser.coffee",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "src/user/NicoUserAPI.coffee": {
+            "name": "src/user/NicoUserAPI.coffee",
+            "modules": {},
+            "classes": {},
             "fors": {},
             "namespaces": {}
         },
@@ -84,27 +106,84 @@
             "fors": {},
             "namespaces": {}
         },
-        "src/NicoNico.coffee": {
-            "name": "src/NicoNico.coffee",
+        "src/APIEndpoints.coffee": {
+            "name": "src/APIEndpoints.coffee",
             "modules": {},
-            "classes": {
-                "NicoNico": 1
-            },
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "src/Emitter.coffee": {
+            "name": "src/Emitter.coffee",
+            "modules": {},
+            "classes": {},
             "fors": {},
             "namespaces": {}
         },
         "src/NicoSession.coffee": {
             "name": "src/NicoSession.coffee",
             "modules": {},
-            "classes": {
-                "NicoSession": 1
-            },
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "src/niconico.coffee": {
+            "name": "src/niconico.coffee",
+            "modules": {},
+            "classes": {},
             "fors": {},
             "namespaces": {}
         }
     },
     "modules": {},
     "classes": {
+        "CommentProvider": {
+            "name": "CommentProvider",
+            "shortname": "CommentProvider",
+            "classitems": [],
+            "plugins": [],
+            "extensions": [],
+            "plugin_for": [],
+            "extension_for": [],
+            "file": "src/live/CommentProvider.coffee",
+            "line": 1,
+            "description": "放送中の番組のコメントの取得と投稿を行うクラスです。"
+        },
+        "NsenChannel": {
+            "name": "NsenChannel",
+            "shortname": "NsenChannel",
+            "classitems": [],
+            "plugins": [],
+            "extensions": [],
+            "plugin_for": [],
+            "extension_for": [],
+            "file": "src/live/NsenChannel.coffee",
+            "line": 1
+        },
+        "MyListItem": {
+            "name": "MyListItem",
+            "shortname": "MyListItem",
+            "classitems": [],
+            "plugins": [],
+            "extensions": [],
+            "plugin_for": [],
+            "extension_for": [],
+            "file": "src/mylist/MyListItem.coffee",
+            "line": 1,
+            "description": "マイリストの項目モデルです。\n\nProperties\n getメソッドを通じて第１階層まで取得できます。\n Example. mylistItem.get(\"movie\").title\n\n - id             : number    -- マイリスト項目ID\n - type           : number    -- 項目の種類（動画、静画など）\n - description    : string    -- マイリストコメント\n - createTime     : Date      -- 追加日\n - updateTime     : Date      -- 更新日（？）\n - watch          : number    -- 不明\n - movie          : Object    -- 動画情報\n     - id             : string    -- 動画ID\n     - title          : string    -- 動画タイトル\n     - length         : number    -- 動画の長さ（秒）\n     - thumbnail      : string    -- サムネイル画像のURL\n\n     - groupType      : string    -- 不明\n     - lastResponse   : string    -- 最近投稿されたコメントの一部\n     - isDeleted      : boolean   -- 削除されているか\n\n     - updateTime     : Date      -- この情報の最終更新日時（？）\n     - firtsRetrieve  : Date      -- 動画投稿日\n\n     - count                  -- カウンタ系の情報が詰められたオブジェクト\n         - view       : number    -- 再生数\n         - comments   : number    -- コメント数\n         - mylist     : number    -- マイリスト数"
+        },
+        "MyListMeta": {
+            "name": "MyListMeta",
+            "shortname": "MyListMeta",
+            "classitems": [],
+            "plugins": [],
+            "extensions": [],
+            "plugin_for": [],
+            "extension_for": [],
+            "file": "src/mylist/MyListMeta.coffee",
+            "line": 26,
+            "description": "マイリストのメタデータを表すクラスです。\nこのモデルからマイリストを操作することはできません。"
+        },
         "NicoMyListApi": {
             "name": "NicoMyListApi",
             "shortname": "NicoMyListApi",
@@ -114,8 +193,19 @@
             "plugin_for": [],
             "extension_for": [],
             "file": "src/mylist/NicoMyListApi.coffee",
-            "line": 42,
-            "description": "マイリストの操作を担当するクラスです。"
+            "line": 38,
+            "description": "ニコニコ動画のマイリスト操作APIのラッピングを行います。\n（参考: http://efcl.info/wiki/niconicoapi/）",
+            "todo": [
+                "Manage MyList instances for support dispose."
+            ],
+            "is_constructor": 1,
+            "params": [
+                {
+                    "name": "session",
+                    "description": "",
+                    "type": "NicoSession"
+                }
+            ]
         },
         "NicoVideoApi": {
             "name": "NicoVideoApi",
@@ -145,7 +235,7 @@
             "plugin_for": [],
             "extension_for": [],
             "file": "src/video/NicoVideoInfo.coffee",
-            "line": 107,
+            "line": 156,
             "description": "ニコニコ動画APIの動画情報モデルクラス\n\nProperties\n  getメソッドで第１階層まで取得できます。\n  Example: NicoVideoInfo.get(\"user\").id",
             "extends": "EventEmitter2",
             "is_constructor": 1,
@@ -156,110 +246,18 @@
                     "type": "String"
                 },
                 {
-                    "name": "session",
+                    "name": "_session",
                     "description": "セッション",
                     "type": "NicoSession"
                 }
             ]
-        },
-        "NicoNico": {
-            "name": "NicoNico",
-            "shortname": "NicoNico",
-            "classitems": [],
-            "plugins": [],
-            "extensions": [],
-            "plugin_for": [],
-            "extension_for": [],
-            "file": "src/NicoNico.coffee",
-            "line": 86,
-            "description": "ニコニコ動画APIのハンドラクラス\n通常、`NicoNico.login`メソッドを利用して初期化します。",
-            "is_constructor": 1,
-            "params": [
-                {
-                    "name": "user",
-                    "description": "ユーザーID",
-                    "type": "String"
-                },
-                {
-                    "name": "password",
-                    "description": "ログインパスワード",
-                    "type": "String"
-                }
-            ]
-        },
-        "NicoSession": {
-            "name": "NicoSession",
-            "shortname": "NicoSession",
-            "classitems": [],
-            "plugins": [],
-            "extensions": [],
-            "plugin_for": [],
-            "extension_for": [],
-            "file": "src/NicoSession.coffee",
-            "line": 54,
-            "description": "ニコニコ動画へのログイン/ログアウトと認証状態の管理を行います。",
-            "extends": "EventEmitter2",
-            "is_constructor": 1,
-            "params": [
-                {
-                    "name": "user",
-                    "description": "ログインユーザーID",
-                    "type": "String"
-                },
-                {
-                    "name": "password",
-                    "description": "ログインパスワード",
-                    "type": "String"
-                }
-            ]
         }
     },
+    "elements": {},
     "classitems": [
         {
             "file": "src/live/CommentProvider.coffee",
-            "line": 1,
-            "description": "放送中の番組のコメントの取得と投稿を行うクラスです。\n\nNicoLiveInfo#commentProviderメソッドを通じてインスタンスを取得します。\nBackbone.Collectionを継承しています。\n\nMethods:\n - getLiveInfo(): LiveInfo\n      配信情報オブジェクトを取得します。\n - postComment(msg: string, command: string): Promise\n      コメントを投稿します。\n      投稿に成功すればresolveされ、失敗すれば投稿結果オブジェクトとともにrejectされます。\n      投稿結果オブジェクトは以下の形式のオブジェクトです。\n      {code:number, message:string} -- code:エラーコード, message:エラーメッセージ\n\nEvents:\n - receive: (rawXMLComment: string)\n      コメントサーバーからレスポンスを受け取った際に発火します。\n - add: (model:NicoLiveComment)\n      コメントを受信した際に発火します。\n - error: (error:Error)\n      コネクションエラーが発生した際に発火します。\n - ended: (live: NicoLiveInfo)\n      配信が終了した際に発火します。\n - disconnected:()\n      コメントサーバから切断した時に発火します。\n - closed:()\n      コメントサーバーから切断された際に発火します。",
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/live/NicoLiveApi.coffee",
-            "line": 1,
-            "description": "ニコニコ生放送APIラッパークラスエントランス\nTODO Manage LiveInfo and NsenChannel instances for support dispose.",
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/live/NicoLiveApi.coffee",
-            "line": 24,
-            "params": [
-                {
-                    "name": "session",
-                    "description": "NicoSession object",
-                    "type": "NicoSession"
-                }
-            ],
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/live/NicoLiveApi.coffee",
-            "line": 36,
-            "description": "指定された放送の情報を取得します。\n\n番組情報が取得できればNicoLiveInfoオブジェクトとともにresolveされます。\n取得中にエラーが発生した場合、エラーメッセージとともにrejectされます。",
-            "params": [
-                {
-                    "name": "liveId",
-                    "description": "放送ID",
-                    "type": "String"
-                }
-            ],
-            "return": {
-                "description": "Promiseオブジェクト",
-                "type": "Promise"
-            },
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/live/NicoLiveApi.coffee",
-            "line": 59,
-            "description": "NicoLiveInfoオブジェクトからNsenChannelのインスタンスを取得します。",
+            "line": 44,
             "params": [
                 {
                     "name": "liveInfo",
@@ -269,60 +267,631 @@
             ],
             "return": {
                 "description": "",
-                "type": "NsenChannel"
+                "type": "Promise"
             },
-            "class": "NicoMyListApi"
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 54,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "property",
+            "name": "_live",
+            "type": "NicoLiveInfo",
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 60,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "property",
+            "name": "_socket",
+            "type": "net.Socket",
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 66,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "property",
+            "name": "_postInfo",
+            "type": "Object",
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 75,
+            "itemtype": "property",
+            "name": "isFirstResponseProsessed",
+            "type": "Boolean",
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 80,
+            "is_constructor": 1,
+            "params": [
+                {
+                    "name": "_live",
+                    "description": "",
+                    "type": "NicoLiveInfo"
+                }
+            ],
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 94,
+            "description": "このインスタンスが保持しているNicoLiveInfoオブジェクトを取得します。",
+            "itemtype": "method",
+            "name": "getLiveInfo",
+            "return": {
+                "description": "",
+                "type": "NicoLiveInfo"
+            },
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 103,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "method",
+            "name": "_canContinue",
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 113,
+            "description": "[Method for testing] Stream given xml data as socket received data.",
+            "access": "private",
+            "tagname": "",
+            "itemtype": "method",
+            "name": "_pourXMLData",
+            "params": [
+                {
+                    "name": "xml",
+                    "description": "",
+                    "type": "String"
+                }
+            ],
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 123,
+            "description": "コメントサーバーへ接続します。\n\n既に接続済みの場合は接続を行いません。\n再接続する場合は `CommentProvider#reconnect`を利用してください。",
+            "itemtype": "method",
+            "name": "connect",
+            "fires": "CommentProvider#did-connect",
+            "params": [
+                {
+                    "name": "options",
+                    "description": "",
+                    "type": "Object",
+                    "optional": true,
+                    "props": [
+                        {
+                            "name": "firstGetComments",
+                            "description": "接続時に取得するコメント数",
+                            "type": "Number",
+                            "optional": true,
+                            "optdefault": "100"
+                        },
+                        {
+                            "name": "timeoutMs",
+                            "description": "タイムアウトまでのミリ秒",
+                            "type": "Number",
+                            "optional": true,
+                            "optdefault": "5000"
+                        }
+                    ]
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 181,
+            "itemtype": "method",
+            "name": "reconnect",
+            "params": [
+                {
+                    "name": "options",
+                    "description": "接続設定（connectメソッドと同じ）",
+                    "type": "Object"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 194,
+            "description": "コメントサーバから切断します。",
+            "itemtype": "method",
+            "name": "disconnect",
+            "fires": "CommentProvider#did-disconnect",
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 211,
+            "description": "APIからpostkeyを取得します。",
+            "access": "private",
+            "tagname": "",
+            "itemtype": "method",
+            "name": "_ferchPostKey",
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 244,
+            "description": "コメントを投稿します。",
+            "itemtype": "method",
+            "name": "postComment",
+            "params": [
+                {
+                    "name": "msg",
+                    "description": "投稿するコメント",
+                    "type": "String"
+                },
+                {
+                    "name": "command",
+                    "description": "コマンド(184, bigなど)",
+                    "type": "String|Array.<String>",
+                    "optional": true
+                },
+                {
+                    "name": "timeoutMs",
+                    "description": "",
+                    "type": "Number",
+                    "optional": true
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 329,
+            "description": "インスタンスを破棄します。",
+            "itemtype": "method",
+            "name": "dispose",
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 344,
+            "description": "コメント受信処理",
+            "access": "private",
+            "tagname": "",
+            "itemtype": "method",
+            "name": "_didReceiveData",
+            "params": [
+                {
+                    "name": "xml",
+                    "description": "",
+                    "type": "String"
+                }
+            ],
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 394,
+            "description": "コネクション上のエラー処理",
+            "access": "private",
+            "tagname": "",
+            "itemtype": "method",
+            "name": "_didErrorOnSocket",
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 404,
+            "description": "コネクションが閉じられた時の処理",
+            "access": "private",
+            "tagname": "",
+            "itemtype": "method",
+            "name": "_didCloseSocket",
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 417,
+            "description": "コメントサーバのスレッドID変更を監視するリスナ",
+            "access": "private",
+            "tagname": "",
+            "itemtype": "method",
+            "name": "_didRefreshLiveInfo",
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 432,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "event",
+            "name": "CommentProvider#did-receive-post-result",
+            "params": [
+                {
+                    "name": "status",
+                    "description": "",
+                    "type": "Number"
+                }
+            ],
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 437,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "method",
+            "name": "_onDidReceivePostResult",
+            "params": [
+                {
+                    "name": "listener",
+                    "description": "",
+                    "type": "Function"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Disposable"
+            },
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 447,
+            "description": "Fire on received and processed thread info and comments first",
+            "itemtype": "event",
+            "name": "CommentProvider#did-process-first-response",
+            "params": [
+                {
+                    "name": "UNKNOWN",
+                    "description": "",
+                    "type": "Array.<NicoLiveComment>"
+                }
+            ],
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 452,
+            "itemtype": "method",
+            "name": "onDidProcessFirstResponse",
+            "params": [
+                {
+                    "name": "listener",
+                    "description": "",
+                    "type": "Function"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Disposable"
+            },
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 461,
+            "description": "Fire on raw response received",
+            "itemtype": "event",
+            "name": "CommentProvider#did-receive-data",
+            "params": [
+                {
+                    "name": "data",
+                    "description": "",
+                    "type": "String"
+                }
+            ],
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 466,
+            "itemtype": "method",
+            "name": "onDidReceiveData",
+            "params": [
+                {
+                    "name": "listener",
+                    "description": "",
+                    "type": "Function"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Disposable"
+            },
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 475,
+            "description": "Fire on comment received",
+            "itemtype": "event",
+            "name": "CommentProvider#did-receive-comment",
+            "params": [
+                {
+                    "name": "comment",
+                    "description": "",
+                    "type": "NicoLiveComment"
+                }
+            ],
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 480,
+            "itemtype": "method",
+            "name": "onDidReceiveComment",
+            "params": [
+                {
+                    "name": "listener",
+                    "description": "",
+                    "type": "Function"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Disposable"
+            },
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 489,
+            "description": "Fire on error raised on Connection",
+            "itemtype": "event",
+            "name": "CommentProvider#did-error",
+            "params": [
+                {
+                    "name": "error",
+                    "description": "",
+                    "type": "Error"
+                }
+            ],
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 494,
+            "itemtype": "method",
+            "name": "onDidError",
+            "params": [
+                {
+                    "name": "listener",
+                    "description": "",
+                    "type": "Function"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Disposable"
+            },
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 503,
+            "description": "Fire on connection closed",
+            "itemtype": "event",
+            "name": "CommentProvider#did-close-connection",
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 507,
+            "itemtype": "method",
+            "name": "onDidCloseConnection",
+            "params": [
+                {
+                    "name": "listener",
+                    "description": "",
+                    "type": "Function"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Disposable"
+            },
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 516,
+            "description": "Fire on live  ended",
+            "itemtype": "event",
+            "name": "CommentProvider#did-end-live",
+            "class": "CommentProvider"
+        },
+        {
+            "file": "src/live/CommentProvider.coffee",
+            "line": 520,
+            "itemtype": "method",
+            "name": "onDidEndLive",
+            "params": [
+                {
+                    "name": "listener",
+                    "description": "",
+                    "type": "Function"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Disposable"
+            },
+            "class": "CommentProvider"
         },
         {
             "file": "src/live/NicoLiveApi.coffee",
-            "line": 71,
+            "line": 14,
+            "params": [
+                {
+                    "name": "_session",
+                    "description": "",
+                    "type": "NicoSession"
+                }
+            ],
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NicoLiveApi.coffee",
+            "line": 21,
+            "description": "指定された放送の情報を取得します。\n\n番組情報が取得できればNicoLiveInfoオブジェクトとともにresolveされます。\n取得中にエラーが発生した場合、エラーメッセージとともにrejectされます。",
+            "params": [
+                {
+                    "name": "liveId",
+                    "description": "放送ID",
+                    "type": "String"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NicoLiveApi.coffee",
+            "line": 42,
+            "description": "NsenChannelのインスタンスを取得します。",
+            "params": [
+                {
+                    "name": "channel",
+                    "description": "",
+                    "type": "String"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NicoLiveApi.coffee",
+            "line": 68,
             "description": "現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。",
-            "class": "NicoMyListApi"
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NicoLiveComment.coffee",
             "line": 1,
-            "description": "ニコニコ生放送のコメント情報モデル。\nBackbone.Modelを継承しています。\n\nMethods\n - NicoLiveComment.fromPlainXml(xml: string)\n      コメントサーバーのレスポンスからNicoLiveCommentインスタンスを生成します。\n\n - isControl(): boolean\n      コメントが運営の制御コメントか判定します。\n - isDistributorPost(): boolean\n      コメントが配信者のものか判定します。\n - isMyPost(): boolean\n      コメントが自分で投稿したものか判定します。\n\nProperties\n - threadId   : number  -- コメントサーバー内のスレッドID\n - date       : Date    -- コメント投稿日時\n - locale     : string  -- 投稿元国情報(\"ja-jp\", \"jp\"など、詳細不明)\n - command    : string  -- コメント投稿時に設定されたコマンド(184など)\n - isMyPost   : boolean -- 自分で投稿したコメントか\n - user                 -- 投稿したユーザー情報\n     - id             : number|string -- ユーザー番号(匿名コメントの場合は文字列）\n     - score          : number        -- このユーザーのNGスコア\n     - accountType    : number        -- アカウント種別(0:一般, 1:プレミアム, 3:配信者)\n     - isPremium      : boolean       -- プレミアム会員かどうか\n     - isAnonymous    : boolean       -- 匿名コメントかどうか",
-            "class": "NicoMyListApi"
+            "description": "Properties\n - threadId   : number  -- コメントサーバー内のスレッドID\n - date       : Date    -- コメント投稿日時\n - locale     : string  -- 投稿元国情報(\"ja-jp\", \"jp\"など、詳細不明)\n - command    : string  -- コメント投稿時に設定されたコマンド(184など)\n - isMyPost   : boolean -- 自分で投稿したコメントか\n - user                 -- 投稿したユーザー情報\n     - id             : number|string -- ユーザー番号(匿名コメントの場合は文字列）\n     - score          : number        -- このユーザーのNGスコア\n     - accountType    : number        -- アカウント種別(0:一般, 1:プレミアム, 3:配信者)\n     - isPremium      : boolean       -- プレミアム会員かどうか\n     - isAnonymous    : boolean       -- 匿名コメントかどうか",
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NicoLiveComment.coffee",
-            "line": 38,
+            "line": 47,
             "description": "規定の形式のXMLからNicoLiveCommentモデルを生成します。\n\nニコ生サーバーから配信されてくる以下のような形式のコメント（１行）を第１引数に渡してください。\n  <chat thread=\"##\" vpos=\"##\" date=\"##\" date_usec=\"##\" user_id=\"##\" premium=\"#\" locale=\"**\">コメント内容</chat>",
             "params": [
                 {
                     "name": "xml",
                     "description": "ニコ生コメントサーバーから受信したXMLコメントデータ",
                     "type": "String"
-                }
-            ],
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/live/NicoLiveInfo.coffee",
-            "line": 99,
-            "description": "valがnullもしくはundefinedの時にdefを返します。",
-            "params": [
-                {
-                    "name": "val",
-                    "description": "",
-                    "type": "Object"
                 },
                 {
-                    "name": "def",
-                    "description": "",
-                    "type": "Object"
+                    "name": "loggedUserId",
+                    "description": "現在ログイン中のユーザーのID",
+                    "type": "Number"
                 }
             ],
             "return": {
                 "description": "",
-                "type": "Object"
+                "type": "NicoLiveComment"
             },
-            "class": "NicoMyListApi"
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NicoLiveInfo.coffee",
-            "line": 182,
+            "line": 69,
+            "itemtype": "property",
+            "name": "",
+            "type": "Object",
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NicoLiveInfo.coffee",
+            "line": 122,
+            "static": 1,
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NicoLiveInfo.coffee",
+            "line": 134,
+            "description": "マイリストが最新の内容に更新された時に発火します",
+            "itemtype": "property",
+            "name": "live",
+            "type": "NicoLiveInfo",
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NicoLiveInfo.coffee",
+            "line": 140,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "property",
+            "name": "_commentProvider",
+            "type": "CommentProvider",
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NicoLiveInfo.coffee",
+            "line": 146,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "property",
+            "name": "_session",
+            "type": "NicoSession",
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NicoLiveInfo.coffee",
+            "line": 152,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "property",
+            "name": "_attr",
+            "type": "Object",
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NicoLiveInfo.coffee",
+            "line": 158,
+            "itemtype": "property",
+            "name": "id",
+            "type": "String",
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NicoLiveInfo.coffee",
+            "line": 163,
             "params": [
                 {
                     "name": "session",
@@ -335,40 +904,91 @@
                     "type": "String"
                 }
             ],
-            "class": "NicoMyListApi"
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NicoLiveInfo.coffee",
-            "line": 205,
-            "description": "自動更新イベントのリスナ",
-            "access": "private",
-            "tagname": "",
-            "class": "NicoMyListApi"
+            "line": 175,
+            "description": "公式放送か調べます。",
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NicoLiveInfo.coffee",
-            "line": 216,
-            "description": "配信終了イベントのリスナ",
-            "access": "private",
-            "tagname": "",
-            "class": "NicoMyListApi"
+            "line": 183,
+            "description": "Nsenのチャンネルか調べます。",
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NicoLiveInfo.coffee",
-            "line": 276,
-            "description": "最初のデータ取得が終了した時の処理を登録します。",
+            "line": 191,
+            "description": "放送が終了しているか調べます。",
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NicoLiveInfo.coffee",
+            "line": 199,
             "params": [
                 {
-                    "name": "fn",
-                    "description": "データ取得後に実行する関数",
-                    "type": "Function"
+                    "name": "path",
+                    "description": "",
+                    "type": "String"
                 }
             ],
-            "class": "NicoMyListApi"
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NicoLiveInfo.coffee",
-            "line": 285,
+            "line": 206,
+            "description": "この放送に対応するCommentProviderオブジェクトを取得します。",
+            "params": [
+                {
+                    "name": "options",
+                    "description": "接続設定",
+                    "type": "Object",
+                    "props": [
+                        {
+                            "name": "firstGetComments",
+                            "description": "接続時に取得するコメント数",
+                            "type": "Number",
+                            "optional": true
+                        },
+                        {
+                            "name": "timeoutMs",
+                            "description": "タイムアウトまでのミリ秒",
+                            "type": "Number",
+                            "optional": true
+                        },
+                        {
+                            "name": "connect",
+                            "description": "trueを指定するとコネクション確立後にresolveします",
+                            "type": "Boolean",
+                            "optional": true,
+                            "optdefault": "true"
+                        }
+                    ]
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NicoLiveInfo.coffee",
+            "line": 230,
             "description": "APIから取得した情報をパースします。",
             "access": "private",
             "tagname": "",
@@ -379,145 +999,341 @@
                     "type": "String"
                 }
             ],
-            "class": "NicoMyListApi"
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NicoLiveInfo.coffee",
-            "line": 366,
+            "line": 310,
             "description": "番組情報を最新の状態に同期します。",
             "return": {
                 "description": "",
                 "type": "Promise"
             },
-            "class": "NicoMyListApi"
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NicoLiveInfo.coffee",
-            "line": 412,
+            "line": 326,
             "description": "現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。",
-            "class": "NicoMyListApi"
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
-            "line": 1,
-            "description": "Nsenのチャンネルと対応するモデルです。\nリクエストの送信とキャンセル、再生中の動画の取得と監視ができます。\n\nTODO:\n WaitListの取得\n\nMethods\n  - getLiveInfo()         : NicoLiveInfo\n      現在接続中の配信のNicoLiveInfoオブジェクトを取得します。\n  - getCurrentVideo()     : NicoVideoInfo|null\n      現在再生中の動画情報を取得します。\n  - getChannelType()      : string\n      チャンネルの種別を取得します。（nsen/***の\"***\"の部分だけ）\n  - isSkipRequestable()   : boolean\n      今現在、スキップリクエストを送ることができるか検証します。\n  - pushRequest(movie: NicoVideoInfo)\n      リクエストを送信します。\n  - cancelRequest()\n      リクエストをキャンセルします。\n  - pushGood()\n      Goodを送信します。\n  - pushSkip()\n      SkipRequestを送信します。\n  - moveToNextLive()\n      次の配信情報を受け取っていれば、次の配信へ移動します。\n\nEvents\n - streamChanged: (newLive: NicoLiveInfo)\n     午前４時以降、インスタンス内部で参照している放送が切り変わった時に発火します。\n - videochanged: (video:NicoVideoInfo|null, beforeVideo:NicoVideoInfo|null)\n     再生中の動画が変わった時に発火します。\n     第２引数に変更後の動画の情報が渡され、第３引数には変更前の動画の情報が渡されます。\n\n - sendRequest:(video:NicoVideoInfo)\n     リクエストが完了した時に発火します。第２引数にリクエストされた動画の情報が渡されます。\n - cancelRequest:(video:NicoVideoInfo)\n     リクエストがキャンセルされた時に発火します。第２引数にキャンセルされた動画の情報が渡されます。\n\n - sendGood:()\n      Goodが送信された時に発火します。\n - sendSkip:()\n      SkipRequestが送信された時に発火します。\n\n - receiveGood:()\n      誰かがGoodを送信した時に発火します。\n - receiveMylist:()\n      誰かが動画をマイリストに追加した時に発火します。\n\n - skipAvailable:()\n      スキップリクエストが送信可能になった時に発火します。\n\n - closing: (liveId:string)\n      午前４時くらいから送られ始める、更新リクエストを受け取った時に発火します。\n      第１引数は移動先の放送IDです。\n\n - ended:()\n      配信が終了した時に発火します。",
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/live/NsenChannel.coffee",
-            "line": 82,
-            "description": "コメント種別判定パターン",
+            "line": 22,
+            "description": "Nsenリクエスト時のエラーコード",
             "itemtype": "property",
-            "name": "{Object.<string, RegExp>",
+            "name": "{Object.<String, String>",
             "final": "",
-            "class": "NicoMyListApi"
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 50,
+            "return": {
+                "description": "Promise"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 60,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "property",
+            "name": "_live",
+            "type": "NicoLiveInfo",
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 66,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "property",
+            "name": "_commentProvider",
+            "type": "CommentProvider",
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 72,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "property",
+            "name": "_session",
+            "type": "NicoSession",
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 78,
+            "description": "再生中の動画情報",
+            "access": "private",
+            "tagname": "",
+            "itemtype": "property",
+            "name": "_playingMovie",
+            "type": "NicoLiveInfo",
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 85,
+            "description": "最後にリクエストした動画情報",
+            "access": "private",
+            "tagname": "",
+            "itemtype": "property",
+            "name": "_requestedMovie",
+            "type": "NicoVideoInfo",
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
             "line": 92,
-            "description": "各チャンネル毎のインスタンス",
-            "type": "{Object.<string, NsenChannel>",
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/live/NsenChannel.coffee",
-            "line": 99,
-            "description": "Nsenチャンネルのハンドラです。\nチャンネル上で発生するイベントを検知して通知します。",
-            "is_constructor": 1,
-            "params": [
-                {
-                    "name": "{NicoLiveInfo",
-                    "description": "liveInfo Nsenの配信を指すLiveInfoオブジェクト"
-                }
-            ],
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/live/NsenChannel.coffee",
-            "line": 108,
-            "description": "Nsenリクエスト時のエラーコード",
-            "itemtype": "property",
-            "name": "{Object.<string, string>",
-            "final": "",
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/live/NsenChannel.coffee",
-            "line": 124,
-            "access": "private",
-            "tagname": "",
-            "type": "{NicoLiveInfo}",
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/live/NsenChannel.coffee",
-            "line": 130,
-            "access": "private",
-            "tagname": "",
-            "type": "{CommentProvider}",
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/live/NsenChannel.coffee",
-            "line": 136,
-            "access": "private",
-            "tagname": "",
-            "type": "{NicoVideoApi}",
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/live/NsenChannel.coffee",
-            "line": 142,
-            "access": "private",
-            "tagname": "",
-            "type": "{NicoLiveApi}",
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/live/NsenChannel.coffee",
-            "line": 148,
-            "access": "private",
-            "tagname": "",
-            "type": "{NicoSession}",
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/live/NsenChannel.coffee",
-            "line": 155,
-            "description": "再生中の動画情報",
-            "access": "private",
-            "tagname": "",
-            "type": "{NicoLiveInfo}",
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/live/NsenChannel.coffee",
-            "line": 162,
-            "description": "最後にリクエストした動画情報",
-            "access": "private",
-            "tagname": "",
-            "type": "{NicoVideoInfo}",
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/live/NsenChannel.coffee",
-            "line": 169,
             "description": "最後にスキップした動画のID。\n比較用なので動画IDだけ。",
             "access": "private",
             "tagname": "",
-            "type": "{string}",
-            "class": "NicoMyListApi"
+            "itemtype": "property",
+            "name": "_lastSkippedMovieId",
+            "type": "String",
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
-            "line": 177,
+            "line": 100,
             "description": "（午前４時遷移時の）移動先の配信のID",
-            "type": "{string}",
-            "class": "NicoMyListApi"
+            "itemtype": "property",
+            "name": "_nextLiveId",
+            "type": "String",
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
-            "line": 237,
+            "line": 107,
+            "params": [
+                {
+                    "name": "liveInfo",
+                    "description": "",
+                    "type": "NicoLiveInfo"
+                },
+                {
+                    "name": "_session",
+                    "description": "",
+                    "type": "NicoSession"
+                }
+            ],
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 128,
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 164,
+            "description": "チャンネルの種類を取得します。",
+            "return": {
+                "description": "\"vocaloid\", \"toho\"など",
+                "type": "String"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 172,
+            "description": "現在接続中の放送のNicoLiveInfoオブジェクトを取得します。",
+            "return": {
+                "description": "",
+                "type": "NicoLiveInfo"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 180,
+            "description": "現在利用しているCommentProviderインスタンスを取得します。",
+            "return": {
+                "description": "",
+                "type": "CommentProvider?"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 188,
+            "description": "現在再生中の動画情報を取得します。",
+            "return": {
+                "description": "",
+                "type": "NicoVideoInfo?"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 196,
+            "return": {
+                "description": "",
+                "type": "NicoVideoInfo?"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 203,
+            "description": "スキップリクエストを送信可能か確認します。\n基本的には、sendSkipイベント、skipAvailableイベントで\n状態の変更を確認するようにします。",
+            "return": {
+                "description": "{boolean"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 214,
+            "access": "private",
+            "tagname": "",
+            "params": [
+                {
+                    "name": "command",
+                    "description": "NicoLive command with \"/\" prefix",
+                    "type": "String"
+                },
+                {
+                    "name": "params",
+                    "description": "command params",
+                    "type": "Array.<String>"
+                }
+            ],
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 248,
+            "description": "Processing /nspanel command",
+            "access": "private",
+            "tagname": "",
+            "params": [
+                {
+                    "name": "op",
+                    "description": "",
+                    "type": "String"
+                },
+                {
+                    "name": "entity",
+                    "description": "",
+                    "type": "String"
+                }
+            ],
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 290,
+            "description": "サーバー側の情報とインスタンスの情報を同期します。",
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 345,
+            "description": "コメントサーバーに再接続します。",
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 365,
+            "description": "リクエストを送信します。",
+            "params": [
+                {
+                    "name": "movie",
+                    "description": "リクエストする動画の動画IDかNicoVideoInfoオブジェクト",
+                    "type": "NicoVideoInfo|String"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 396,
+            "description": "リクエストをキャンセルします",
+            "return": {
+                "description": "キャンセルに成功すればresolveされます。\n  (事前にリクエストが送信されていない場合もresolveされます。）\n  リクエストに失敗した時、エラーメッセージつきでrejectされます。",
+                "type": "Promise"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 424,
+            "description": "Goodを送信します。",
+            "return": {
+                "description": "成功したらresolveされます。\n  失敗した時、エラーメッセージつきでrejectされます。",
+                "type": "Promise"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 448,
+            "description": "SkipRequestを送信します。",
+            "return": {
+                "description": "成功したらresolveされます。\n  失敗した時、エラーメッセージつきでrejectされます。",
+                "type": "Promise"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 477,
+            "description": "コメントを投稿します。",
+            "params": [
+                {
+                    "name": "msg",
+                    "description": "投稿するコメント",
+                    "type": "String"
+                },
+                {
+                    "name": "command",
+                    "description": "コマンド(184, bigなど)",
+                    "type": "String|Array.<String>",
+                    "optional": true
+                },
+                {
+                    "name": "timeoutMs",
+                    "description": "",
+                    "type": "Number",
+                    "optional": true
+                }
+            ],
+            "return": {
+                "description": "投稿に成功すればresolveされ、\n  失敗すればエラーメッセージとともにrejectされます。",
+                "type": "Promise"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 490,
+            "description": "次のチャンネル情報を受信していれば、その配信へ移動します。",
+            "return": {
+                "description": "移動に成功すればresolveされ、それ以外の時にはrejectされます。",
+                "type": "Promise"
+            },
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 516,
             "description": "コメントを受信した時のイベントリスナ。\n\n制御コメントの中からNsen内イベントを通知するコメントを取得して\n関係するイベントを発火させます。",
             "params": [
                 {
@@ -526,11 +1342,11 @@
                     "type": "LiveComment"
                 }
             ],
-            "class": "NicoMyListApi"
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
-            "line": 275,
+            "line": 532,
             "description": "配信情報が更新された時に実行される\n再生中の動画などのデータを取得する",
             "params": [
                 {
@@ -539,24 +1355,26 @@
                     "type": "NicoLiveInfo"
                 }
             ],
-            "class": "NicoMyListApi"
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
-            "line": 294,
+            "line": 549,
             "description": "再生中の動画の変更を検知した時に呼ばれるメソッド",
+            "access": "private",
+            "tagname": "",
             "params": [
                 {
                     "name": "videoId",
-                    "description": "",
+                    "description": "次に再生される動画のID",
                     "type": "String"
                 }
             ],
-            "class": "NicoMyListApi"
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
-            "line": 315,
+            "line": 575,
             "description": "チャンネルの内部放送IDの変更を検知するリスナ",
             "params": [
                 {
@@ -565,175 +1383,279 @@
                     "type": "String"
                 }
             ],
-            "class": "NicoMyListApi"
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
-            "line": 323,
+            "line": 583,
             "description": "放送が終了した時のイベントリスナ",
-            "class": "NicoMyListApi"
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
-            "line": 333,
+            "line": 593,
             "description": "再生中の動画が変わった時のイベントリスナ",
-            "class": "NicoMyListApi"
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
-            "line": 341,
-            "description": "ニコニコ動画APIオブジェクトを取得します。",
-            "access": "private",
-            "tagname": "",
-            "return": {
-                "description": "",
-                "type": "NicoVideoApi"
-            },
-            "class": "NicoMyListApi"
+            "line": 607,
+            "itemtype": "event",
+            "name": "NsenChannel#did-receive-comment",
+            "params": [
+                {
+                    "name": "comment",
+                    "description": "",
+                    "type": "NicoLiveComment"
+                }
+            ],
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
-            "line": 353,
-            "description": "生放送APIオブジェクトを取得します。",
-            "access": "private",
-            "tagname": "",
-            "return": {
-                "description": "",
-                "type": "NicoLiveApi"
-            },
-            "class": "NicoMyListApi"
+            "line": 615,
+            "itemtype": "event",
+            "name": "NsenChannel#did-receive-good",
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
-            "line": 365,
-            "description": "チャンネルの種類を取得します。",
-            "return": {
-                "description": "\"vocaloid\", \"toho\"など",
-                "type": "String"
-            },
-            "class": "NicoMyListApi"
+            "line": 622,
+            "itemtype": "event",
+            "name": "NsenChannel#did-receive-add-mylist",
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
-            "line": 373,
-            "description": "現在接続中の放送のNicoLiveInfoオブジェクトを取得します。",
-            "return": {
-                "description": "",
-                "type": "NicoLiveInfo"
-            },
-            "class": "NicoMyListApi"
+            "line": 629,
+            "itemtype": "event",
+            "name": "NsenChannel#did-push-good",
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
-            "line": 381,
-            "description": "現在再生中の動画情報を取得します。",
-            "return": {
-                "description": "",
-                "type": "NicoVideoInfo?"
-            },
-            "class": "NicoMyListApi"
+            "line": 636,
+            "itemtype": "event",
+            "name": "NsenChannel#did-push-skip",
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
-            "line": 389,
-            "description": "スキップリクエストを送信可能か確認します。\n基本的には、sendSkipイベント、skipAvailableイベントで\n状態の変更を確認するようにします。",
-            "return": {
-                "description": "{boolean"
-            },
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/live/NsenChannel.coffee",
-            "line": 400,
-            "description": "サーバー側の情報とインスタンスの情報を同期します。",
-            "return": {
-                "description": "",
-                "type": "Promise"
-            },
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/live/NsenChannel.coffee",
-            "line": 446,
-            "description": "リクエストを送信します。",
+            "line": 643,
+            "itemtype": "event",
+            "name": "NsenChannel#did-send-request",
             "params": [
                 {
                     "name": "movie",
-                    "description": "リクエストする動画のNicoVideoInfoオブジェクト",
+                    "description": "",
                     "type": "NicoVideoInfo"
                 }
             ],
-            "return": {
-                "description": "リクエストに成功したらresolveされます。\n  リクエストに失敗した時、Errorオブジェクトつきでrejectされます。",
-                "type": "Promise"
-            },
-            "class": "NicoMyListApi"
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
-            "line": 498,
-            "description": "リクエストをキャンセルします",
-            "return": {
-                "description": "キャンセルに成功すればresolveされます。\n  (事前にリクエストが送信されていない場合もresolveされます。）\n  リクエストに失敗した時、エラーメッセージつきでrejectされます。",
-                "type": "Promise"
-            },
-            "class": "NicoMyListApi"
+            "line": 651,
+            "itemtype": "event",
+            "name": "NsenChannel#did-cancel-request",
+            "params": [
+                {
+                    "name": "UNKNOWN",
+                    "description": "",
+                    "type": "NicoVideoInfo"
+                }
+            ],
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
-            "line": 534,
-            "description": "Goodを送信します。",
-            "return": {
-                "description": "成功したらresolveされます。\n  失敗した時、エラーメッセージつきでrejectされます。",
-                "type": "Promise"
-            },
-            "class": "NicoMyListApi"
+            "line": 659,
+            "itemtype": "event",
+            "name": "NsenChannel#did-change-movie",
+            "params": [
+                {
+                    "name": "nextMovie",
+                    "description": "",
+                    "type": "NicoVideoInfo"
+                },
+                {
+                    "name": "beforeMovie",
+                    "description": "",
+                    "type": "NicoVideoInfo"
+                }
+            ],
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
-            "line": 566,
-            "description": "SkipRequestを送信します。",
-            "return": {
-                "description": "成功したらresolveされます。\n  失敗した時、エラーメッセージつきでrejectされます。",
-                "type": "Promise"
-            },
-            "class": "NicoMyListApi"
+            "line": 668,
+            "itemtype": "event",
+            "name": "NsenChannel#did-available-skip",
+            "class": "NsenChannel"
         },
         {
             "file": "src/live/NsenChannel.coffee",
-            "line": 602,
-            "description": "次のチャンネル情報を受信していれば、その配信へ移動します。",
-            "return": {
-                "description": "移動に成功すればresolveされ、それ以外の時にはrejectされます。",
-                "type": "Promise"
-            },
-            "class": "NicoMyListApi"
+            "line": 675,
+            "itemtype": "event",
+            "name": "NsenChannel#will-close",
+            "params": [
+                {
+                    "name": "nextLiveId",
+                    "description": "",
+                    "type": "String"
+                }
+            ],
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 683,
+            "itemtype": "event",
+            "name": "NsenChannel#did-receive-request-state",
+            "params": [
+                {
+                    "name": "newState",
+                    "description": "",
+                    "type": "String"
+                }
+            ],
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 690,
+            "itemtype": "property",
+            "name": "{Number} tv",
+            "type": "Boolean",
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 709,
+            "itemtype": "event",
+            "name": "NsenChannel#did-receive-tvchan-message",
+            "params": [
+                {
+                    "name": "message",
+                    "description": "",
+                    "type": "String"
+                }
+            ],
+            "class": "NsenChannel"
+        },
+        {
+            "file": "src/live/NsenChannel.coffee",
+            "line": 716,
+            "itemtype": "event",
+            "name": "NsenChannel#will-dispose",
+            "class": "NsenChannel"
         },
         {
             "file": "src/mylist/MyList.coffee",
             "line": 1,
-            "description": "ひとつのリストと対応する マイリストのインターフェースです。\nBackbone.Collectionを継承しています。\n\nMethods\n - isDefaultList(): boolean\n      このリストが\"とりあえずマイリスト\"か判定します。\n - attr(attr: string)\n      マイリストの属性（プロパティ）を取得します。\n - add(movie: NicoVideoInfo|string)\n      マイリストに動画を追加します。\n      引数には動画IDを指定することができます。\n      (Backbone.Collection#addは実行されません。)\n\nEvents\n (Backbone.Collection で発生するイベント)\n\nProperties\n attrメソッドを介して取得します。（とりあえずマイリストの場合、属性は一切設定されません。）\n     Example: mylist.attr(\"id\") // -> マイリストIDを取得\n - id             : number    -- マイリストID\n - name           : string    -- リスト名\n - description    : string    -- マイリストの説明\n - public         : boolean   -- 公開マイリストかどうか\n - iconId         : number    -- マイリストのアイコンID\n - defaultSort    : number    -- 標準のソート方法（？）\n - sortOrder      : number    -- ソート方式（？）\n - userId         : number    -- ユーザー番号\n - createTime     : Date      -- マイリストの作成日\n - updateTime     : Date      -- マイリストの更新日",
-            "class": "NicoMyListApi"
+            "description": "Properties\n attrメソッドを介して取得します。（とりあえずマイリストの場合、属性は一切設定されません。）\n     Example: mylist.attr(\"id\") // -> マイリストIDを取得\n - id             : number    -- マイリストID\n - name           : string    -- リスト名\n - description    : string    -- マイリストの説明\n - public         : boolean   -- 公開マイリストかどうか\n - iconId         : number    -- マイリストのアイコンID\n - defaultSort    : number    -- 標準のソート方法（？）\n - sortOrder      : number    -- ソート方式（？）\n - userId         : number    -- ユーザー番号\n - createTime     : Date      -- マイリストの作成日\n - updateTime     : Date      -- マイリストの更新日",
+            "class": "MyListItem"
         },
         {
             "file": "src/mylist/MyList.coffee",
-            "line": 44,
-            "description": "マイリストマイリストグループ（一つのリスト）のコレクションです。\nBackbone.Collectionを継承しています。",
-            "class": "NicoMyListApi"
+            "line": 45,
+            "params": [
+                {
+                    "name": "myListMeta",
+                    "description": "",
+                    "type": "MyListMeta"
+                },
+                {
+                    "name": "session",
+                    "description": "",
+                    "type": "NicoSession"
+                }
+            ],
+            "return": {
+                "description": "Promise"
+            },
+            "class": "MyListItem"
         },
         {
             "file": "src/mylist/MyList.coffee",
-            "line": 97,
-            "description": "マイリストのアイテムを取得します。",
+            "line": 59,
+            "description": "マイリストが最新の内容に更新された時に発火します",
+            "itemtype": "property",
+            "name": "list",
+            "type": "MyList",
+            "class": "MyListItem"
+        },
+        {
+            "file": "src/mylist/MyList.coffee",
+            "line": 65,
+            "description": "マイリストから項目が削除された時に発火します",
+            "itemtype": "property",
+            "name": "{MyListItem}    item",
+            "type": "MyList",
+            "class": "MyListItem"
+        },
+        {
+            "file": "src/mylist/MyList.coffee",
+            "line": 72,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "property",
+            "name": "_session セッション",
+            "type": "NicoSession",
+            "class": "MyListItem"
+        },
+        {
+            "file": "src/mylist/MyList.coffee",
+            "line": 78,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "property",
+            "name": "_urlSet MyList APIのurl",
+            "type": "Object",
+            "class": "MyListItem"
+        },
+        {
+            "file": "src/mylist/MyList.coffee",
+            "line": 84,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "property",
+            "name": "_attr マイリスト情報",
+            "type": "Object",
+            "class": "MyListItem"
+        },
+        {
+            "file": "src/mylist/MyList.coffee",
+            "line": 90,
+            "itemtype": "property",
+            "name": "items 登録されている動画のリスト",
+            "type": "Array.<MyListItem>",
+            "class": "MyListItem"
+        },
+        {
+            "file": "src/mylist/MyList.coffee",
+            "line": 109,
+            "description": "このマイリストが\"とりあえずマイリスト\"か調べます。",
+            "return": {
+                "description": "とりあえずマイリストならtrueを返します。",
+                "type": "Boolean"
+            },
+            "class": "MyListItem"
+        },
+        {
+            "file": "src/mylist/MyList.coffee",
+            "line": 116,
+            "description": "マイリストに登録されている動画を取得します。",
+            "fires": "MyList#refreshed",
             "return": {
                 "description": "",
                 "type": "Promise"
             },
-            "class": "NicoMyListApi"
+            "class": "MyListItem"
         },
         {
             "file": "src/mylist/MyList.coffee",
-            "line": 137,
+            "line": 156,
             "description": "マイリストのメタ情報を取得します。",
             "params": [
                 {
@@ -742,16 +1664,30 @@
                     "type": "String"
                 }
             ],
-            "class": "NicoMyListApi"
+            "class": "MyListItem"
         },
         {
             "file": "src/mylist/MyList.coffee",
-            "line": 145,
+            "line": 163,
+            "access": "private",
+            "tagname": "",
+            "params": [
+                {
+                    "name": "items",
+                    "description": "",
+                    "type": "MyListItem|Array.<MyListItem>"
+                }
+            ],
+            "class": "MyListItem"
+        },
+        {
+            "file": "src/mylist/MyList.coffee",
+            "line": 173,
             "description": "マイリストに動画を追加します。",
             "params": [
                 {
                     "name": "movie",
-                    "description": "追加する、動画情報か動画ID",
+                    "description": "追加する動画のNicoVideoInfoオブジェクトか動画ID",
                     "type": "NicoVideoInfo|string"
                 },
                 {
@@ -761,56 +1697,223 @@
                 }
             ],
             "return": {
-                "description": "動画の追加に成功すればresolve、失敗した時はエラーメッセージとともにrejectされます。",
+                "description": "",
                 "type": "Promise"
             },
-            "class": "NicoMyListApi"
+            "class": "MyListItem"
+        },
+        {
+            "file": "src/mylist/MyList.coffee",
+            "line": 225,
+            "description": "マイリストから項目を削除します。\n\n渡されたアイテム内のこのリストの項目でないものは無視されます。",
+            "params": [
+                {
+                    "name": "items",
+                    "description": "削除する項目の配列",
+                    "type": "MyListItem|Array.<MyListItem>"
+                }
+            ],
+            "return": {
+                "description": "成功した時に削除された項目数でresolveします。",
+                "type": "Promise"
+            },
+            "class": "MyListItem"
+        },
+        {
+            "file": "src/mylist/MyList.coffee",
+            "line": 265,
+            "description": "マイリストから別のマイリストへ項目を移動します。\n\n渡された項目内のこのリストの項目でないものは無視されます。",
+            "params": [
+                {
+                    "name": "items",
+                    "description": "移動する項目の配列",
+                    "type": "MyListItem|Array.<MyListItem>"
+                },
+                {
+                    "name": "targetMyList",
+                    "description": "移動先のマイリスト",
+                    "type": "MyList"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": "MyListItem"
         },
         {
             "file": "src/mylist/MyListItem.coffee",
-            "line": 1,
-            "description": "マイリストの項目モデルです。\nBackbone.Modelを継承しています。\n\nProperties\n getメソッドを通じて第１階層まで取得できます。\n Example. mylistItem.get(\"movie\").title\n\n - id             : number    -- マイリスト項目ID\n - type           : number    -- 項目の種類（動画、静画など）\n - description    : string    -- マイリストコメント\n - createTime     : Date      -- 追加日\n - updateTime     : Date      -- 更新日（？）\n - watch          : number    -- 不明\n - movie          : Object    -- 動画情報\n     - id             : string    -- 動画ID\n     - title          : string    -- 動画タイトル\n     - length         : number    -- 動画の長さ（秒）\n     - thumbnail      : string    -- サムネイル画像のURL\n\n     - groupType      : string    -- 不明\n     - lastResponse   : string    -- 最近投稿されたコメントの一部\n     - isDeleted      : boolean   -- 削除されているか\n\n     - updateTime     : Date      -- この情報の最終更新日時（？）\n     - firtsRetrieve  : Date      -- 動画投稿日\n\n     - count                  -- カウンタ系の情報が詰められたオブジェクト\n         - view       : number    -- 再生数\n         - comments   : number    -- コメント数\n         - mylist     : number    -- マイリスト数",
-            "class": "NicoMyListApi"
+            "line": 45,
+            "static": 1,
+            "itemtype": "property",
+            "name": "ItemTypes           アイテムの種類のリスト",
+            "type": "Object",
+            "class": "MyListItem",
+            "subprops": [
+                {
+                    "name": "ItemTypes.movie",
+                    "description": "動画",
+                    "type": "Number"
+                },
+                {
+                    "name": "ItemTypes.seiga",
+                    "description": "静画",
+                    "type": "Number"
+                }
+            ]
         },
         {
-            "file": "src/mylist/MyListMeta.coffee",
-            "line": 1,
-            "description": "ひとつのリストを表すのモデルです。\nこのモデルからマイリストを操作することはできません。\n\nMethods\n  - attr(attr: string)\n      指定したプロパティの値を取得します。\n  - isDefaultList(): boolean\n      このリストが\"とりあえずマイリスト\"か判定します。\n  - getInterface(): MyList\n      現在のインスタンスのマイリストと対応するMyListインスタンスを取得します。\n  - toJSON(): Object\n      インスタンスのプロパティを複製します。\n\nEvents\n  (none)\n\nProperties\n  attrメソッドを介して取得します。（とりあえずマイリストの場合,idとname以外設定されません。）\n      Example. mylist.attr(\"id\") // -> マイリストIDを取得\n\n  - id            : number    -- マイリストID\n  - name          : string    -- リスト名\n  - description   : string    -- マイリストの説明\n  - public        : boolean   -- 公開マイリストかどうか\n  - iconId        : number    -- マイリストのアイコンID\n  - defaultSort   : number    -- 標準のソート方法（？）\n  - sortOrder     : number    -- ソート方式（？）\n  - userId        : number    -- ユーザー番号\n  - createTime    : Date      -- マイリストの作成日\n  - updateTime    : Date      -- マイリストの更新日",
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/mylist/MyListMeta.coffee",
-            "line": 52,
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/mylist/MyListMeta.coffee",
-            "line": 57,
-            "type": "{NicoMyListApi}",
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/mylist/MyListMeta.coffee",
-            "line": 63,
-            "description": "マイリストのメタ情報を保存しているモデル",
+            "file": "src/mylist/MyListItem.coffee",
+            "line": 67,
+            "description": "MylistAPIの取得結果の一部からMyListItemのオブジェクトを生成します。",
+            "static": 1,
+            "itemtype": "method",
+            "name": "fronApiResponse",
             "params": [
                 {
-                    "name": "groupInfo",
-                    "description": "マイリスト情報（MylistAPI形式）",
+                    "name": "itemInfo",
+                    "description": "",
                     "type": "Object"
                 },
                 {
-                    "name": "fnGetMyListGroup",
-                    "description": "MyListGroupインスタンスを取得するための関数。",
-                    "type": "Function(OmittedMyListGroup)"
+                    "name": "mylist",
+                    "description": "",
+                    "type": "MyList"
                 }
             ],
-            "is_constructor": 1,
-            "class": "NicoMyListApi"
+            "class": "MyListItem"
+        },
+        {
+            "file": "src/mylist/MyListItem.coffee",
+            "line": 117,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "property",
+            "name": "_attr",
+            "type": "Object",
+            "class": "MyListItem"
+        },
+        {
+            "file": "src/mylist/MyListItem.coffee",
+            "line": 122,
+            "itemtype": "property",
+            "name": "id",
+            "type": "Number",
+            "class": "MyListItem"
+        },
+        {
+            "file": "src/mylist/MyListItem.coffee",
+            "line": 126,
+            "params": [
+                {
+                    "name": "path",
+                    "description": "",
+                    "type": "String"
+                }
+            ],
+            "return": {
+                "description": ""
+            },
+            "class": "MyListItem"
+        },
+        {
+            "file": "src/mylist/MyListItem.coffee",
+            "line": 133,
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": "MyListItem"
+        },
+        {
+            "file": "src/mylist/MyListItem.coffee",
+            "line": 139,
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "class": "MyListItem"
+        },
+        {
+            "file": "src/mylist/MyListItem.coffee",
+            "line": 145,
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "class": "MyListItem"
+        },
+        {
+            "file": "src/mylist/MyListItem.coffee",
+            "line": 151,
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "class": "MyListItem"
+        },
+        {
+            "file": "src/mylist/MyListItem.coffee",
+            "line": 157,
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "class": "MyListItem"
         },
         {
             "file": "src/mylist/MyListMeta.coffee",
-            "line": 96,
+            "line": 1,
+            "description": "Methods\n   - attr(attr: string)\n       指定したプロパティの値を取得します。\n   - isDefaultList(): boolean\n       このリストが\"とりあえずマイリスト\"か判定します。\n   - getInterface(): MyList\n       現在のインスタンスのマイリストと対応するMyListインスタンスを取得します。\n   - toJSON(): Object\n       インスタンスのプロパティを複製します。\n\n Events\n   (none)\n\n Properties\n   attrメソッドを介して取得します。（とりあえずマイリストの場合,idとname以外設定されません。）\n       Example. mylist.attr(\"id\") // -> マイリストIDを取得",
+            "class": "MyListMeta"
+        },
+        {
+            "file": "src/mylist/MyListMeta.coffee",
+            "line": 45,
+            "params": [
+                {
+                    "name": "metaInfo",
+                    "description": "Result of mylistgroup/list API",
+                    "type": "Object"
+                }
+            ],
+            "class": "MyListMeta"
+        },
+        {
+            "file": "src/mylist/MyListMeta.coffee",
+            "line": 58,
+            "params": [
+                {
+                    "name": "metaInfo",
+                    "description": "Result of mylistgroup/list API",
+                    "type": "Object"
+                }
+            ],
+            "class": "MyListMeta"
+        },
+        {
+            "file": "src/mylist/MyListMeta.coffee",
+            "line": 86,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "property",
+            "name": "_id",
+            "type": "String|Number",
+            "class": "MyListMeta"
+        },
+        {
+            "file": "src/mylist/MyListMeta.coffee",
+            "line": 92,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "property",
+            "name": "{Date}      _attributes.updateTime      マイリストの更新日",
+            "type": "Number",
+            "class": "MyListMeta"
+        },
+        {
+            "file": "src/mylist/MyListMeta.coffee",
+            "line": 108,
             "description": "指定したプロパティの値を取得します。",
             "params": [
                 {
@@ -819,47 +1922,41 @@
                     "type": "String"
                 }
             ],
-            "class": "NicoMyListApi"
+            "class": "MyListMeta"
         },
         {
             "file": "src/mylist/MyListMeta.coffee",
-            "line": 104,
+            "line": 116,
             "description": "このマイリストが\"とりあえずマイリスト\"か検証します。",
             "return": {
                 "description": "\"とりあえずマイリスト\"ならtrueを返します。",
                 "type": "Boolean"
             },
-            "class": "NicoMyListApi"
+            "class": "MyListMeta"
         },
         {
             "file": "src/mylist/MyListMeta.coffee",
-            "line": 113,
+            "line": 125,
             "description": "オブジェクトと対応するMyListインスタンスを取得します。",
             "return": {
                 "description": "",
                 "type": "Promise"
             },
-            "class": "NicoMyListApi"
+            "class": "MyListMeta"
         },
         {
             "file": "src/mylist/MyListMeta.coffee",
-            "line": 121,
+            "line": 133,
             "description": "インスタンスのプロパティを複製します。",
             "return": {
                 "description": "",
                 "type": "Object"
             },
-            "class": "NicoMyListApi"
+            "class": "MyListMeta"
         },
         {
             "file": "src/mylist/NicoMyListApi.coffee",
-            "line": 1,
-            "description": "ニコニコ動画のマイリスト操作APIのラッピングを行います。\n（参考: http://efcl.info/wiki/niconicoapi/）\n\nMethods\n- fetchListsIndex(withoutDefList: boolean?): Promise\n      マイリストの一覧情報を取得します。\n\n      withoutDefListにtrueを指定すると\"とりあえずマイリスト\"を一覧から除外します。\n      取得に成功したら{Array.<MyListItemIndex>}をresolveし、\n      失敗した時はエラーメッセージとともにrejectされます。\n\n- fetchMyList(id: MyListItemIndex|number?): Promise\n      指定されたMyListItemIndexまたはidと対応する、MyListインスタンスを取得します。\n      取得できればMyListオブジェクトと共にresolveされ、\n      そうでなければエラーメッセージと共にrejectされます\n\nEvents\n  (none)\n\nProperties\n  (none)\n\nTODO Manage MyList instances for support dispose.",
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/mylist/NicoMyListApi.coffee",
-            "line": 50,
+            "line": 24,
             "access": "private",
             "tagname": "",
             "itemtype": "property",
@@ -869,7 +1966,7 @@
         },
         {
             "file": "src/mylist/NicoMyListApi.coffee",
-            "line": 56,
+            "line": 29,
             "description": "認証トークン",
             "access": "private",
             "tagname": "",
@@ -884,7 +1981,7 @@
                     "type": "Number"
                 },
                 {
-                    "name": "toke",
+                    "name": "token",
                     "description": "マイリスト操作用トークン",
                     "type": "String"
                 }
@@ -892,21 +1989,10 @@
         },
         {
             "file": "src/mylist/NicoMyListApi.coffee",
-            "line": 67,
-            "is_constructor": 1,
-            "params": [
-                {
-                    "name": "session",
-                    "description": "",
-                    "type": "NicoSession"
-                }
-            ],
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/mylist/NicoMyListApi.coffee",
-            "line": 76,
+            "line": 49,
             "description": "マイリストを操作するための認証トークンを取得します。",
+            "itemtype": "method",
+            "name": "fetchToken",
             "return": {
                 "description": "",
                 "type": "Promise"
@@ -915,17 +2001,13 @@
         },
         {
             "file": "src/mylist/NicoMyListApi.coffee",
-            "line": 107,
-            "description": "割り当てられている認証チケットを取得します。",
-            "class": "NicoMyListApi"
-        },
-        {
-            "file": "src/mylist/NicoMyListApi.coffee",
-            "line": 114,
-            "description": "マイリストの簡略な一覧情報を取得します。",
+            "line": 77,
+            "description": "マイリストの一覧を取得します。",
+            "itemtype": "method",
+            "name": "fetchMyListsIndex",
             "params": [
                 {
-                    "name": "withoutDefList",
+                    "name": "withoutHome",
                     "description": "trueを指定すると\"とりあえずマイリスト\"を一覧から除外します。",
                     "type": "Boolean"
                 }
@@ -938,8 +2020,10 @@
         },
         {
             "file": "src/mylist/NicoMyListApi.coffee",
-            "line": 162,
+            "line": 113,
             "description": "MyListインスタンスを取得します。",
+            "itemtype": "method",
+            "name": "fetchMyList",
             "params": [
                 {
                     "name": "id",
@@ -954,10 +2038,53 @@
             "class": "NicoMyListApi"
         },
         {
-            "file": "src/mylist/NicoMyListApi.coffee",
-            "line": 203,
-            "description": "現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。",
-            "class": "NicoMyListApi"
+            "file": "src/user/NicoUser.coffee",
+            "line": 9,
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": "NicoVideoApi"
+        },
+        {
+            "file": "src/user/NicoUser.coffee",
+            "line": 39,
+            "params": [
+                {
+                    "name": "res",
+                    "description": "",
+                    "type": "Object"
+                }
+            ],
+            "class": "NicoVideoApi"
+        },
+        {
+            "file": "src/user/NicoUser.coffee",
+            "line": 68,
+            "params": [
+                {
+                    "name": "props",
+                    "description": "",
+                    "type": "Object"
+                }
+            ],
+            "class": "NicoVideoApi"
+        },
+        {
+            "file": "src/user/NicoUserAPI.coffee",
+            "line": 8,
+            "params": [
+                {
+                    "name": "userId",
+                    "description": "",
+                    "type": "Number"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": "NicoVideoApi"
         },
         {
             "file": "src/video/NicoVideoApi.coffee",
@@ -971,7 +2098,7 @@
         },
         {
             "file": "src/video/NicoVideoApi.coffee",
-            "line": 26,
+            "line": 24,
             "description": "動画情報(NicoVideoInfo）を取得します。\n\n動画情報が用意できれば取得したNicoVideoInfoオブジェクトと一緒にresolveされます。",
             "params": [
                 {
@@ -981,88 +2108,40 @@
                 }
             ],
             "return": {
-                "description": "- resolve : (info: NicoVideoInfo)\n- reject : (message: String)",
+                "description": "- resolve : (info: NicoVideoInfo)",
                 "type": "Promise"
             },
             "class": "NicoVideoApi"
         },
         {
-            "file": "src/video/NicoVideoApi.coffee",
-            "line": 47,
-            "description": "現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。",
-            "class": "NicoVideoApi"
-        },
-        {
             "file": "src/video/NicoVideoInfo.coffee",
-            "line": 28,
-            "description": "オブジェクトがNicoVideoInfoのインスタンスか検証します。",
+            "line": 44,
+            "access": "private",
+            "tagname": "",
             "params": [
                 {
-                    "name": "obj",
-                    "description": "",
-                    "type": "Object"
-                }
-            ],
-            "class": "NicoVideoInfo"
-        },
-        {
-            "file": "src/video/NicoVideoInfo.coffee",
-            "line": 55,
-            "description": "データが同期された時に発火します。",
-            "itemtype": "event",
-            "name": "sync",
-            "params": [
-                {
-                    "name": "info",
-                    "description": "",
-                    "type": "NicoVideoInfo"
-                }
-            ],
-            "class": "NicoVideoInfo"
-        },
-        {
-            "file": "src/video/NicoVideoInfo.coffee",
-            "line": 61,
-            "description": "データの同期に失敗した時に発火します。",
-            "itemtype": "event",
-            "name": "error",
-            "params": [
-                {
-                    "name": "info",
-                    "description": "",
-                    "type": "NicoVideoInfo"
-                },
-                {
-                    "name": "err",
-                    "description": "エラーメッセージ",
+                    "name": "resBody",
+                    "description": "getThumbInfoAPIから取得したXML",
                     "type": "String"
                 }
             ],
+            "return": {
+                "description": "",
+                "type": "Object"
+            },
             "class": "NicoVideoInfo"
         },
         {
             "file": "src/video/NicoVideoInfo.coffee",
-            "line": 68,
-            "access": "private",
-            "tagname": "",
+            "line": 126,
             "itemtype": "property",
-            "name": "_session",
-            "type": "NicoSession",
-            "class": "NicoVideoInfo"
-        },
-        {
-            "file": "src/video/NicoVideoInfo.coffee",
-            "line": 75,
-            "access": "private",
-            "tagname": "",
-            "itemtype": "property",
-            "name": "_id",
+            "name": "id",
             "type": "String",
             "class": "NicoVideoInfo"
         },
         {
             "file": "src/video/NicoVideoInfo.coffee",
-            "line": 82,
+            "line": 131,
             "itemtype": "property",
             "name": "attributes",
             "type": "Object",
@@ -1126,7 +2205,7 @@
                 {
                     "name": "tags",
                     "description": "タグ情報",
-                    "type": "Array.<Object>"
+                    "type": "Array<Object>"
                 },
                 {
                     "name": "tags[n].name",
@@ -1172,7 +2251,7 @@
         },
         {
             "file": "src/video/NicoVideoInfo.coffee",
-            "line": 124,
+            "line": 173,
             "description": "動画が削除されているか調べます。",
             "return": {
                 "description": "",
@@ -1182,11 +2261,11 @@
         },
         {
             "file": "src/video/NicoVideoInfo.coffee",
-            "line": 132,
+            "line": 181,
             "description": "属性を取得します。",
             "params": [
                 {
-                    "name": "attr",
+                    "name": "path",
                     "description": "属性名(Ex. \"id\", \"title\", \"user.id\")",
                     "type": "String"
                 }
@@ -1194,45 +2273,356 @@
             "class": "NicoVideoInfo"
         },
         {
-            "file": "src/video/NicoVideoInfo.coffee",
-            "line": 150,
-            "description": "最新の情報を取得します。",
-            "itemtype": "method",
-            "name": "fetch",
-            "return": {
-                "description": "- resolve : (void)\n- reject : (message: String)",
-                "type": "Promise"
-            },
-            "class": "NicoVideoInfo"
-        },
-        {
-            "file": "src/video/NicoVideoInfo.coffee",
-            "line": 187,
-            "access": "private",
-            "tagname": "",
+            "file": "src/APIEndpoints.coffee",
+            "line": 15,
             "params": [
                 {
-                    "name": "getThumbInfoAPIから取得したXML",
+                    "name": "session",
+                    "description": "",
+                    "type": "NicoSession"
+                },
+                {
+                    "name": "options.movieId",
                     "description": "",
                     "type": "String"
                 }
             ],
             "return": {
                 "description": "",
-                "type": "Object"
+                "type": "Promise"
             },
-            "class": "NicoVideoInfo"
+            "class": ""
         },
         {
-            "file": "src/video/NicoVideoInfo.coffee",
-            "line": 263,
-            "description": "インスタンスを破棄します。",
-            "class": "NicoVideoInfo"
+            "file": "src/APIEndpoints.coffee",
+            "line": 26,
+            "params": [
+                {
+                    "name": "UNKNOWN",
+                    "description": "",
+                    "type": "NicoSession"
+                },
+                {
+                    "name": "options.liveId",
+                    "description": "",
+                    "type": "String"
+                }
+            ],
+            "class": ""
         },
         {
-            "file": "src/NicoNico.coffee",
+            "file": "src/APIEndpoints.coffee",
+            "line": 36,
+            "params": [
+                {
+                    "name": "session",
+                    "description": "",
+                    "type": "NicoSession"
+                },
+                {
+                    "name": "options.liveId",
+                    "description": "LiveID",
+                    "type": "String"
+                },
+                {
+                    "name": "options.movieId",
+                    "description": "Request movie ID",
+                    "type": "String"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": ""
+        },
+        {
+            "file": "src/APIEndpoints.coffee",
+            "line": 50,
+            "params": [
+                {
+                    "name": "session",
+                    "description": "",
+                    "type": "NicoSession"
+                },
+                {
+                    "name": "options.liveId",
+                    "description": "LiveID",
+                    "type": "String"
+                }
+            ],
+            "return": {
+                "description": "Promise"
+            },
+            "class": ""
+        },
+        {
+            "file": "src/APIEndpoints.coffee",
+            "line": 63,
+            "params": [
+                {
+                    "name": "session",
+                    "description": "",
+                    "type": "NicoSession"
+                },
+                {
+                    "name": "options.liveId",
+                    "description": "LiveID",
+                    "type": "String"
+                }
+            ],
+            "return": {
+                "description": "Promise"
+            },
+            "class": ""
+        },
+        {
+            "file": "src/APIEndpoints.coffee",
+            "line": 76,
+            "params": [
+                {
+                    "name": "session",
+                    "description": "",
+                    "type": "NicoSession"
+                },
+                {
+                    "name": "options.liveId",
+                    "description": "LiveID",
+                    "type": "String"
+                }
+            ],
+            "return": {
+                "description": "Promise"
+            },
+            "class": ""
+        },
+        {
+            "file": "src/APIEndpoints.coffee",
+            "line": 88,
+            "params": [
+                {
+                    "name": "session",
+                    "description": "",
+                    "type": "NicoSession"
+                },
+                {
+                    "name": "options.liveId",
+                    "description": "LiveID",
+                    "type": "String"
+                }
+            ],
+            "return": {
+                "description": "Promise"
+            },
+            "class": ""
+        },
+        {
+            "file": "src/Emitter.coffee",
+            "line": 21,
+            "params": [
+                {
+                    "name": "event",
+                    "description": "listening event name",
+                    "type": "String"
+                },
+                {
+                    "name": "fn",
+                    "description": "listener",
+                    "type": "Function"
+                },
+                {
+                    "name": "context",
+                    "description": "binding context to listener",
+                    "type": "Object?"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "src/Emitter.coffee",
+            "line": 36,
+            "params": [
+                {
+                    "name": "event",
+                    "description": "listening event name",
+                    "type": "String"
+                },
+                {
+                    "name": "fn",
+                    "description": "listener",
+                    "type": "Function"
+                },
+                {
+                    "name": "context",
+                    "description": "binding context to listener",
+                    "type": "Object?"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "src/Emitter.coffee",
+            "line": 52,
+            "params": [
+                {
+                    "name": "event",
+                    "description": "unlistening event name",
+                    "type": "String"
+                },
+                {
+                    "name": "fn",
+                    "description": "unlistening listener",
+                    "type": "Function?"
+                },
+                {
+                    "name": "context",
+                    "description": "binded context to listener",
+                    "type": "Object?"
+                },
+                {
+                    "name": "once",
+                    "description": "unlistening once listener",
+                    "type": "Boolean?"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "src/NicoSession.coffee",
             "line": 18,
-            "description": "ニコニコ動画へログインし、ハンドラを取得します。",
+            "itemtype": "property",
+            "name": "live",
+            "type": "NicoLive",
+            "class": ""
+        },
+        {
+            "file": "src/NicoSession.coffee",
+            "line": 23,
+            "itemtype": "property",
+            "name": "video",
+            "type": "NicoVideo",
+            "class": ""
+        },
+        {
+            "file": "src/NicoSession.coffee",
+            "line": 28,
+            "itemtype": "property",
+            "name": "mylist",
+            "type": "NicoMyList",
+            "class": ""
+        },
+        {
+            "file": "src/NicoSession.coffee",
+            "line": 33,
+            "itemtype": "property",
+            "name": "sessionId",
+            "type": "String",
+            "class": ""
+        },
+        {
+            "file": "src/NicoSession.coffee",
+            "line": 38,
+            "itemtype": "property",
+            "name": "cookie",
+            "type": "request.CookieJar",
+            "class": ""
+        },
+        {
+            "file": "src/NicoSession.coffee",
+            "line": 43,
+            "access": "private",
+            "tagname": "",
+            "itemtype": "property",
+            "name": "_user",
+            "type": "String",
+            "class": ""
+        },
+        {
+            "file": "src/NicoSession.coffee",
+            "line": 76,
+            "description": "再ログインします。",
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": ""
+        },
+        {
+            "file": "src/NicoSession.coffee",
+            "line": 93,
+            "description": "ログアウトします。",
+            "itemtype": "method",
+            "name": "logout",
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": ""
+        },
+        {
+            "file": "src/NicoSession.coffee",
+            "line": 107,
+            "description": "セッションが有効であるか調べます。",
+            "itemtype": "method",
+            "name": "isActive",
+            "return": {
+                "description": "ネットワークエラー時にrejectされます\n- Resolve: (state: Boolean)",
+                "type": "Promise"
+            },
+            "class": ""
+        },
+        {
+            "file": "src/NicoSession.coffee",
+            "line": 130,
+            "description": "このインスタンスを破棄します。",
+            "itemtype": "method",
+            "name": "dispose",
+            "class": ""
+        },
+        {
+            "file": "src/NicoSession.coffee",
+            "line": 136,
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": ""
+        },
+        {
+            "file": "src/NicoSession.coffee",
+            "line": 163,
+            "description": "ニコニコ動画のログインセッションを確立します。",
+            "params": [
+                {
+                    "name": "user",
+                    "description": "ログインユーザーID",
+                    "type": "String"
+                },
+                {
+                    "name": "password",
+                    "description": "ログインパスワード",
+                    "type": "String"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": ""
+        },
+        {
+            "file": "src/niconico.coffee",
+            "line": 5,
+            "return": {
+                "description": "",
+                "type": "Promise"
+            },
+            "class": ""
+        },
+        {
+            "file": "src/niconico.coffee",
+            "line": 11,
+            "description": "ニコニコ動画へログインし、セッションを取得します。",
             "static": 1,
             "itemtype": "method",
             "name": "login",
@@ -1252,538 +2642,409 @@
                 "description": "",
                 "type": "Promise"
             },
-            "class": "NicoNico"
-        },
-        {
-            "file": "src/NicoNico.coffee",
-            "line": 35,
-            "access": "private",
-            "tagname": "",
-            "itemtype": "property",
-            "name": "_session",
-            "type": "NicoSession",
-            "class": "NicoNico"
-        },
-        {
-            "file": "src/NicoNico.coffee",
-            "line": 42,
-            "access": "private",
-            "tagname": "",
-            "itemtype": "property",
-            "name": "_live",
-            "type": "NicoLive",
-            "class": "NicoNico"
-        },
-        {
-            "file": "src/NicoNico.coffee",
-            "line": 49,
-            "access": "private",
-            "tagname": "",
-            "itemtype": "property",
-            "name": "_video",
-            "type": "NicoVideo",
-            "class": "NicoNico"
-        },
-        {
-            "file": "src/NicoNico.coffee",
-            "line": 56,
-            "access": "private",
-            "tagname": "",
-            "itemtype": "property",
-            "name": "_mylist",
-            "type": "NicoMyList",
-            "class": "NicoNico"
-        },
-        {
-            "file": "src/NicoNico.coffee",
-            "line": 64,
-            "itemtype": "property",
-            "name": "session",
-            "type": "NicoSession",
-            "class": "NicoNico"
-        },
-        {
-            "file": "src/NicoNico.coffee",
-            "line": 69,
-            "itemtype": "property",
-            "name": "live",
-            "type": "NicoLive",
-            "class": "NicoNico"
-        },
-        {
-            "file": "src/NicoNico.coffee",
-            "line": 74,
-            "itemtype": "property",
-            "name": "video",
-            "type": "NicoVideo",
-            "class": "NicoNico"
-        },
-        {
-            "file": "src/NicoNico.coffee",
-            "line": 79,
-            "itemtype": "property",
-            "name": "mylist",
-            "type": "NicoMyList",
-            "class": "NicoNico"
-        },
-        {
-            "file": "src/NicoNico.coffee",
-            "line": 106,
-            "description": "インスタンスに紐付いているオブジェクトを破棄し、利用不能にします。",
-            "itemtype": "method",
-            "name": "dispose",
-            "class": "NicoNico"
-        },
-        {
-            "file": "src/NicoSession.coffee",
-            "line": 15,
-            "description": "ログインに成功した時に発火します。",
-            "itemtype": "event",
-            "name": "login",
-            "class": "NicoSession"
-        },
-        {
-            "file": "src/NicoSession.coffee",
-            "line": 20,
-            "description": "ログインに失敗した時に発火します。",
-            "itemtype": "event",
-            "name": "logout",
-            "class": "NicoSession"
-        },
-        {
-            "file": "src/NicoSession.coffee",
-            "line": 25,
-            "access": "private",
-            "tagname": "",
-            "itemtype": "property",
-            "name": "_user",
-            "type": "String",
-            "class": "NicoSession"
-        },
-        {
-            "file": "src/NicoSession.coffee",
-            "line": 32,
-            "access": "private",
-            "tagname": "",
-            "itemtype": "property",
-            "name": "_pass",
-            "type": "String",
-            "class": "NicoSession"
-        },
-        {
-            "file": "src/NicoSession.coffee",
-            "line": 39,
-            "access": "private",
-            "tagname": "",
-            "itemtype": "property",
-            "name": "_sessionKey",
-            "type": "String",
-            "class": "NicoSession"
-        },
-        {
-            "file": "src/NicoSession.coffee",
-            "line": 46,
-            "access": "private",
-            "tagname": "",
-            "itemtype": "property",
-            "name": "_cookieJar",
-            "type": "request.CookieJar",
-            "class": "NicoSession"
-        },
-        {
-            "file": "src/NicoSession.coffee",
-            "line": 68,
-            "description": "現在のログイン情報を元にログインを行います。",
-            "itemtype": "method",
-            "name": "login",
-            "return": {
-                "description": "",
-                "type": "Promise"
-            },
-            "class": "NicoSession"
-        },
-        {
-            "file": "src/NicoSession.coffee",
-            "line": 114,
-            "description": "ログアウトします。",
-            "itemtype": "method",
-            "name": "logout",
-            "return": {
-                "description": "",
-                "type": "Promise"
-            },
-            "class": "NicoSession"
-        },
-        {
-            "file": "src/NicoSession.coffee",
-            "line": 135,
-            "description": "ログイン済みか調べます。",
-            "itemtype": "method",
-            "name": "isLogged",
-            "return": {
-                "description": "",
-                "type": "Boolean"
-            },
-            "class": "NicoSession"
-        },
-        {
-            "file": "src/NicoSession.coffee",
-            "line": 144,
-            "description": "セッションが有効であるか調べます。",
-            "itemtype": "method",
-            "name": "isActive",
-            "return": {
-                "description": "ネットワークエラー時にrejectされます\n- Resolve: (state: Boolean, message: String)\n- Reject: (err: String)",
-                "type": "Promise"
-            },
-            "class": "NicoSession"
-        },
-        {
-            "file": "src/NicoSession.coffee",
-            "line": 175,
-            "description": "セッションIDを設定します。",
-            "itemtype": "method",
-            "name": "setSessionId",
-            "params": [
-                {
-                    "name": "sessionId",
-                    "description": "新しいセッションID",
-                    "type": "String"
-                }
-            ],
-            "class": "NicoSession"
-        },
-        {
-            "file": "src/NicoSession.coffee",
-            "line": 186,
-            "description": "セッションIDを取得します。",
-            "itemtype": "method",
-            "name": "getSessionId",
-            "return": {
-                "description": "",
-                "type": "String"
-            },
-            "class": "NicoSession"
-        },
-        {
-            "file": "src/NicoSession.coffee",
-            "line": 195,
-            "description": "このインスタンスのクッキーを取得します。",
-            "return": {
-                "description": "",
-                "type": "request.CookieJar"
-            },
-            "class": "NicoSession"
-        },
-        {
-            "file": "src/NicoSession.coffee",
-            "line": 216,
-            "description": "このインスタンスを破棄します。",
-            "itemtype": "method",
-            "name": "dispose",
-            "class": "NicoSession"
+            "class": ""
         }
     ],
     "warnings": [
         {
-            "message": "Missing item type\n放送中の番組のコメントの取得と投稿を行うクラスです。\n\nNicoLiveInfo#commentProviderメソッドを通じてインスタンスを取得します。\nBackbone.Collectionを継承しています。\n\nMethods:\n - getLiveInfo(): LiveInfo\n      配信情報オブジェクトを取得します。\n - postComment(msg: string, command: string): Promise\n      コメントを投稿します。\n      投稿に成功すればresolveされ、失敗すれば投稿結果オブジェクトとともにrejectされます。\n      投稿結果オブジェクトは以下の形式のオブジェクトです。\n      {code:number, message:string} -- code:エラーコード, message:エラーメッセージ\n\nEvents:\n - receive: (rawXMLComment: string)\n      コメントサーバーからレスポンスを受け取った際に発火します。\n - add: (model:NicoLiveComment)\n      コメントを受信した際に発火します。\n - error: (error:Error)\n      コネクションエラーが発生した際に発火します。\n - ended: (live: NicoLiveInfo)\n      配信が終了した際に発火します。\n - disconnected:()\n      コメントサーバから切断した時に発火します。\n - closed:()\n      コメントサーバーから切断された際に発火します。",
-            "line": " src/live/CommentProvider.coffee:1"
+            "message": "replacing incorrect tag: propery with property",
+            "line": " src/live/CommentProvider.coffee:54"
         },
         {
-            "message": "Missing item type\nニコニコ生放送APIラッパークラスエントランス\nTODO Manage LiveInfo and NsenChannel instances for support dispose.",
-            "line": " src/live/NicoLiveApi.coffee:1"
+            "message": "replacing incorrect tag: propery with property",
+            "line": " src/live/CommentProvider.coffee:60"
+        },
+        {
+            "message": "replacing incorrect tag: propery with property",
+            "line": " src/live/CommentProvider.coffee:66"
+        },
+        {
+            "message": "unknown tag: fires",
+            "line": " src/live/CommentProvider.coffee:123"
+        },
+        {
+            "message": "unknown tag: fires",
+            "line": " src/live/CommentProvider.coffee:194"
+        },
+        {
+            "message": "param name missing: {Array.<NicoLiveComment>}",
+            "line": " src/live/CommentProvider.coffee:447"
+        },
+        {
+            "message": "replacing incorrect tag: params with param",
+            "line": " src/live/CommentProvider.coffee:461"
+        },
+        {
+            "message": "replacing incorrect tag: params with param",
+            "line": " src/live/CommentProvider.coffee:475"
+        },
+        {
+            "message": "replacing incorrect tag: params with param",
+            "line": " src/live/CommentProvider.coffee:489"
+        },
+        {
+            "message": "replacing incorrect tag: propery with property",
+            "line": " src/live/NicoLiveInfo.coffee:69"
+        },
+        {
+            "message": "param name missing: {NicoVideoInfo}",
+            "line": " src/live/NsenChannel.coffee:651"
+        },
+        {
+            "message": "unknown tag: fires",
+            "line": " src/mylist/MyList.coffee:116"
+        },
+        {
+            "message": "param name missing: {NicoSession}",
+            "line": " src/APIEndpoints.coffee:26"
         },
         {
             "message": "Missing item type",
-            "line": " src/live/NicoLiveApi.coffee:24"
+            "line": " src/live/CommentProvider.coffee:44"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/live/CommentProvider.coffee:80"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/live/NicoLiveApi.coffee:14"
         },
         {
             "message": "Missing item type\n指定された放送の情報を取得します。\n\n番組情報が取得できればNicoLiveInfoオブジェクトとともにresolveされます。\n取得中にエラーが発生した場合、エラーメッセージとともにrejectされます。",
-            "line": " src/live/NicoLiveApi.coffee:36"
+            "line": " src/live/NicoLiveApi.coffee:21"
         },
         {
-            "message": "Missing item type\nNicoLiveInfoオブジェクトからNsenChannelのインスタンスを取得します。",
-            "line": " src/live/NicoLiveApi.coffee:59"
+            "message": "Missing item type\nNsenChannelのインスタンスを取得します。",
+            "line": " src/live/NicoLiveApi.coffee:42"
         },
         {
             "message": "Missing item type\n現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。",
-            "line": " src/live/NicoLiveApi.coffee:71"
+            "line": " src/live/NicoLiveApi.coffee:68"
         },
         {
-            "message": "Missing item type\nニコニコ生放送のコメント情報モデル。\nBackbone.Modelを継承しています。\n\nMethods\n - NicoLiveComment.fromPlainXml(xml: string)\n      コメントサーバーのレスポンスからNicoLiveCommentインスタンスを生成します。\n\n - isControl(): boolean\n      コメントが運営の制御コメントか判定します。\n - isDistributorPost(): boolean\n      コメントが配信者のものか判定します。\n - isMyPost(): boolean\n      コメントが自分で投稿したものか判定します。\n\nProperties\n - threadId   : number  -- コメントサーバー内のスレッドID\n - date       : Date    -- コメント投稿日時\n - locale     : string  -- 投稿元国情報(\"ja-jp\", \"jp\"など、詳細不明)\n - command    : string  -- コメント投稿時に設定されたコマンド(184など)\n - isMyPost   : boolean -- 自分で投稿したコメントか\n - user                 -- 投稿したユーザー情報\n     - id             : number|string -- ユーザー番号(匿名コメントの場合は文字列）\n     - score          : number        -- このユーザーのNGスコア\n     - accountType    : number        -- アカウント種別(0:一般, 1:プレミアム, 3:配信者)\n     - isPremium      : boolean       -- プレミアム会員かどうか\n     - isAnonymous    : boolean       -- 匿名コメントかどうか",
+            "message": "Missing item type\nProperties\n - threadId   : number  -- コメントサーバー内のスレッドID\n - date       : Date    -- コメント投稿日時\n - locale     : string  -- 投稿元国情報(\"ja-jp\", \"jp\"など、詳細不明)\n - command    : string  -- コメント投稿時に設定されたコマンド(184など)\n - isMyPost   : boolean -- 自分で投稿したコメントか\n - user                 -- 投稿したユーザー情報\n     - id             : number|string -- ユーザー番号(匿名コメントの場合は文字列）\n     - score          : number        -- このユーザーのNGスコア\n     - accountType    : number        -- アカウント種別(0:一般, 1:プレミアム, 3:配信者)\n     - isPremium      : boolean       -- プレミアム会員かどうか\n     - isAnonymous    : boolean       -- 匿名コメントかどうか",
             "line": " src/live/NicoLiveComment.coffee:1"
         },
         {
             "message": "Missing item type\n規定の形式のXMLからNicoLiveCommentモデルを生成します。\n\nニコ生サーバーから配信されてくる以下のような形式のコメント（１行）を第１引数に渡してください。\n  <chat thread=\"##\" vpos=\"##\" date=\"##\" date_usec=\"##\" user_id=\"##\" premium=\"#\" locale=\"**\">コメント内容</chat>",
-            "line": " src/live/NicoLiveComment.coffee:38"
-        },
-        {
-            "message": "Missing item type\nvalがnullもしくはundefinedの時にdefを返します。",
-            "line": " src/live/NicoLiveInfo.coffee:99"
+            "line": " src/live/NicoLiveComment.coffee:47"
         },
         {
             "message": "Missing item type",
-            "line": " src/live/NicoLiveInfo.coffee:182"
+            "line": " src/live/NicoLiveInfo.coffee:122"
         },
         {
-            "message": "Missing item type\n自動更新イベントのリスナ",
-            "line": " src/live/NicoLiveInfo.coffee:205"
+            "message": "Missing item type",
+            "line": " src/live/NicoLiveInfo.coffee:163"
         },
         {
-            "message": "Missing item type\n配信終了イベントのリスナ",
-            "line": " src/live/NicoLiveInfo.coffee:216"
+            "message": "Missing item type\n公式放送か調べます。",
+            "line": " src/live/NicoLiveInfo.coffee:175"
         },
         {
-            "message": "Missing item type\n最初のデータ取得が終了した時の処理を登録します。",
-            "line": " src/live/NicoLiveInfo.coffee:276"
+            "message": "Missing item type\nNsenのチャンネルか調べます。",
+            "line": " src/live/NicoLiveInfo.coffee:183"
+        },
+        {
+            "message": "Missing item type\n放送が終了しているか調べます。",
+            "line": " src/live/NicoLiveInfo.coffee:191"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/live/NicoLiveInfo.coffee:199"
+        },
+        {
+            "message": "Missing item type\nこの放送に対応するCommentProviderオブジェクトを取得します。",
+            "line": " src/live/NicoLiveInfo.coffee:206"
         },
         {
             "message": "Missing item type\nAPIから取得した情報をパースします。",
-            "line": " src/live/NicoLiveInfo.coffee:285"
+            "line": " src/live/NicoLiveInfo.coffee:230"
         },
         {
             "message": "Missing item type\n番組情報を最新の状態に同期します。",
-            "line": " src/live/NicoLiveInfo.coffee:366"
+            "line": " src/live/NicoLiveInfo.coffee:310"
         },
         {
             "message": "Missing item type\n現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。",
-            "line": " src/live/NicoLiveInfo.coffee:412"
-        },
-        {
-            "message": "Missing item type\nNsenのチャンネルと対応するモデルです。\nリクエストの送信とキャンセル、再生中の動画の取得と監視ができます。\n\nTODO:\n WaitListの取得\n\nMethods\n  - getLiveInfo()         : NicoLiveInfo\n      現在接続中の配信のNicoLiveInfoオブジェクトを取得します。\n  - getCurrentVideo()     : NicoVideoInfo|null\n      現在再生中の動画情報を取得します。\n  - getChannelType()      : string\n      チャンネルの種別を取得します。（nsen/***の\"***\"の部分だけ）\n  - isSkipRequestable()   : boolean\n      今現在、スキップリクエストを送ることができるか検証します。\n  - pushRequest(movie: NicoVideoInfo)\n      リクエストを送信します。\n  - cancelRequest()\n      リクエストをキャンセルします。\n  - pushGood()\n      Goodを送信します。\n  - pushSkip()\n      SkipRequestを送信します。\n  - moveToNextLive()\n      次の配信情報を受け取っていれば、次の配信へ移動します。\n\nEvents\n - streamChanged: (newLive: NicoLiveInfo)\n     午前４時以降、インスタンス内部で参照している放送が切り変わった時に発火します。\n - videochanged: (video:NicoVideoInfo|null, beforeVideo:NicoVideoInfo|null)\n     再生中の動画が変わった時に発火します。\n     第２引数に変更後の動画の情報が渡され、第３引数には変更前の動画の情報が渡されます。\n\n - sendRequest:(video:NicoVideoInfo)\n     リクエストが完了した時に発火します。第２引数にリクエストされた動画の情報が渡されます。\n - cancelRequest:(video:NicoVideoInfo)\n     リクエストがキャンセルされた時に発火します。第２引数にキャンセルされた動画の情報が渡されます。\n\n - sendGood:()\n      Goodが送信された時に発火します。\n - sendSkip:()\n      SkipRequestが送信された時に発火します。\n\n - receiveGood:()\n      誰かがGoodを送信した時に発火します。\n - receiveMylist:()\n      誰かが動画をマイリストに追加した時に発火します。\n\n - skipAvailable:()\n      スキップリクエストが送信可能になった時に発火します。\n\n - closing: (liveId:string)\n      午前４時くらいから送られ始める、更新リクエストを受け取った時に発火します。\n      第１引数は移動先の放送IDです。\n\n - ended:()\n      配信が終了した時に発火します。",
-            "line": " src/live/NsenChannel.coffee:1"
-        },
-        {
-            "message": "Missing item type\n各チャンネル毎のインスタンス",
-            "line": " src/live/NsenChannel.coffee:92"
-        },
-        {
-            "message": "Missing item type\nNsenチャンネルのハンドラです。\nチャンネル上で発生するイベントを検知して通知します。",
-            "line": " src/live/NsenChannel.coffee:99"
+            "line": " src/live/NicoLiveInfo.coffee:326"
         },
         {
             "message": "Missing item type",
-            "line": " src/live/NsenChannel.coffee:124"
+            "line": " src/live/NsenChannel.coffee:50"
         },
         {
             "message": "Missing item type",
-            "line": " src/live/NsenChannel.coffee:130"
+            "line": " src/live/NsenChannel.coffee:107"
         },
         {
             "message": "Missing item type",
-            "line": " src/live/NsenChannel.coffee:136"
-        },
-        {
-            "message": "Missing item type",
-            "line": " src/live/NsenChannel.coffee:142"
-        },
-        {
-            "message": "Missing item type",
-            "line": " src/live/NsenChannel.coffee:148"
-        },
-        {
-            "message": "Missing item type\n再生中の動画情報",
-            "line": " src/live/NsenChannel.coffee:155"
-        },
-        {
-            "message": "Missing item type\n最後にリクエストした動画情報",
-            "line": " src/live/NsenChannel.coffee:162"
-        },
-        {
-            "message": "Missing item type\n最後にスキップした動画のID。\n比較用なので動画IDだけ。",
-            "line": " src/live/NsenChannel.coffee:169"
-        },
-        {
-            "message": "Missing item type\n（午前４時遷移時の）移動先の配信のID",
-            "line": " src/live/NsenChannel.coffee:177"
-        },
-        {
-            "message": "Missing item type\nコメントを受信した時のイベントリスナ。\n\n制御コメントの中からNsen内イベントを通知するコメントを取得して\n関係するイベントを発火させます。",
-            "line": " src/live/NsenChannel.coffee:237"
-        },
-        {
-            "message": "Missing item type\n配信情報が更新された時に実行される\n再生中の動画などのデータを取得する",
-            "line": " src/live/NsenChannel.coffee:275"
-        },
-        {
-            "message": "Missing item type\n再生中の動画の変更を検知した時に呼ばれるメソッド",
-            "line": " src/live/NsenChannel.coffee:294"
-        },
-        {
-            "message": "Missing item type\nチャンネルの内部放送IDの変更を検知するリスナ",
-            "line": " src/live/NsenChannel.coffee:315"
-        },
-        {
-            "message": "Missing item type\n放送が終了した時のイベントリスナ",
-            "line": " src/live/NsenChannel.coffee:323"
-        },
-        {
-            "message": "Missing item type\n再生中の動画が変わった時のイベントリスナ",
-            "line": " src/live/NsenChannel.coffee:333"
-        },
-        {
-            "message": "Missing item type\nニコニコ動画APIオブジェクトを取得します。",
-            "line": " src/live/NsenChannel.coffee:341"
-        },
-        {
-            "message": "Missing item type\n生放送APIオブジェクトを取得します。",
-            "line": " src/live/NsenChannel.coffee:353"
+            "line": " src/live/NsenChannel.coffee:128"
         },
         {
             "message": "Missing item type\nチャンネルの種類を取得します。",
-            "line": " src/live/NsenChannel.coffee:365"
+            "line": " src/live/NsenChannel.coffee:164"
         },
         {
             "message": "Missing item type\n現在接続中の放送のNicoLiveInfoオブジェクトを取得します。",
-            "line": " src/live/NsenChannel.coffee:373"
+            "line": " src/live/NsenChannel.coffee:172"
+        },
+        {
+            "message": "Missing item type\n現在利用しているCommentProviderインスタンスを取得します。",
+            "line": " src/live/NsenChannel.coffee:180"
         },
         {
             "message": "Missing item type\n現在再生中の動画情報を取得します。",
-            "line": " src/live/NsenChannel.coffee:381"
+            "line": " src/live/NsenChannel.coffee:188"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/live/NsenChannel.coffee:196"
         },
         {
             "message": "Missing item type\nスキップリクエストを送信可能か確認します。\n基本的には、sendSkipイベント、skipAvailableイベントで\n状態の変更を確認するようにします。",
-            "line": " src/live/NsenChannel.coffee:389"
+            "line": " src/live/NsenChannel.coffee:203"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/live/NsenChannel.coffee:214"
+        },
+        {
+            "message": "Missing item type\nProcessing /nspanel command",
+            "line": " src/live/NsenChannel.coffee:248"
         },
         {
             "message": "Missing item type\nサーバー側の情報とインスタンスの情報を同期します。",
-            "line": " src/live/NsenChannel.coffee:400"
+            "line": " src/live/NsenChannel.coffee:290"
+        },
+        {
+            "message": "Missing item type\nコメントサーバーに再接続します。",
+            "line": " src/live/NsenChannel.coffee:345"
         },
         {
             "message": "Missing item type\nリクエストを送信します。",
-            "line": " src/live/NsenChannel.coffee:446"
+            "line": " src/live/NsenChannel.coffee:365"
         },
         {
             "message": "Missing item type\nリクエストをキャンセルします",
-            "line": " src/live/NsenChannel.coffee:498"
+            "line": " src/live/NsenChannel.coffee:396"
         },
         {
             "message": "Missing item type\nGoodを送信します。",
-            "line": " src/live/NsenChannel.coffee:534"
+            "line": " src/live/NsenChannel.coffee:424"
         },
         {
             "message": "Missing item type\nSkipRequestを送信します。",
-            "line": " src/live/NsenChannel.coffee:566"
+            "line": " src/live/NsenChannel.coffee:448"
+        },
+        {
+            "message": "Missing item type\nコメントを投稿します。",
+            "line": " src/live/NsenChannel.coffee:477"
         },
         {
             "message": "Missing item type\n次のチャンネル情報を受信していれば、その配信へ移動します。",
-            "line": " src/live/NsenChannel.coffee:602"
+            "line": " src/live/NsenChannel.coffee:490"
         },
         {
-            "message": "Missing item type\nひとつのリストと対応する マイリストのインターフェースです。\nBackbone.Collectionを継承しています。\n\nMethods\n - isDefaultList(): boolean\n      このリストが\"とりあえずマイリスト\"か判定します。\n - attr(attr: string)\n      マイリストの属性（プロパティ）を取得します。\n - add(movie: NicoVideoInfo|string)\n      マイリストに動画を追加します。\n      引数には動画IDを指定することができます。\n      (Backbone.Collection#addは実行されません。)\n\nEvents\n (Backbone.Collection で発生するイベント)\n\nProperties\n attrメソッドを介して取得します。（とりあえずマイリストの場合、属性は一切設定されません。）\n     Example: mylist.attr(\"id\") // -> マイリストIDを取得\n - id             : number    -- マイリストID\n - name           : string    -- リスト名\n - description    : string    -- マイリストの説明\n - public         : boolean   -- 公開マイリストかどうか\n - iconId         : number    -- マイリストのアイコンID\n - defaultSort    : number    -- 標準のソート方法（？）\n - sortOrder      : number    -- ソート方式（？）\n - userId         : number    -- ユーザー番号\n - createTime     : Date      -- マイリストの作成日\n - updateTime     : Date      -- マイリストの更新日",
+            "message": "Missing item type\nコメントを受信した時のイベントリスナ。\n\n制御コメントの中からNsen内イベントを通知するコメントを取得して\n関係するイベントを発火させます。",
+            "line": " src/live/NsenChannel.coffee:516"
+        },
+        {
+            "message": "Missing item type\n配信情報が更新された時に実行される\n再生中の動画などのデータを取得する",
+            "line": " src/live/NsenChannel.coffee:532"
+        },
+        {
+            "message": "Missing item type\n再生中の動画の変更を検知した時に呼ばれるメソッド",
+            "line": " src/live/NsenChannel.coffee:549"
+        },
+        {
+            "message": "Missing item type\nチャンネルの内部放送IDの変更を検知するリスナ",
+            "line": " src/live/NsenChannel.coffee:575"
+        },
+        {
+            "message": "Missing item type\n放送が終了した時のイベントリスナ",
+            "line": " src/live/NsenChannel.coffee:583"
+        },
+        {
+            "message": "Missing item type\n再生中の動画が変わった時のイベントリスナ",
+            "line": " src/live/NsenChannel.coffee:593"
+        },
+        {
+            "message": "Missing item type\nProperties\n attrメソッドを介して取得します。（とりあえずマイリストの場合、属性は一切設定されません。）\n     Example: mylist.attr(\"id\") // -> マイリストIDを取得\n - id             : number    -- マイリストID\n - name           : string    -- リスト名\n - description    : string    -- マイリストの説明\n - public         : boolean   -- 公開マイリストかどうか\n - iconId         : number    -- マイリストのアイコンID\n - defaultSort    : number    -- 標準のソート方法（？）\n - sortOrder      : number    -- ソート方式（？）\n - userId         : number    -- ユーザー番号\n - createTime     : Date      -- マイリストの作成日\n - updateTime     : Date      -- マイリストの更新日",
             "line": " src/mylist/MyList.coffee:1"
         },
         {
-            "message": "Missing item type\nマイリストマイリストグループ（一つのリスト）のコレクションです。\nBackbone.Collectionを継承しています。",
-            "line": " src/mylist/MyList.coffee:44"
+            "message": "Missing item type",
+            "line": " src/mylist/MyList.coffee:45"
         },
         {
-            "message": "Missing item type\nマイリストのアイテムを取得します。",
-            "line": " src/mylist/MyList.coffee:97"
+            "message": "Missing item type\nこのマイリストが\"とりあえずマイリスト\"か調べます。",
+            "line": " src/mylist/MyList.coffee:109"
+        },
+        {
+            "message": "Missing item type\nマイリストに登録されている動画を取得します。",
+            "line": " src/mylist/MyList.coffee:116"
         },
         {
             "message": "Missing item type\nマイリストのメタ情報を取得します。",
-            "line": " src/mylist/MyList.coffee:137"
+            "line": " src/mylist/MyList.coffee:156"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/mylist/MyList.coffee:163"
         },
         {
             "message": "Missing item type\nマイリストに動画を追加します。",
-            "line": " src/mylist/MyList.coffee:145"
+            "line": " src/mylist/MyList.coffee:173"
         },
         {
-            "message": "Missing item type\nマイリストの項目モデルです。\nBackbone.Modelを継承しています。\n\nProperties\n getメソッドを通じて第１階層まで取得できます。\n Example. mylistItem.get(\"movie\").title\n\n - id             : number    -- マイリスト項目ID\n - type           : number    -- 項目の種類（動画、静画など）\n - description    : string    -- マイリストコメント\n - createTime     : Date      -- 追加日\n - updateTime     : Date      -- 更新日（？）\n - watch          : number    -- 不明\n - movie          : Object    -- 動画情報\n     - id             : string    -- 動画ID\n     - title          : string    -- 動画タイトル\n     - length         : number    -- 動画の長さ（秒）\n     - thumbnail      : string    -- サムネイル画像のURL\n\n     - groupType      : string    -- 不明\n     - lastResponse   : string    -- 最近投稿されたコメントの一部\n     - isDeleted      : boolean   -- 削除されているか\n\n     - updateTime     : Date      -- この情報の最終更新日時（？）\n     - firtsRetrieve  : Date      -- 動画投稿日\n\n     - count                  -- カウンタ系の情報が詰められたオブジェクト\n         - view       : number    -- 再生数\n         - comments   : number    -- コメント数\n         - mylist     : number    -- マイリスト数",
-            "line": " src/mylist/MyListItem.coffee:1"
+            "message": "Missing item type\nマイリストから項目を削除します。\n\n渡されたアイテム内のこのリストの項目でないものは無視されます。",
+            "line": " src/mylist/MyList.coffee:225"
         },
         {
-            "message": "Missing item type\nひとつのリストを表すのモデルです。\nこのモデルからマイリストを操作することはできません。\n\nMethods\n  - attr(attr: string)\n      指定したプロパティの値を取得します。\n  - isDefaultList(): boolean\n      このリストが\"とりあえずマイリスト\"か判定します。\n  - getInterface(): MyList\n      現在のインスタンスのマイリストと対応するMyListインスタンスを取得します。\n  - toJSON(): Object\n      インスタンスのプロパティを複製します。\n\nEvents\n  (none)\n\nProperties\n  attrメソッドを介して取得します。（とりあえずマイリストの場合,idとname以外設定されません。）\n      Example. mylist.attr(\"id\") // -> マイリストIDを取得\n\n  - id            : number    -- マイリストID\n  - name          : string    -- リスト名\n  - description   : string    -- マイリストの説明\n  - public        : boolean   -- 公開マイリストかどうか\n  - iconId        : number    -- マイリストのアイコンID\n  - defaultSort   : number    -- 標準のソート方法（？）\n  - sortOrder     : number    -- ソート方式（？）\n  - userId        : number    -- ユーザー番号\n  - createTime    : Date      -- マイリストの作成日\n  - updateTime    : Date      -- マイリストの更新日",
+            "message": "Missing item type\nマイリストから別のマイリストへ項目を移動します。\n\n渡された項目内のこのリストの項目でないものは無視されます。",
+            "line": " src/mylist/MyList.coffee:265"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/mylist/MyListItem.coffee:126"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/mylist/MyListItem.coffee:133"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/mylist/MyListItem.coffee:139"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/mylist/MyListItem.coffee:145"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/mylist/MyListItem.coffee:151"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/mylist/MyListItem.coffee:157"
+        },
+        {
+            "message": "Missing item type\nMethods\n   - attr(attr: string)\n       指定したプロパティの値を取得します。\n   - isDefaultList(): boolean\n       このリストが\"とりあえずマイリスト\"か判定します。\n   - getInterface(): MyList\n       現在のインスタンスのマイリストと対応するMyListインスタンスを取得します。\n   - toJSON(): Object\n       インスタンスのプロパティを複製します。\n\n Events\n   (none)\n\n Properties\n   attrメソッドを介して取得します。（とりあえずマイリストの場合,idとname以外設定されません。）\n       Example. mylist.attr(\"id\") // -> マイリストIDを取得",
             "line": " src/mylist/MyListMeta.coffee:1"
         },
         {
             "message": "Missing item type",
-            "line": " src/mylist/MyListMeta.coffee:52"
+            "line": " src/mylist/MyListMeta.coffee:45"
         },
         {
             "message": "Missing item type",
-            "line": " src/mylist/MyListMeta.coffee:57"
-        },
-        {
-            "message": "Missing item type\nマイリストのメタ情報を保存しているモデル",
-            "line": " src/mylist/MyListMeta.coffee:63"
+            "line": " src/mylist/MyListMeta.coffee:58"
         },
         {
             "message": "Missing item type\n指定したプロパティの値を取得します。",
-            "line": " src/mylist/MyListMeta.coffee:96"
+            "line": " src/mylist/MyListMeta.coffee:108"
         },
         {
             "message": "Missing item type\nこのマイリストが\"とりあえずマイリスト\"か検証します。",
-            "line": " src/mylist/MyListMeta.coffee:104"
+            "line": " src/mylist/MyListMeta.coffee:116"
         },
         {
             "message": "Missing item type\nオブジェクトと対応するMyListインスタンスを取得します。",
-            "line": " src/mylist/MyListMeta.coffee:113"
+            "line": " src/mylist/MyListMeta.coffee:125"
         },
         {
             "message": "Missing item type\nインスタンスのプロパティを複製します。",
-            "line": " src/mylist/MyListMeta.coffee:121"
-        },
-        {
-            "message": "Missing item type\nニコニコ動画のマイリスト操作APIのラッピングを行います。\n（参考: http://efcl.info/wiki/niconicoapi/）\n\nMethods\n- fetchListsIndex(withoutDefList: boolean?): Promise\n      マイリストの一覧情報を取得します。\n\n      withoutDefListにtrueを指定すると\"とりあえずマイリスト\"を一覧から除外します。\n      取得に成功したら{Array.<MyListItemIndex>}をresolveし、\n      失敗した時はエラーメッセージとともにrejectされます。\n\n- fetchMyList(id: MyListItemIndex|number?): Promise\n      指定されたMyListItemIndexまたはidと対応する、MyListインスタンスを取得します。\n      取得できればMyListオブジェクトと共にresolveされ、\n      そうでなければエラーメッセージと共にrejectされます\n\nEvents\n  (none)\n\nProperties\n  (none)\n\nTODO Manage MyList instances for support dispose.",
-            "line": " src/mylist/NicoMyListApi.coffee:1"
+            "line": " src/mylist/MyListMeta.coffee:133"
         },
         {
             "message": "Missing item type",
-            "line": " src/mylist/NicoMyListApi.coffee:67"
+            "line": " src/user/NicoUser.coffee:9"
         },
         {
-            "message": "Missing item type\nマイリストを操作するための認証トークンを取得します。",
-            "line": " src/mylist/NicoMyListApi.coffee:76"
+            "message": "Missing item type",
+            "line": " src/user/NicoUser.coffee:39"
         },
         {
-            "message": "Missing item type\n割り当てられている認証チケットを取得します。",
-            "line": " src/mylist/NicoMyListApi.coffee:107"
+            "message": "Missing item type",
+            "line": " src/user/NicoUser.coffee:68"
         },
         {
-            "message": "Missing item type\nマイリストの簡略な一覧情報を取得します。",
-            "line": " src/mylist/NicoMyListApi.coffee:114"
-        },
-        {
-            "message": "Missing item type\nMyListインスタンスを取得します。",
-            "line": " src/mylist/NicoMyListApi.coffee:162"
-        },
-        {
-            "message": "Missing item type\n現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。",
-            "line": " src/mylist/NicoMyListApi.coffee:203"
+            "message": "Missing item type",
+            "line": " src/user/NicoUserAPI.coffee:8"
         },
         {
             "message": "Missing item type\n動画情報(NicoVideoInfo）を取得します。\n\n動画情報が用意できれば取得したNicoVideoInfoオブジェクトと一緒にresolveされます。",
-            "line": " src/video/NicoVideoApi.coffee:26"
-        },
-        {
-            "message": "Missing item type\n現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。",
-            "line": " src/video/NicoVideoApi.coffee:47"
-        },
-        {
-            "message": "Missing item type\nオブジェクトがNicoVideoInfoのインスタンスか検証します。",
-            "line": " src/video/NicoVideoInfo.coffee:28"
-        },
-        {
-            "message": "Missing item type\n動画が削除されているか調べます。",
-            "line": " src/video/NicoVideoInfo.coffee:124"
-        },
-        {
-            "message": "Missing item type\n属性を取得します。",
-            "line": " src/video/NicoVideoInfo.coffee:132"
+            "line": " src/video/NicoVideoApi.coffee:24"
         },
         {
             "message": "Missing item type",
-            "line": " src/video/NicoVideoInfo.coffee:187"
+            "line": " src/video/NicoVideoInfo.coffee:44"
         },
         {
-            "message": "Missing item type\nインスタンスを破棄します。",
-            "line": " src/video/NicoVideoInfo.coffee:263"
+            "message": "Missing item type\n動画が削除されているか調べます。",
+            "line": " src/video/NicoVideoInfo.coffee:173"
         },
         {
-            "message": "Missing item type\nこのインスタンスのクッキーを取得します。",
-            "line": " src/NicoSession.coffee:195"
+            "message": "Missing item type\n属性を取得します。",
+            "line": " src/video/NicoVideoInfo.coffee:181"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/APIEndpoints.coffee:15"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/APIEndpoints.coffee:26"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/APIEndpoints.coffee:36"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/APIEndpoints.coffee:50"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/APIEndpoints.coffee:63"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/APIEndpoints.coffee:76"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/APIEndpoints.coffee:88"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/Emitter.coffee:21"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/Emitter.coffee:36"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/Emitter.coffee:52"
+        },
+        {
+            "message": "Missing item type\n再ログインします。",
+            "line": " src/NicoSession.coffee:76"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/NicoSession.coffee:136"
+        },
+        {
+            "message": "Missing item type\nニコニコ動画のログインセッションを確立します。",
+            "line": " src/NicoSession.coffee:163"
+        },
+        {
+            "message": "Missing item type",
+            "line": " src/niconico.coffee:5"
         }
     ]
 }
