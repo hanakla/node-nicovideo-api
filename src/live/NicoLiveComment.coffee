@@ -12,6 +12,7 @@
 #      - isPremium      : boolean       -- プレミアム会員かどうか
 #      - isAnonymous    : boolean       -- 匿名コメントかどうか
 ###
+_ = require "lodash"
 __ = require "lodash-deep"
 Cheerio = require "cheerio"
 deepFreeze = require "deep-freeze"
@@ -68,7 +69,7 @@ class NicoLiveComment
             isMyPost: ($xml.attr("yourpost") is "1" or (($xml.attr("user_id")|0) is loggedUserId))
 
             user    :
-                id          : $xml.attr("user_id")|0
+                id          : if _.isNaN(parseInt(ref = $xml.attr("user_id"), 10)) then ref else (ref | 0)
                 score       : $xml.attr("score")|0
                 accountType : $xml.attr("premium")|0
                 isPremium   : ($xml.attr("premium")|0) > 0
