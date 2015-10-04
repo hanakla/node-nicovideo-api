@@ -1,57 +1,37 @@
-###
-# このモジュールでは以下のイベントが発生します。
-#   "login"  : ニコニコ動画へログインした時に発生します。
-#   "logout" : ニコニコ動画からログアウトした時に発生します。
-###
+NicoSession = require "./NicoSession"
+deepFreeze = require "deep-freeze"
 
-NicoSession  = require "./api/NicoSession"
-NicoLive        = require "./api/live/NicoLiveApi"
-NicoMyList      = require "./api/mylist/NicoMyListApi"
-NicoVideo       = require "./api/video/NicoVideoApi"
-
-
-class Nico
-    @Session    = NicoSession
-    @Live       = NicoLive
-    @MyList     = NicoMyList
-    @Video      = NicoVideo
-
-    _session     : null
-
-    # _live        : null # Lazy initialize
-    # _video       : null # Lazy initialize
-    # _mylist      : null # Lazy initialize
-
-    constructor     : (user, password) ->
-        @_session = new NicoSession user, password
-
-        Object.defineProperties @,
-            session :
-                get     : -> @_session
-                set     : ->
-            live    :
-                get     : -> @_live ?= new NicoLive @_session
-                set     : ->
-            video   :
-                get     : -> @_video ?= new NicoVideo @_session
-                set     : ->
-            mylist  :
-                get     : -> @_mylist ?= new NicoMyList @_session
-                set     : ->
-
-
-    loginThen : (resolved, rejected) ->
-        @_session.loginThen resolved, rejected
-
+module.exports =
+    ###*
+    # @return {Promise}
+    ###
+    restoreSession : (json) ->
+        NicoSession.fromJSON(json)
 
     ###*
-    # 現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。
+    # ニコニコ動画へログインし、セッションを取得します。
+    #
+    # @static
+    # @method login
+    # @param {String}   user        ログインユーザーID
+    # @param {String}   password    ログインパスワード
+    # @return {Promise}
     ###
-    dispose : ->
-        @_session?.dispose()
-        @_live?.dispose()
-        @_video?.dispose()
-        @_mylist?.dispose()
+    login : (user, password) ->
+        NicoSession.login(user, password)
 
 
-module.exports = Nico
+    Nsen : deepFreeze
+        RequestError  :
+            NO_LOGIN        : "not_login"
+            CLOSED          : "nsen_close"
+            REQUIRED_TAG    : "nsen_tag"
+            TOO_LONG        : "nsen_long"
+            REQUESTED       : "nsen_requested"
+
+        Gage :
+            BLUE    : 0
+            GREEN   : 1
+            YELLOW  : 2
+            ORANGE  : 3
+            RED     : 4

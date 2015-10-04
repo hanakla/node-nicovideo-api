@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>CommentProvider</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="icon" href="../assets/favicon.ico">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="hd" class="yui3-g header">
+        <div class="yui3-u-3-4">
+                <h1><img src="../assets/css/logo.png" title="" width="117" height="52"></h1>
+        </div>
+        <div class="yui3-u-1-4 version">
+            <em>API Docs for: </em>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+                    <h2 class="off-left">APIs</h2>
+                    <div id="api-tabview" class="tabview">
+                        <ul class="tabs">
+                            <li><a href="#api-classes">Classes</a></li>
+                            <li><a href="#api-modules">Modules</a></li>
+                        </ul>
+                
+                        <div id="api-tabview-filter">
+                            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+                        </div>
+                
+                        <div id="api-tabview-panel">
+                            <ul id="api-classes" class="apis classes">
+                                <li><a href="../classes/CommentProvider.html">CommentProvider</a></li>
+                                <li><a href="../classes/MyListItem.html">MyListItem</a></li>
+                                <li><a href="../classes/MyListMeta.html">MyListMeta</a></li>
+                                <li><a href="../classes/NicoMyListApi.html">NicoMyListApi</a></li>
+                                <li><a href="../classes/NicoVideoApi.html">NicoVideoApi</a></li>
+                                <li><a href="../classes/NicoVideoInfo.html">NicoVideoInfo</a></li>
+                                <li><a href="../classes/NsenChannel.html">NsenChannel</a></li>
+                            </ul>
+                
+                
+                            <ul id="api-modules" class="apis modules">
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+                    Show:
+                    <label for="api-show-inherited">
+                        <input type="checkbox" id="api-show-inherited" checked>
+                        Inherited
+                    </label>
+            
+                    <label for="api-show-protected">
+                        <input type="checkbox" id="api-show-protected">
+                        Protected
+                    </label>
+            
+                    <label for="api-show-private">
+                        <input type="checkbox" id="api-show-private">
+                        Private
+                    </label>
+                    <label for="api-show-deprecated">
+                        <input type="checkbox" id="api-show-deprecated">
+                        Deprecated
+                    </label>
+            
+                </div>
+            
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+<h1>CommentProvider Class</h1>
+<div class="box meta">
+
+
+        <div class="foundat">
+            Defined in: <a href="../files/src_live_CommentProvider.coffee.html#l1"><code>src&#x2F;live&#x2F;CommentProvider.coffee:1</code></a>
+        </div>
+
+
+</div>
+
+
+<div class="box intro">
+    <p>放送中の番組のコメントの取得と投稿を行うクラスです。</p>
+
+</div>
+
+
+<div id="classdocs" class="tabview">
+    <ul class="api-class-tabs">
+        <li class="api-class-tab index"><a href="#index">Index</a></li>
+
+            <li class="api-class-tab methods"><a href="#methods">Methods</a></li>
+            <li class="api-class-tab properties"><a href="#properties">Properties</a></li>
+            <li class="api-class-tab events"><a href="#events">Events</a></li>
+    </ul>
+
+    <div>
+        <div id="index" class="api-class-tabpanel index">
+            <h2 class="off-left">Item Index</h2>
+
+                <div class="index-section methods">
+                    <h3>Methods</h3>
+
+                    <ul class="index-list methods">
+                            <li class="index-item method private">
+                                <a href="#method__canContinue">_canContinue</a>
+
+                            </li>
+                            <li class="index-item method private">
+                                <a href="#method__didCloseSocket">_didCloseSocket</a>
+
+                            </li>
+                            <li class="index-item method private">
+                                <a href="#method__didErrorOnSocket">_didErrorOnSocket</a>
+
+                            </li>
+                            <li class="index-item method private">
+                                <a href="#method__didReceiveData">_didReceiveData</a>
+
+                            </li>
+                            <li class="index-item method private">
+                                <a href="#method__didRefreshLiveInfo">_didRefreshLiveInfo</a>
+
+                            </li>
+                            <li class="index-item method private">
+                                <a href="#method__ferchPostKey">_ferchPostKey</a>
+
+                            </li>
+                            <li class="index-item method private">
+                                <a href="#method__onDidReceivePostResult">_onDidReceivePostResult</a>
+
+                            </li>
+                            <li class="index-item method private">
+                                <a href="#method__pourXMLData">_pourXMLData</a>
+
+                            </li>
+                            <li class="index-item method">
+                                <a href="#method_connect">connect</a>
+
+                            </li>
+                            <li class="index-item method">
+                                <a href="#method_disconnect">disconnect</a>
+
+                            </li>
+                            <li class="index-item method">
+                                <a href="#method_dispose">dispose</a>
+
+                            </li>
+                            <li class="index-item method">
+                                <a href="#method_getLiveInfo">getLiveInfo</a>
+
+                            </li>
+                            <li class="index-item method">
+                                <a href="#method_onDidCloseConnection">onDidCloseConnection</a>
+
+                            </li>
+                            <li class="index-item method">
+                                <a href="#method_onDidEndLive">onDidEndLive</a>
+
+                            </li>
+                            <li class="index-item method">
+                                <a href="#method_onDidError">onDidError</a>
+
+                            </li>
+                            <li class="index-item method">
+                                <a href="#method_onDidProcessFirstResponse">onDidProcessFirstResponse</a>
+
+                            </li>
+                            <li class="index-item method">
+                                <a href="#method_onDidReceiveComment">onDidReceiveComment</a>
+
+                            </li>
+                            <li class="index-item method">
+                                <a href="#method_onDidReceiveData">onDidReceiveData</a>
+
+                            </li>
+                            <li class="index-item method">
+                                <a href="#method_postComment">postComment</a>
+
+                            </li>
+                            <li class="index-item method">
+                                <a href="#method_reconnect">reconnect</a>
+
+                            </li>
+                    </ul>
+                </div>
+
+                <div class="index-section properties">
+                    <h3>Properties</h3>
+
+                    <ul class="index-list properties">
+                            <li class="index-item property private">
+                                <a href="#property__live">_live</a>
+
+                            </li>
+                            <li class="index-item property private">
+                                <a href="#property__postInfo">_postInfo</a>
+
+                            </li>
+                            <li class="index-item property private">
+                                <a href="#property__socket">_socket</a>
+
+                            </li>
+                            <li class="index-item property">
+                                <a href="#property_isFirstResponseProsessed">isFirstResponseProsessed</a>
+
+                            </li>
+                    </ul>
+                </div>
+
+
+                <div class="index-section events">
+                    <h3>Events</h3>
+
+                    <ul class="index-list events">
+                            <li class="index-item event">
+                                <a href="#event_CommentProvider#did-close-connection">CommentProvider#did-close-connection</a>
+
+                            </li>
+                            <li class="index-item event">
+                                <a href="#event_CommentProvider#did-end-live">CommentProvider#did-end-live</a>
+
+                            </li>
+                            <li class="index-item event">
+                                <a href="#event_CommentProvider#did-error">CommentProvider#did-error</a>
+
+                            </li>
+                            <li class="index-item event">
+                                <a href="#event_CommentProvider#did-process-first-response">CommentProvider#did-process-first-response</a>
+
+                            </li>
+                            <li class="index-item event">
+                                <a href="#event_CommentProvider#did-receive-comment">CommentProvider#did-receive-comment</a>
+
+                            </li>
+                            <li class="index-item event">
+                                <a href="#event_CommentProvider#did-receive-data">CommentProvider#did-receive-data</a>
+
+                            </li>
+                            <li class="index-item event private">
+                                <a href="#event_CommentProvider#did-receive-post-result">CommentProvider#did-receive-post-result</a>
+
+                            </li>
+                    </ul>
+                </div>
+        </div>
+
+            <div id="methods" class="api-class-tabpanel">
+                <h2 class="off-left">Methods</h2>
+
+<div id="method__canContinue" class="method item private">
+    <h3 class="name"><code>_canContinue</code></h3>
+
+        <span class="paren">()</span>
+
+
+
+        <span class="flag private">private</span>
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l103"><code>src&#x2F;live&#x2F;CommentProvider.coffee:103</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        
+    </div>
+
+
+
+
+</div>
+<div id="method__didCloseSocket" class="method item private">
+    <h3 class="name"><code>_didCloseSocket</code></h3>
+
+        <span class="paren">()</span>
+
+
+
+        <span class="flag private">private</span>
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l404"><code>src&#x2F;live&#x2F;CommentProvider.coffee:404</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        <p>コネクションが閉じられた時の処理</p>
+
+    </div>
+
+
+
+
+</div>
+<div id="method__didErrorOnSocket" class="method item private">
+    <h3 class="name"><code>_didErrorOnSocket</code></h3>
+
+        <span class="paren">()</span>
+
+
+
+        <span class="flag private">private</span>
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l394"><code>src&#x2F;live&#x2F;CommentProvider.coffee:394</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        <p>コネクション上のエラー処理</p>
+
+    </div>
+
+
+
+
+</div>
+<div id="method__didReceiveData" class="method item private">
+    <h3 class="name"><code>_didReceiveData</code></h3>
+
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+                <li class="arg">
+                        <code>xml</code>
+                </li>
+            </ul><span class="paren">)</span>
+        </div>
+
+
+
+        <span class="flag private">private</span>
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l344"><code>src&#x2F;live&#x2F;CommentProvider.coffee:344</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        <p>コメント受信処理</p>
+
+    </div>
+
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+                <li class="param">
+                        <code class="param-name">xml</code>
+                        <span class="type">String</span>
+
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                </li>
+            </ul>
+        </div>
+
+
+
+</div>
+<div id="method__didRefreshLiveInfo" class="method item private">
+    <h3 class="name"><code>_didRefreshLiveInfo</code></h3>
+
+        <span class="paren">()</span>
+
+
+
+        <span class="flag private">private</span>
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l417"><code>src&#x2F;live&#x2F;CommentProvider.coffee:417</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        <p>コメントサーバのスレッドID変更を監視するリスナ</p>
+
+    </div>
+
+
+
+
+</div>
+<div id="method__ferchPostKey" class="method item private">
+    <h3 class="name"><code>_ferchPostKey</code></h3>
+
+        <span class="paren">()</span>
+
+        <span class="returns-inline">
+            <span class="type">Promise</span>
+        </span>
+
+
+        <span class="flag private">private</span>
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l211"><code>src&#x2F;live&#x2F;CommentProvider.coffee:211</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        <p>APIからpostkeyを取得します。</p>
+
+    </div>
+
+
+        <div class="returns">
+            <h4>Returns:</h4>
+
+            <div class="returns-description">
+                        <span class="type">Promise</span>:
+            </div>
+        </div>
+
+
+</div>
+<div id="method__onDidReceivePostResult" class="method item private">
+    <h3 class="name"><code>_onDidReceivePostResult</code></h3>
+
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+                <li class="arg">
+                        <code>listener</code>
+                </li>
+            </ul><span class="paren">)</span>
+        </div>
+
+        <span class="returns-inline">
+            <span class="type">Disposable</span>
+        </span>
+
+
+        <span class="flag private">private</span>
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l437"><code>src&#x2F;live&#x2F;CommentProvider.coffee:437</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        
+    </div>
+
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+                <li class="param">
+                        <code class="param-name">listener</code>
+                        <span class="type">Function</span>
+
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                </li>
+            </ul>
+        </div>
+
+        <div class="returns">
+            <h4>Returns:</h4>
+
+            <div class="returns-description">
+                        <span class="type">Disposable</span>:
+            </div>
+        </div>
+
+
+</div>
+<div id="method__pourXMLData" class="method item private">
+    <h3 class="name"><code>_pourXMLData</code></h3>
+
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+                <li class="arg">
+                        <code>xml</code>
+                </li>
+            </ul><span class="paren">)</span>
+        </div>
+
+
+
+        <span class="flag private">private</span>
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l113"><code>src&#x2F;live&#x2F;CommentProvider.coffee:113</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        <p>[Method for testing] Stream given xml data as socket received data.</p>
+
+    </div>
+
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+                <li class="param">
+                        <code class="param-name">xml</code>
+                        <span class="type">String</span>
+
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                </li>
+            </ul>
+        </div>
+
+
+
+</div>
+<div id="method_connect" class="method item">
+    <h3 class="name"><code>connect</code></h3>
+
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+                <li class="arg">
+                        <code class="optional">[options]</code>
+                </li>
+            </ul><span class="paren">)</span>
+        </div>
+
+        <span class="returns-inline">
+            <span class="type">Promise</span>
+        </span>
+
+
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l123"><code>src&#x2F;live&#x2F;CommentProvider.coffee:123</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        <p>コメントサーバーへ接続します。</p>
+<p>既に接続済みの場合は接続を行いません。
+再接続する場合は <code>CommentProvider#reconnect</code>を利用してください。</p>
+
+    </div>
+
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+                <li class="param">
+                        <code class="param-name optional">[options]</code>
+                        <span class="type">Object</span>
+                        <span class="flag optional" title="This parameter is optional.">optional</span>
+
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                        <ul class="params-list">
+                            <li class="param">
+                                    <code class="param-name optional">[firstGetComments=100]</code>
+                                    <span class="type">Number</span>
+                                    <span class="flag optional" title="This parameter is optional.">optional</span>
+
+                                <div class="param-description">
+                                    <p>接続時に取得するコメント数</p>
+
+                                </div>
+
+                            </li>
+                            <li class="param">
+                                    <code class="param-name optional">[timeoutMs=5000]</code>
+                                    <span class="type">Number</span>
+                                    <span class="flag optional" title="This parameter is optional.">optional</span>
+
+                                <div class="param-description">
+                                    <p>タイムアウトまでのミリ秒</p>
+
+                                </div>
+
+                            </li>
+                        </ul>
+                </li>
+            </ul>
+        </div>
+
+        <div class="returns">
+            <h4>Returns:</h4>
+
+            <div class="returns-description">
+                        <span class="type">Promise</span>:
+            </div>
+        </div>
+
+
+</div>
+<div id="method_disconnect" class="method item">
+    <h3 class="name"><code>disconnect</code></h3>
+
+        <span class="paren">()</span>
+
+
+
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l194"><code>src&#x2F;live&#x2F;CommentProvider.coffee:194</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        <p>コメントサーバから切断します。</p>
+
+    </div>
+
+
+
+
+</div>
+<div id="method_dispose" class="method item">
+    <h3 class="name"><code>dispose</code></h3>
+
+        <span class="paren">()</span>
+
+
+
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l329"><code>src&#x2F;live&#x2F;CommentProvider.coffee:329</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        <p>インスタンスを破棄します。</p>
+
+    </div>
+
+
+
+
+</div>
+<div id="method_getLiveInfo" class="method item">
+    <h3 class="name"><code>getLiveInfo</code></h3>
+
+        <span class="paren">()</span>
+
+        <span class="returns-inline">
+            <span class="type">NicoLiveInfo</span>
+        </span>
+
+
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l94"><code>src&#x2F;live&#x2F;CommentProvider.coffee:94</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        <p>このインスタンスが保持しているNicoLiveInfoオブジェクトを取得します。</p>
+
+    </div>
+
+
+        <div class="returns">
+            <h4>Returns:</h4>
+
+            <div class="returns-description">
+                        <span class="type">NicoLiveInfo</span>:
+            </div>
+        </div>
+
+
+</div>
+<div id="method_onDidCloseConnection" class="method item">
+    <h3 class="name"><code>onDidCloseConnection</code></h3>
+
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+                <li class="arg">
+                        <code>listener</code>
+                </li>
+            </ul><span class="paren">)</span>
+        </div>
+
+        <span class="returns-inline">
+            <span class="type">Disposable</span>
+        </span>
+
+
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l507"><code>src&#x2F;live&#x2F;CommentProvider.coffee:507</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        
+    </div>
+
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+                <li class="param">
+                        <code class="param-name">listener</code>
+                        <span class="type">Function</span>
+
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                </li>
+            </ul>
+        </div>
+
+        <div class="returns">
+            <h4>Returns:</h4>
+
+            <div class="returns-description">
+                        <span class="type">Disposable</span>:
+            </div>
+        </div>
+
+
+</div>
+<div id="method_onDidEndLive" class="method item">
+    <h3 class="name"><code>onDidEndLive</code></h3>
+
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+                <li class="arg">
+                        <code>listener</code>
+                </li>
+            </ul><span class="paren">)</span>
+        </div>
+
+        <span class="returns-inline">
+            <span class="type">Disposable</span>
+        </span>
+
+
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l520"><code>src&#x2F;live&#x2F;CommentProvider.coffee:520</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        
+    </div>
+
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+                <li class="param">
+                        <code class="param-name">listener</code>
+                        <span class="type">Function</span>
+
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                </li>
+            </ul>
+        </div>
+
+        <div class="returns">
+            <h4>Returns:</h4>
+
+            <div class="returns-description">
+                        <span class="type">Disposable</span>:
+            </div>
+        </div>
+
+
+</div>
+<div id="method_onDidError" class="method item">
+    <h3 class="name"><code>onDidError</code></h3>
+
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+                <li class="arg">
+                        <code>listener</code>
+                </li>
+            </ul><span class="paren">)</span>
+        </div>
+
+        <span class="returns-inline">
+            <span class="type">Disposable</span>
+        </span>
+
+
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l494"><code>src&#x2F;live&#x2F;CommentProvider.coffee:494</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        
+    </div>
+
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+                <li class="param">
+                        <code class="param-name">listener</code>
+                        <span class="type">Function</span>
+
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                </li>
+            </ul>
+        </div>
+
+        <div class="returns">
+            <h4>Returns:</h4>
+
+            <div class="returns-description">
+                        <span class="type">Disposable</span>:
+            </div>
+        </div>
+
+
+</div>
+<div id="method_onDidProcessFirstResponse" class="method item">
+    <h3 class="name"><code>onDidProcessFirstResponse</code></h3>
+
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+                <li class="arg">
+                        <code>listener</code>
+                </li>
+            </ul><span class="paren">)</span>
+        </div>
+
+        <span class="returns-inline">
+            <span class="type">Disposable</span>
+        </span>
+
+
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l452"><code>src&#x2F;live&#x2F;CommentProvider.coffee:452</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        
+    </div>
+
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+                <li class="param">
+                        <code class="param-name">listener</code>
+                        <span class="type">Function</span>
+
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                </li>
+            </ul>
+        </div>
+
+        <div class="returns">
+            <h4>Returns:</h4>
+
+            <div class="returns-description">
+                        <span class="type">Disposable</span>:
+            </div>
+        </div>
+
+
+</div>
+<div id="method_onDidReceiveComment" class="method item">
+    <h3 class="name"><code>onDidReceiveComment</code></h3>
+
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+                <li class="arg">
+                        <code>listener</code>
+                </li>
+            </ul><span class="paren">)</span>
+        </div>
+
+        <span class="returns-inline">
+            <span class="type">Disposable</span>
+        </span>
+
+
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l480"><code>src&#x2F;live&#x2F;CommentProvider.coffee:480</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        
+    </div>
+
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+                <li class="param">
+                        <code class="param-name">listener</code>
+                        <span class="type">Function</span>
+
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                </li>
+            </ul>
+        </div>
+
+        <div class="returns">
+            <h4>Returns:</h4>
+
+            <div class="returns-description">
+                        <span class="type">Disposable</span>:
+            </div>
+        </div>
+
+
+</div>
+<div id="method_onDidReceiveData" class="method item">
+    <h3 class="name"><code>onDidReceiveData</code></h3>
+
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+                <li class="arg">
+                        <code>listener</code>
+                </li>
+            </ul><span class="paren">)</span>
+        </div>
+
+        <span class="returns-inline">
+            <span class="type">Disposable</span>
+        </span>
+
+
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l466"><code>src&#x2F;live&#x2F;CommentProvider.coffee:466</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        
+    </div>
+
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+                <li class="param">
+                        <code class="param-name">listener</code>
+                        <span class="type">Function</span>
+
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                </li>
+            </ul>
+        </div>
+
+        <div class="returns">
+            <h4>Returns:</h4>
+
+            <div class="returns-description">
+                        <span class="type">Disposable</span>:
+            </div>
+        </div>
+
+
+</div>
+<div id="method_postComment" class="method item">
+    <h3 class="name"><code>postComment</code></h3>
+
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+                <li class="arg">
+                        <code>msg</code>
+                </li>
+                <li class="arg">
+                        <code class="optional">[command]</code>
+                </li>
+                <li class="arg">
+                        <code class="optional">[timeoutMs]</code>
+                </li>
+            </ul><span class="paren">)</span>
+        </div>
+
+        <span class="returns-inline">
+            <span class="type">Promise</span>
+        </span>
+
+
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l244"><code>src&#x2F;live&#x2F;CommentProvider.coffee:244</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        <p>コメントを投稿します。</p>
+
+    </div>
+
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+                <li class="param">
+                        <code class="param-name">msg</code>
+                        <span class="type">String</span>
+
+
+                    <div class="param-description">
+                        <p>投稿するコメント</p>
+
+                    </div>
+
+                </li>
+                <li class="param">
+                        <code class="param-name optional">[command]</code>
+                        <span class="type">String | Array.<String></span>
+                        <span class="flag optional" title="This parameter is optional.">optional</span>
+
+
+                    <div class="param-description">
+                        <p>コマンド(184, bigなど)</p>
+
+                    </div>
+
+                </li>
+                <li class="param">
+                        <code class="param-name optional">[timeoutMs]</code>
+                        <span class="type">Number</span>
+                        <span class="flag optional" title="This parameter is optional.">optional</span>
+
+
+                    <div class="param-description">
+                         
+                    </div>
+
+                </li>
+            </ul>
+        </div>
+
+        <div class="returns">
+            <h4>Returns:</h4>
+
+            <div class="returns-description">
+                        <span class="type">Promise</span>:
+            </div>
+        </div>
+
+
+</div>
+<div id="method_reconnect" class="method item">
+    <h3 class="name"><code>reconnect</code></h3>
+
+        <div class="args">
+            <span class="paren">(</span><ul class="args-list inline commas">
+                <li class="arg">
+                        <code>options</code>
+                </li>
+            </ul><span class="paren">)</span>
+        </div>
+
+        <span class="returns-inline">
+            <span class="type">Promise</span>
+        </span>
+
+
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l181"><code>src&#x2F;live&#x2F;CommentProvider.coffee:181</code></a>
+        </p>
+
+
+
+    </div>
+
+    <div class="description">
+        
+    </div>
+
+        <div class="params">
+            <h4>Parameters:</h4>
+
+            <ul class="params-list">
+                <li class="param">
+                        <code class="param-name">options</code>
+                        <span class="type">Object</span>
+
+
+                    <div class="param-description">
+                        <p>接続設定（connectメソッドと同じ）</p>
+
+                    </div>
+
+                </li>
+            </ul>
+        </div>
+
+        <div class="returns">
+            <h4>Returns:</h4>
+
+            <div class="returns-description">
+                        <span class="type">Promise</span>:
+            </div>
+        </div>
+
+
+</div>
+            </div>
+
+            <div id="properties" class="api-class-tabpanel">
+                <h2 class="off-left">Properties</h2>
+
+<div id="property__live" class="property item private">
+    <h3 class="name"><code>_live</code></h3>
+    <span class="type">NicoLiveInfo</span>
+
+
+        <span class="flag private">private</span>
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l54"><code>src&#x2F;live&#x2F;CommentProvider.coffee:54</code></a>
+        </p>
+
+
+    </div>
+
+    <div class="description">
+        
+    </div>
+
+
+
+</div>
+<div id="property__postInfo" class="property item private">
+    <h3 class="name"><code>_postInfo</code></h3>
+    <span class="type">Object</span>
+
+
+        <span class="flag private">private</span>
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l66"><code>src&#x2F;live&#x2F;CommentProvider.coffee:66</code></a>
+        </p>
+
+
+    </div>
+
+    <div class="description">
+        
+    </div>
+
+
+
+</div>
+<div id="property__socket" class="property item private">
+    <h3 class="name"><code>_socket</code></h3>
+    <span class="type">net.Socket</span>
+
+
+        <span class="flag private">private</span>
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l60"><code>src&#x2F;live&#x2F;CommentProvider.coffee:60</code></a>
+        </p>
+
+
+    </div>
+
+    <div class="description">
+        
+    </div>
+
+
+
+</div>
+<div id="property_isFirstResponseProsessed" class="property item">
+    <h3 class="name"><code>isFirstResponseProsessed</code></h3>
+    <span class="type">Boolean</span>
+
+
+
+
+
+    <div class="meta">
+                <p>
+                Defined in
+        <a href="../files/src_live_CommentProvider.coffee.html#l75"><code>src&#x2F;live&#x2F;CommentProvider.coffee:75</code></a>
+        </p>
+
+
+    </div>
+
+    <div class="description">
+        
+    </div>
+
+
+
+</div>
+            </div>
+
+
+            <div id="events" class="api-class-tabpanel">
+                <h2 class="off-left">Events</h2>
+
+                    <div id="event_CommentProvider#did-close-connection" class="events item">
+                        <h3 class="name"><code>CommentProvider#did-close-connection</code></h3>
+                        <span class="type"></span>
+                    
+                    
+                    
+                    
+                    
+                        <div class="meta">
+                                    <p>
+                                    Defined in
+                            <a href="../files/src_live_CommentProvider.coffee.html#l503"><code>src&#x2F;live&#x2F;CommentProvider.coffee:503</code></a>
+                            </p>
+                    
+                    
+                        </div>
+                    
+                        <div class="description">
+                            <p>Fire on connection closed</p>
+                    
+                        </div>
+                    
+                    
+                    
+                    </div>
+                    <div id="event_CommentProvider#did-end-live" class="events item">
+                        <h3 class="name"><code>CommentProvider#did-end-live</code></h3>
+                        <span class="type"></span>
+                    
+                    
+                    
+                    
+                    
+                        <div class="meta">
+                                    <p>
+                                    Defined in
+                            <a href="../files/src_live_CommentProvider.coffee.html#l516"><code>src&#x2F;live&#x2F;CommentProvider.coffee:516</code></a>
+                            </p>
+                    
+                    
+                        </div>
+                    
+                        <div class="description">
+                            <p>Fire on live  ended</p>
+                    
+                        </div>
+                    
+                    
+                    
+                    </div>
+                    <div id="event_CommentProvider#did-error" class="events item">
+                        <h3 class="name"><code>CommentProvider#did-error</code></h3>
+                        <span class="type"></span>
+                    
+                    
+                    
+                    
+                    
+                        <div class="meta">
+                                    <p>
+                                    Defined in
+                            <a href="../files/src_live_CommentProvider.coffee.html#l489"><code>src&#x2F;live&#x2F;CommentProvider.coffee:489</code></a>
+                            </p>
+                    
+                    
+                        </div>
+                    
+                        <div class="description">
+                            <p>Fire on error raised on Connection</p>
+                    
+                        </div>
+                    
+                            <div class="params">
+                                <h4>Event Payload:</h4>
+                    
+                                <ul class="params-list">
+                                    <li class="param">
+                                            <code class="param-name">error</code>
+                                            <span class="type">Error</span>
+                    
+                    
+                                        <div class="param-description">
+                                             
+                                        </div>
+                    
+                                    </li>
+                                </ul>
+                            </div>
+                    
+                    
+                    </div>
+                    <div id="event_CommentProvider#did-process-first-response" class="events item">
+                        <h3 class="name"><code>CommentProvider#did-process-first-response</code></h3>
+                        <span class="type"></span>
+                    
+                    
+                    
+                    
+                    
+                        <div class="meta">
+                                    <p>
+                                    Defined in
+                            <a href="../files/src_live_CommentProvider.coffee.html#l447"><code>src&#x2F;live&#x2F;CommentProvider.coffee:447</code></a>
+                            </p>
+                    
+                    
+                        </div>
+                    
+                        <div class="description">
+                            <p>Fire on received and processed thread info and comments first</p>
+                    
+                        </div>
+                    
+                            <div class="params">
+                                <h4>Event Payload:</h4>
+                    
+                                <ul class="params-list">
+                                    <li class="param">
+                                            <code class="param-name">UNKNOWN</code>
+                                            <span class="type">Array.<NicoLiveComment></span>
+                    
+                    
+                                        <div class="param-description">
+                                             
+                                        </div>
+                    
+                                    </li>
+                                </ul>
+                            </div>
+                    
+                    
+                    </div>
+                    <div id="event_CommentProvider#did-receive-comment" class="events item">
+                        <h3 class="name"><code>CommentProvider#did-receive-comment</code></h3>
+                        <span class="type"></span>
+                    
+                    
+                    
+                    
+                    
+                        <div class="meta">
+                                    <p>
+                                    Defined in
+                            <a href="../files/src_live_CommentProvider.coffee.html#l475"><code>src&#x2F;live&#x2F;CommentProvider.coffee:475</code></a>
+                            </p>
+                    
+                    
+                        </div>
+                    
+                        <div class="description">
+                            <p>Fire on comment received</p>
+                    
+                        </div>
+                    
+                            <div class="params">
+                                <h4>Event Payload:</h4>
+                    
+                                <ul class="params-list">
+                                    <li class="param">
+                                            <code class="param-name">comment</code>
+                                            <span class="type">NicoLiveComment</span>
+                    
+                    
+                                        <div class="param-description">
+                                             
+                                        </div>
+                    
+                                    </li>
+                                </ul>
+                            </div>
+                    
+                    
+                    </div>
+                    <div id="event_CommentProvider#did-receive-data" class="events item">
+                        <h3 class="name"><code>CommentProvider#did-receive-data</code></h3>
+                        <span class="type"></span>
+                    
+                    
+                    
+                    
+                    
+                        <div class="meta">
+                                    <p>
+                                    Defined in
+                            <a href="../files/src_live_CommentProvider.coffee.html#l461"><code>src&#x2F;live&#x2F;CommentProvider.coffee:461</code></a>
+                            </p>
+                    
+                    
+                        </div>
+                    
+                        <div class="description">
+                            <p>Fire on raw response received</p>
+                    
+                        </div>
+                    
+                            <div class="params">
+                                <h4>Event Payload:</h4>
+                    
+                                <ul class="params-list">
+                                    <li class="param">
+                                            <code class="param-name">data</code>
+                                            <span class="type">String</span>
+                    
+                    
+                                        <div class="param-description">
+                                             
+                                        </div>
+                    
+                                    </li>
+                                </ul>
+                            </div>
+                    
+                    
+                    </div>
+                    <div id="event_CommentProvider#did-receive-post-result" class="events item private">
+                        <h3 class="name"><code>CommentProvider#did-receive-post-result</code></h3>
+                        <span class="type"></span>
+                    
+                    
+                            <span class="flag private">private</span>
+                    
+                    
+                    
+                        <div class="meta">
+                                    <p>
+                                    Defined in
+                            <a href="../files/src_live_CommentProvider.coffee.html#l432"><code>src&#x2F;live&#x2F;CommentProvider.coffee:432</code></a>
+                            </p>
+                    
+                    
+                        </div>
+                    
+                        <div class="description">
+                            
+                        </div>
+                    
+                            <div class="params">
+                                <h4>Event Payload:</h4>
+                    
+                                <ul class="params-list">
+                                    <li class="param">
+                                            <code class="param-name">status</code>
+                                            <span class="type">Number</span>
+                    
+                    
+                                        <div class="param-description">
+                                             
+                                        </div>
+                    
+                                    </li>
+                                </ul>
+                            </div>
+                    
+                    
+                    </div>
+            </div>
+    </div>
+</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>
