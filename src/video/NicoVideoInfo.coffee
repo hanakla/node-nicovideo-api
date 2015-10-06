@@ -177,6 +177,13 @@ class NicoVideoInfo
     isDeleted       : ->
       return @get "isDeleted"
 
+    ###*
+    # この動画のgetflv APIの結果を取得します。
+    # @return {Promise}
+    ###
+    fetchGetFlv : ->
+        @_session.video.getFlv @id
+
 
     ###*
     # 属性を取得します。

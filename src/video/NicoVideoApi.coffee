@@ -1,10 +1,13 @@
+QueryString = require "querystring"
+
 NicoVideoInfo   = require "./NicoVideoInfo"
+APIEndpoints = require "../APIEndpoints"
 
 ###*
 # ニコニコ動画APIへのアクセスを担当するクラス
 # @class NicoVideoApi
 ###
-module.exports = 
+module.exports =
 class NicoVideoApi
     @NicoVideoInfo  = NicoVideoInfo
 
@@ -32,3 +35,10 @@ class NicoVideoApi
     ###
     getVideoInfo    : (movieId) ->
         NicoVideoInfo.fetch movieId, @_session
+
+    ###*
+    # getflv APIの結果を取得します。
+    ###
+    getFlv : (movieId) ->
+        APIEndpoints.video.getFlv(@_session, {movieId}).then (res) ->
+            Promise.resolve QueryString.parse res.body

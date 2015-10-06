@@ -22,6 +22,17 @@ module.exports =
                 url : NicoURL.Video.GET_VIDEO_INFO + movieId
                 jar : session.cookie
 
+        ###*
+        # @param {NicoSession} session
+        # @param {String} options.movieId
+        # @return {Promise}
+        ###
+        getFlv : (session, {movieId}) ->
+            console.log NicoURL.Video.GETFLV + movieId
+            get
+                url : NicoURL.Video.GETFLV + movieId
+                jar : session.cookie
+
     live :
         ###*
         # @param {NicoSession}

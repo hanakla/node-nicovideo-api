@@ -41,6 +41,10 @@ exports.Video =
     #  /:movieId
     GET_VIDEO_INFO: "http://ext.nicovideo.jp/api/getthumbinfo/"
 
+    # GET
+    # /:movieId
+    GETFLV : "http://flapi.nicovideo.jp/api/getflv/"
+
 exports.MyList =
     FETCH_TOKEN: "http://www.nicovideo.jp/my/mylist"
     GET_GROUPS: "http://www.nicovideo.jp/api/mylistgroup/list"
