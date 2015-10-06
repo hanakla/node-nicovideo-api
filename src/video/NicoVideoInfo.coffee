@@ -34,7 +34,7 @@ class NicoVideoInfo
             if res.statusCode is 503
                 defer.reject("Nicovideo has in maintenance.")
 
-            info = new NicoVideoInfo(movieId)
+            info = new NicoVideoInfo(movieId, session)
             info._attr = deepFreeze(NicoVideoInfo.parseResponse(res.body))
 
             defer.resolve(info)
