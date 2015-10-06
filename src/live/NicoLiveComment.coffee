@@ -91,7 +91,7 @@ class NicoLiveComment
 
 
     isNormalComment : ->
-        not (@isControlComment() and @isDistributorPost())
+        not (@isControlComment() and @isPostByDistributor())
 
 
     isControlComment : ->
