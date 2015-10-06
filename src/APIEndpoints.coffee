@@ -28,7 +28,6 @@ module.exports =
         # @return {Promise}
         ###
         getFlv : (session, {movieId}) ->
-            console.log NicoURL.Video.GETFLV + movieId
             get
                 url : NicoURL.Video.GETFLV + movieId
                 jar : session.cookie
