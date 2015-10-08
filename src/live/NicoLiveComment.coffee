@@ -69,7 +69,7 @@ class NicoLiveComment
             isMyPost: ($xml.attr("yourpost") is "1" or (($xml.attr("user_id")|0) is loggedUserId))
 
             user    :
-                id          : if _.isNaN(parseInt(ref = $xml.attr("user_id"), 10)) then ref else (ref | 0)
+                id          : if /^\d+$/.test(ref = $xml.attr("user_id")) then (ref | 0) else ref
                 score       : $xml.attr("score")|0
                 accountType : $xml.attr("premium")|0
                 isPremium   : ($xml.attr("premium")|0) > 0
