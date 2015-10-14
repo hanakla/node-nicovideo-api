@@ -1,20 +1,22 @@
 node-nicovideo-api
 ==============
-nicovideo API wrapper for node.js
-
+Nicovideo API wrapper for Node.js
 
 ## Current supported API
-- Niconico Common API
+- Common
     - Auth (one session managed by one Nico class instance.)
         - Login, Logout, Login Test
 
-- Niconico Live API
-    - Live information (aka GetPlayerStatus API)
-    - Put & receive comments
+- NicoLive
+    - Get Live information (getplayerstatus API)
+    - Put & Receive comments
     - Nsen API Wrapper
 
-- Nicovideo API
-    - Video information (aka GetThumbInfo API)
+- NicoVideo
+    - Get video information (getthumbinfo, getflv API)
 
-- Nicovideo MyList API
-    -  MyList control (list, add) wrapped by Backbone.Collection
+- MyList
+    -  MyList control (list, add, move, delete)
+
+- User
+    - Get user info
