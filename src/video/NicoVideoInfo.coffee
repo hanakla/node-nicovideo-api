@@ -35,7 +35,7 @@ class NicoVideoInfo
                 defer.reject("Nicovideo has in maintenance.")
 
             info = new NicoVideoInfo(movieId, session)
-            info._attr = deepFreeze(NicoVideoInfo.parseResponse(res.body))
+            info._attr = deepFreeze(NicoVideoInfo.parseResponse(res.body, movieId))
 
             defer.resolve(info)
 
@@ -46,13 +46,13 @@ class NicoVideoInfo
     # @param {String}   resBody     getThumbInfoAPIから取得したXML
     # @return {Object}
     ###
-    @parseResponse : (resBody) ->
+    @parseResponse : (resBody, movieId) ->
         $res = cheerio.load resBody
 
         if $res(":root").attr("status") isnt "ok"
             errorMessage = $res("error description").text()
             throw new NicoException
-                message : "Failed to fetch movie info (#{errorMessage})"
+                message : "Failed to fetch movie info (#{errorMessage}) movie:#{movieId}"
                 code    : $res "error code"
 
         $resThumb = $res "thumb"
