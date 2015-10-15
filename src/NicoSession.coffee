@@ -1,6 +1,7 @@
 {Emitter} = require "event-kit"
 cheerio = require "cheerio"
 Request = require "request-promise"
+ToughCookie = require "tough-cookie"
 {SerializeCookieStore} = require "tough-cookie-serialize"
 
 NicoUrl = require "./NicoURL"
@@ -159,6 +160,41 @@ module.exports =
 
         defer.promise
 
+    ###*
+    # @method restoreFromSessionId
+    # @param {String} sessionId
+    ###
+    fromSessionId : (sessionId) ->
+        defer = Promise.defer()
+
+        session = new NicoSession
+        store = new SerializeCookieStore
+        cookieJar = Request.jar store
+
+        nicoCookie = new ToughCookie.Cookie
+            key : "user_session"
+            value : sessionId
+            domain : "nicovideo.jp"
+            path : "/"
+            httpOnly : false
+
+        store.putCookie nicoCookie, ->
+            session.sessionId = sessionId
+
+            Object.defineProperties session,
+                _user :
+                    value : null
+
+                cookie :
+                    value : cookieJar
+
+                sessionId :
+                    configurable : true
+                    value : sessionId
+
+            defer.resolve session
+
+        defer.promise
 
     ###*
     # ニコニコ動画のログインセッションを確立します。

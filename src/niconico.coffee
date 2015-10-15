@@ -9,6 +9,15 @@ module.exports =
         NicoSession.fromJSON(json)
 
     ###*
+    # @method restoreFromSessionId
+    # @param {String} sessionId
+    # @return {Promise}
+    ###
+    restoreFromSessionId : (sessionId) ->
+        NicoSession.fromSessionId sessionId
+
+
+    ###*
     # ニコニコ動画へログインし、セッションを取得します。
     #
     # @static
