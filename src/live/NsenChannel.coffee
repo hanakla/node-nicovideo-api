@@ -219,7 +219,8 @@ class NsenChannel extends Emitter
     _processLiveCommands : (command, params = [], options = {}) ->
         switch command
             when "/prepare"
-                @emit "will-change-movie"
+                [videoId] = params
+                @_willMovieChange videoId
 
             when "/play"
                 break if options.ignoreVideoChanged
@@ -545,6 +546,11 @@ class NsenChannel extends Emitter
         if (not @_playingMovie?) or @_playingMovie.id isnt videoId
             @_didDetectMovieChange videoId[1]
 
+    _willMovieChange : (videoId) ->
+        @_session.video.getVideoInfo(videoId).then (video) =>
+            @emit "will-change-movie", video
+            return
+
 
     ###*
     # 再生中の動画の変更を検知した時に呼ばれるメソッド
@@ -655,6 +661,12 @@ class NsenChannel extends Emitter
     onDidCancelRequest : (listener) ->
         @on "did-cancel-request", listener
 
+    ###*
+    # @event NsenChannel#will-change-movie
+    # @param {NicoVideoInfo} movie
+    ###
+    onWillChangeMovie : (listener) ->
+        @on "will-change-movie", listener
 
     ###*
     # @event NsenChannel#did-change-movie
