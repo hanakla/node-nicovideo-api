@@ -316,6 +316,9 @@ class NsenChannel extends Emitter
             status = $res.attr("status")
             errorCode = $res.find("error code").text()
 
+            # It's correctry.
+            # NsenRequest API returns `[status="fail]"` and `error>code="unknown"`
+            # When nothing is requested.
             return if status isnt "ok" and errorCode isnt "unknown"
                 Promise.reject new NicoException
                     message     : "Failed to fetch Nsen request status. (#{errorCode})"
@@ -329,17 +332,20 @@ class NsenChannel extends Emitter
 
             # リクエストの取得に成功したら動画情報を同期
             videoId = $res.find("id").text()
+            return Promise.resolve() if videoId.length is 0
 
             # 直前にリクエストした動画と内容が異なれば
             # 新しい動画に更新
-            if not @_requestedMovie? or @_requestedMovie.id isnt videoId
-                @_session.video.getVideoInfo(videoId)
+            return if @_requestedMovie? and @_requestedMovie.id is videoId
+
+            @_session.video.getVideoInfo(videoId)
 
         .then (movie) =>
             return unless movie?
 
             @_requestedMovie = movie
             @emit "did-send-request", movie
+
             Promise.resolve()
 
 
