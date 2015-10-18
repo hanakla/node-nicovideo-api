@@ -211,20 +211,23 @@ class NicoLiveInfo extends Emitter
     # @param {Boolean} [options.connect=true] trueを指定するとコネクション確立後にresolveします
     # @return {Promise}
     ###
-    commentProvider  : (options = {
-        connect: true
-    }) ->
-        unless @_commentProvider?
-            return CommentProvider.instanceFor(@, options).then (provider) =>
-                @_commentProvider = provider
-                provider.onDidEndLive @_didEndLive.bind(@)
+    commentProvider  : (options = {}) ->
+        _.defaults options, {connect: false}
 
-                if options.connect
-                    provider.connect(options)
-                else
-                    Promise.resolve provider
+        if @_commentProvider?
+            return Promise.resolve @_commentProvider
 
-        Promise.resolve @_commentProvider
+        CommentProvider.instanceFor(@, options)
+        .then (provider) =>
+            @_commentProvider = provider
+            provider.onDidEndLive @_didEndLive.bind(@)
+
+            if options.connect
+                provider.connect(options)
+            else
+                Promise.resolve provider
+
+
 
 
     ###*

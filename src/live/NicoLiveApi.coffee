@@ -43,9 +43,13 @@ class NicoLiveApi
     # NsenChannelのインスタンスを取得します。
     #
     # @param {String} channel
+    # @param {Object} [options]
+    # @param {Boolean} [options.connect=false] NsenChannel生成時にコメントサーバーへ自動接続するか指定します。
+    # @param {Number} [options.firstGetComments] 接続時に取得するコメント数
+    # @param {Number} [options.timeoutMs] タイムアウトまでのミリ秒
     # @return {Promise}
     ###
-    getNsenChannelHandlerFor : (channel) ->
+    getNsenChannelHandlerFor : (channel, options = {}) ->
         isValidChannel = _.select(NsenChannels, {'id': channel}).length is 1
 
         unless isValidChannel
@@ -55,7 +59,7 @@ class NicoLiveApi
 
         @getLiveInfo(channel)
         .then (live) =>
-            NsenChannel.instanceFor(live, @_session)
+            NsenChannel.instanceFor(live, options, @_session)
 
         .then (instance) =>
             @_nsenChannelInstances[channel] = instance

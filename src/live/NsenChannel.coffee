@@ -48,13 +48,23 @@ class NsenChannel extends Emitter
 
 
     ###*
-    # @return Promise
+    # @param {Object} [options]
+    # @param {Boolean} [options.connect=false] NsenChannel生成時にコメントサーバーへ自動接続するか指定します。
+    # @param {Number} [options.firstGetComments] 接続時に取得するコメント数
+    # @param {Number} [options.timeoutMs] タイムアウトまでのミリ秒
+    # @param {NicoSession}
+    # @return {Promise}
     ###
-    @instanceFor : (live, session) ->
-        nsen = new NsenChannel(live, session)
-        nsen._attachLive(live)
-        Promise.resolve nsen
+    @instanceFor : (live, options = {}, session) ->
+        _.defaults options, {connect: false}
 
+        nsen = new NsenChannel(live, session)
+        nsen._attachLive(live).then ->
+            if not options.connect
+                return Promise.resolve nsen
+
+            nsen.connect(options).then ->
+                Promise.resolve nsen
 
 
     ###*
@@ -133,34 +143,13 @@ class NsenChannel extends Emitter
         @_live = null
         @_commentProvider = null
 
-        @_channelSubscriptions = sub = new CompositeDisposable
+        sub = @_channelSubscriptions = new CompositeDisposable
         @_live = liveInfo
 
         sub.add liveInfo.onDidRefresh =>
             @_didLiveInfoUpdated()
 
-        liveInfo.commentProvider({connect: true})
-        .then (provider) =>
-            @_commentProvider = provider
-
-            sub.add provider.onDidProcessFirstResponse (comments) =>
-                @lockAutoEmit("did-process-first-response", comments)
-
-                comments.forEach (comment) =>
-                    @_didCommentReceived(comment, {ignoreVideoChanged: true})
-
-                sub.add new Disposable =>
-                    @unlockAutoEmit("did-process-first-response")
-
-                sub.add provider.onDidReceiveComment (comment) =>
-                    @_didCommentReceived(comment)
-
-            sub.add provider.onDidEndLive =>
-                @_onLiveClosed()
-
-            @_didLiveInfoUpdated()
-            @fetch()
-
+        @fetch()
 
     ###*
     # チャンネルの種類を取得します。
@@ -302,7 +291,6 @@ class NsenChannel extends Emitter
         liveId = @_live.get("stream").liveId
 
         @_live.fetch()
-
         .then =>
             APIEndpoints.nsen.syncRequest(@_session, {liveId})
 
@@ -348,6 +336,40 @@ class NsenChannel extends Emitter
             @emit "did-send-request", movie
 
             Promise.resolve()
+
+    ###*
+    # コメントサーバーへ接続します。
+    #
+    # @param {Object} [options]
+    # @param {Number} [options.firstGetComments] 接続時に取得するコメント数
+    # @param {Number} [options.timeoutMs] タイムアウトまでのミリ秒
+    # @return {Promise}
+    ###
+    connect : (options = {}) ->
+        _.assign options, {connect: false}
+
+        @_live.commentProvider(options)
+        .then (provider) =>
+            @_commentProvider = provider
+
+            sub = @_channelSubscriptions
+            sub.add provider.onDidProcessFirstResponse (comments) =>
+                @lockAutoEmit("did-process-first-response", comments)
+
+                comments.forEach (comment) =>
+                    @_didCommentReceived(comment, {ignoreVideoChanged: true})
+
+                sub.add new Disposable =>
+                    @unlockAutoEmit("did-process-first-response")
+
+                sub.add provider.onDidReceiveComment (comment) =>
+                    @_didCommentReceived(comment)
+
+            sub.add provider.onDidEndLive =>
+                @_onLiveClosed()
+
+            provider.connect(options)
+
 
 
     ###*
@@ -494,24 +516,22 @@ class NsenChannel extends Emitter
         @_commentProvider?.postComment(msg, command, timeoutMs)
 
 
-
     ###*
     # 次のチャンネル情報を受信していれば、その配信へ移動します。
+    # @param {Object} [options]
+    # @param {Boolean} [options.connect=true] コメントサーバーへ自動接続するか指定します。
     # @return {Promise}
     #   移動に成功すればresolveされ、それ以外の時にはrejectされます。
     ###
-    moveToNextLive      : ->
+    moveToNextLive : (options = {}) ->
         return Promise.reject() unless @_nextLiveId?
 
-        liveId = @_nextLiveId
-        return unless liveId?
-            Promise.reject new NicoException
-                message : "Next liveId is unknown."
+        _.defaults options, {connect: true}
 
         # 放送情報を取得
-        @_session.live.getLiveInfo(liveId)
+        @_session.live.getLiveInfo(@_nextLiveId)
         .then (liveInfo) =>
-            @_attachLive(liveInfo)
+            @_attachLive(liveInfo, options)
             @emit "did-change-stream", liveInfo
             @fetch()
 
