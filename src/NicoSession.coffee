@@ -11,8 +11,6 @@ NicoVideoAPI = require "./video/NicoVideoApi"
 NicoMyListAPI = require "./mylist/NicoMyListApi"
 NicoUserAPI = require "./user/NicoUserAPI"
 
-passwordStore = new WeakMap
-
 class NicoSession
     @services : new WeakMap
 
@@ -40,13 +38,6 @@ class NicoSession
     # @property cookie
     # @type request.CookieJar
     ###
-
-    ###*
-    # @private
-    # @property _user
-    # @type String
-    ###
-
 
     constructor : ->
         Object.defineProperties @,
@@ -85,8 +76,8 @@ class NicoSession
             url : NicoUrl.Auth.LOGIN
             jar : @cookie
             form :
-                mail_tel : user ? @_user
-                password : password ? passwordStore.get(@)
+                mail_tel : user
+                password : password
         .then (res) ->
             return Promise.reject("Nicovideo has in maintenance.") if res.statusCode is 503
 
@@ -239,12 +230,7 @@ module.exports =
             session = new NicoSession
             session.sessionId = sessionId
 
-            passwordStore.set(session, password)
-
             Object.defineProperties session,
-                _user :
-                    value : user
-
                 cookie :
                     value : cookie
 
