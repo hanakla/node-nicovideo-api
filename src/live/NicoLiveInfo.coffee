@@ -59,7 +59,7 @@ Request = require "request-promise"
 
 APIEndpoints = require "../APIEndpoints"
 NicoURL = require "../NicoURL"
-NicoException = "../NicoException"
+NicoException = require "../NicoException"
 Emitter = require "../Emitter"
 CommentProvider = require "./CommentProvider"
 
