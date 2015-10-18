@@ -10,7 +10,7 @@ Request = require "request-promise"
 {Socket} = require "net"
 {sprintf} = require "sprintf"
 
-Emitter = require "../Emitter"
+Emitter = require "disposable-emitter"
 NicoUrl     = require "../NicoURL"
 NicoException = require "../NicoException"
 NicoLiveComment = require "./NicoLiveComment"
@@ -386,7 +386,7 @@ class CommentProvider extends Emitter
 
         if @isFirstResponseProsessed is no
             @isFirstResponseProsessed = yes
-            @emit "did-process-first-response", comments
+            @lockAutoEmit "did-process-first-response", comments
 
         return
 
