@@ -3,12 +3,12 @@
 ###
 
 _ = require "lodash"
-Emitter = require "../Emitter"
+Emitter = require "disposable-emitter"
 Cheerio = require "cheerio"
 deepFreeze = require "deep-freeze"
 Request = require "request-promise"
 {sprintf} = require("sprintf")
-{CompositeDisposable} = require "event-kit"
+{CompositeDisposable, Disposable} = require "event-kit"
 QueryString = require "querystring"
 
 APIEndpoints = require "../APIEndpoints"
@@ -143,19 +143,20 @@ class NsenChannel extends Emitter
         .then (provider) =>
             @_commentProvider = provider
 
-            # if provider.isFirstResponseProsessed is no
-            #     sub.add provider.onDidProcessFirstResponse (comments) =>
-            #         comments.forEach (comment) =>
-            #             @_didCommentReceived comment, {ignoreVideoChanged: true}
-            #
-            #         sub.add provider.onDidReceiveComment (comment) =>
-            #             @_didCommentReceived(comment)
-            #
-            # else
-            sub.add provider.onDidReceiveComment (comment) =>
-                @_didCommentReceived(comment)
+            sub.add provider.onDidProcessFirstResponse (comments) =>
+                @lockAutoEmit("did-process-first-response", comments)
 
-            sub.add provider.onDidEndLive => @_onLiveClosed()
+                comments.forEach (comment) =>
+                    @_didCommentReceived(comment, {ignoreVideoChanged: true})
+
+                sub.add new Disposable =>
+                    @unlockAutoEmit("did-process-first-response")
+
+                sub.add provider.onDidReceiveComment (comment) =>
+                    @_didCommentReceived(comment)
+
+            sub.add provider.onDidEndLive =>
+                @_onLiveClosed()
 
             @_didLiveInfoUpdated()
             @fetch()
@@ -615,6 +616,13 @@ class NsenChannel extends Emitter
     #
     # Event Handlers
     #
+
+    ###*
+    # @event NsenChannel#did-process-first-response
+    # @param {Array.<NicoLiveComment>}
+    ###
+    onDidProcessFirstResponse : (listener) ->
+        @on "did-process-first-response", listener
 
     ###*
     # @event NsenChannel#did-receive-comment
