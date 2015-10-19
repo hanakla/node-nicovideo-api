@@ -93,6 +93,12 @@ class NsenChannel extends Emitter
     _playingMovie   : null
 
     ###*
+    # @private
+    # @property {Number}
+    ###
+    _movieChangeDetectionTimer : null
+
+    ###*
     # 最後にリクエストした動画情報
     # @private
     # @property {NicoVideoInfo} _requestedMovie
@@ -357,7 +363,7 @@ class NsenChannel extends Emitter
                 @lockAutoEmit("did-process-first-response", comments)
 
                 comments.forEach (comment) =>
-                    @_didCommentReceived(comment, {ignoreVideoChanged: true})
+                    @_didCommentReceived(comment)
 
                 sub.add new Disposable =>
                     @unlockAutoEmit("did-process-first-response")
@@ -585,22 +591,25 @@ class NsenChannel extends Emitter
     # @param {String} videoId 次に再生される動画のID
     ###
     _didDetectMovieChange  : (videoId) ->
-        return if @_videoInfoFetcher?
+        if @_movieChangeDetectionTimer?
+            clearTimeout @_movieChangeDetectionTimer
+            @_movieChangeDetectionTimer = null
 
-        beforeVideo = @_playingMovie
+        @_movieChangeDetectionTimer = setTimeout =>
+            beforeVideo = @_playingMovie
 
-        if videoId is null
-            @emit "did-change-movie", null, beforeVideo
-            @_playingMovie = null
-            return
+            unless videoId?
+                @emit "did-change-movie", null, beforeVideo
+                @_playingMovie = null
+                return
 
-        return if beforeVideo?.id is videoId
+            return if beforeVideo?.id is videoId
 
-        @_videoInfoFetcher = @_session.video.getVideoInfo(videoId).then (video) =>
-            @_playingMovie = video
-            @_videoInfoFetcher = null
-            @emit "did-change-movie", video, beforeVideo
-            return
+            @_session.video.getVideoInfo(videoId).then (video) =>
+                @_playingMovie = video
+                @emit "did-change-movie", video, beforeVideo
+                return
+        , 1000
 
         return
 
