@@ -20,7 +20,7 @@
     "coffee-script": "^1.8.0"
   },
   "scripts": {
-    "prepublish": "coffee -o lib/ -c src/"
+    "prepublish": "$(npm bin)/coffee -o lib/ -c src/"
   },
   "dependencies": {
     "cheerio": "^0.19.0",
