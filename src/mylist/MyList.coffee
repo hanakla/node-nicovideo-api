@@ -18,6 +18,7 @@ _  = require "lodash"
 Request = require "request-promise"
 {sprintf} = require("sprintf")
 QueryString = require "querystring"
+Deferred = require "promise-native-deferred"
 
 NicoUrl = require "../NicoURL"
 NicoException = require "../NicoException"
@@ -177,8 +178,6 @@ class MyList extends Emitter
     # @return {Promise}
     ###
     addMovie : (movie, desc = "") ->
-        self    = this
-        dfd     = Promise.defer()
         id      = null
 
         # movieが文字列じゃない上に、オブジェクトじゃないとか、idプロパティがない場合

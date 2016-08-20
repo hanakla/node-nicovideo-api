@@ -1,5 +1,6 @@
 _ = require "lodash"
 Request = require "request-promise"
+Deferred = require "promise-native-deferred"
 
 NicoUrl     = require "../NicoURL"
 MyListMeta  = require "./MyListMeta"
@@ -138,6 +139,6 @@ class NicoMyListApi
             return
 
         .then (mylist) =>
-            defer = Promise.defer()
+            defer = new Deferred
             mylist.fetch().then((-> defer.resolve(mylist)), defer.reject)
             defer.promise
