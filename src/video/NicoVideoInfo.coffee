@@ -6,6 +6,7 @@ cheerio = require "cheerio"
 {sprintf} = require("sprintf")
 deepFreeze = require "deep-freeze"
 Ent = require "ent"
+Deferred = require "promise-native-deferred"
 
 APIEndpoints = require "../APIEndpoints"
 NicoException = require "../NicoException"
@@ -25,7 +26,7 @@ NicoException = require "../NicoException"
 module.exports =
 class NicoVideoInfo
     @fetch : (movieId, session) ->
-        defer = Promise.defer()
+        defer = new Deferred
         return defer.reject "Fetch failed. Movie id not specified." unless movieId?
 
         # getThumbInfoの結果を取得

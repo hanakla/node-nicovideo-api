@@ -7,6 +7,7 @@ _ = require "lodash"
 Cheerio = require "cheerio"
 deepFreeze = require "deep-freeze"
 Request = require "request-promise"
+Deferred = require "promise-native-deferred"
 {Socket} = require "net"
 {sprintf} = require "sprintf"
 
@@ -261,7 +262,7 @@ class CommentProvider extends Emitter
         command = command.join(" ") if Array.isArray(command)
 
         @_fetchPostKey().then =>
-            defer = Promise.defer()
+            defer = new Deferred
             timerId = null
 
             postInfo =

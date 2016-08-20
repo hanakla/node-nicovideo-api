@@ -3,6 +3,7 @@ cheerio = require "cheerio"
 Request = require "request-promise"
 ToughCookie = require "tough-cookie"
 {SerializeCookieStore} = require "tough-cookie-serialize"
+Deferred = require "promise-native-deferred"
 
 NicoUrl = require "./NicoURL"
 NicoException = require "./NicoException"
@@ -129,7 +130,7 @@ module.exports =
     # @return {Promise}
     ###
     fromJSON : (object, user = null, password = null) ->
-        defer = Promise.defer()
+        defer = new Deferred
 
         store = new SerializeCookieStore()
         store.fromString(JSON.stringify(object))
@@ -156,7 +157,7 @@ module.exports =
     # @param {String} sessionId
     ###
     fromSessionId : (sessionId) ->
-        defer = Promise.defer()
+        defer = new Deferred
 
         session = new NicoSession
         store = new SerializeCookieStore
@@ -205,7 +206,7 @@ module.exports =
                 mail_tel : user
                 password : password
         .then (res) =>
-            defer = Promise.defer()
+            defer = new Deferred
 
             if res.statusCode is 503
                 defer.reject "Nicovideo has in maintenance."
