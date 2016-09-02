@@ -17,10 +17,16 @@
     "nicovideo"
   ],
   "devDependencies": {
-    "coffee-script": "^1.8.0"
+    "babel-core": "^6.14.0",
+    "babel-loader": "^6.2.5",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-preset-es2015": "^6.14.0",
+    "babel-preset-stage-2": "^6.13.0",
+    "babel-preset-stage-3": "^6.11.0"
   },
   "scripts": {
-    "prepublish": "$(npm bin)/coffee -o lib/ -c src/"
+    "start": "$(npm bin)/webpack --watch",
+    "prepublish": "$(npm bin)/webpack"
   },
   "dependencies": {
     "cheerio": "^0.19.0",
