@@ -12,10 +12,9 @@
  *      - isPremium      : boolean       -- プレミアム会員かどうか
  *      - isAnonymous    : boolean       -- 匿名コメントかどうか
  */
-import _ from "lodash";
-import __ from "lodash-deep";
-import Cheerio from "cheerio";
-import deepFreeze from "deep-freeze";
+import _ from 'lodash';
+import Cheerio from 'cheerio';
+import deepFreeze from 'deep-freeze';
 
 let REGEXP_LT = /</g;
 let REGEXP_GT = />/g;
@@ -60,22 +59,22 @@ class NicoLiveComment {
         let ref;
         let $xml    = Cheerio(xml);
         let props     = {
-            threadId: $xml.attr("thread"),
+            threadId: $xml.attr('thread'),
 
-            date    : new Date($xml.attr("date") * 1000),
-            locale  : $xml.attr("locale"),
-            command : $xml.attr("mail"),
-            comment : $xml.text().replace(REGEXP_GT, ">").replace(REGEXP_LT, "<"),
-            vpos    : $xml.attr("vpos")|0,
+            date    : new Date($xml.attr('date') * 1000),
+            locale  : $xml.attr('locale'),
+            command : $xml.attr('mail'),
+            comment : $xml.text().replace(REGEXP_GT, '>').replace(REGEXP_LT, '<'),
+            vpos    : $xml.attr('vpos')|0,
 
-            isMyPost: ($xml.attr("yourpost") === "1" || (($xml.attr("user_id")|0) === loggedUserId)),
+            isMyPost: ($xml.attr('yourpost') === '1' || (($xml.attr('user_id')|0) === loggedUserId)),
 
             user    : {
-                id          : /^\d+$/.test(ref = $xml.attr("user_id")) ? (ref | 0) : ref,
-                score       : $xml.attr("score")|0,
-                accountType : $xml.attr("premium")|0,
-                isPremium   : ($xml.attr("premium")|0) > 0,
-                isAnonymous : $xml.attr("anonymity")|0 !== 0
+                id          : /^\d+$/.test(ref = $xml.attr('user_id')) ? (ref | 0) : ref,
+                score       : $xml.attr('score')|0,
+                accountType : $xml.attr('premium')|0,
+                isPremium   : ($xml.attr('premium')|0) > 0,
+                isAnonymous : $xml.attr('anonymity')|0 !== 0
             }
         };
 
@@ -87,10 +86,10 @@ class NicoLiveComment {
         this._attr = _attr;
         Object.defineProperties(this, {
             command : {
-                value : this.get("command")
+                value : this.get('command')
             },
             comment : {
-                value : this.get("comment")
+                value : this.get('comment')
             }
         }
         );
@@ -98,7 +97,7 @@ class NicoLiveComment {
 
 
     get(path) {
-        return __.deepGet(this._attr, path);
+        return _.get(this._attr, path);
     }
 
 
@@ -108,30 +107,30 @@ class NicoLiveComment {
 
 
     isControlComment() {
-        let userid      = this.get("user.id");
-        let accountType = this.get("user.accountType");
+        let userid      = this.get('user.id');
+        let accountType = this.get('user.accountType');
 
         return (userid === 900000000) || (accountType === NicoLiveComment.AccountTypes.ADMIN);
     }
 
 
     isPostByDistributor() {
-        return this.get("user.accountType") === NicoLiveComment.AccountTypes.DISTRIBUTOR;
+        return this.get('user.accountType') === NicoLiveComment.AccountTypes.DISTRIBUTOR;
     }
 
 
     isPostBySelf() {
-        return this.get("isMyPost");
+        return this.get('isMyPost');
     }
 
 
     isPostByAnonymous() {
-        return this.get("user.isAnonymous");
+        return this.get('user.isAnonymous');
     }
 
 
     isPostByPremiumUser() {
-        return this.get("user.isPremium");
+        return this.get('user.isPremium');
     }
 }
 

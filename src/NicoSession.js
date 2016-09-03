@@ -1,19 +1,18 @@
-import { Emitter } from "event-kit";
-import cheerio from "cheerio";
-import Request from "request-promise";
-import ToughCookie from "tough-cookie";
-import { SerializeCookieStore } from "tough-cookie-serialize";
-import Deferred from "promise-native-deferred";
+import cheerio from 'cheerio';
+import Request from 'request-promise';
+import ToughCookie from 'tough-cookie';
+import { SerializeCookieStore } from 'tough-cookie-serialize';
 
-import NicoUrl from "./NicoURL";
-import NicoException from "./NicoException";
-import NicoLiveAPI from "./live/NicoLiveApi";
-import NicoVideoAPI from "./video/NicoVideoApi";
-import NicoMyListAPI from "./mylist/NicoMyListApi";
-import NicoUserAPI from "./user/NicoUserAPI";
+import APIEndpoints from '../APIEndpoints'
+import NicoLiveAPI from './live/NicoLiveApi';
+import NicoVideoAPI from './video/NicoVideoApi';
+import NicoMyListAPI from './mylist/NicoMyListApi';
+import NicoUserAPI from './user/NicoUserAPI';
+import {NicoException} from './errors/';
+import ErrorCode from './ErrorCode';
 
 class NicoSession {
-    static services  = new WeakMap();
+    static services = new WeakMap();
 
     /**
      * @property live
@@ -81,22 +80,16 @@ class NicoSession {
      * 再ログインします。
      * @return {Promise}
      */
-    relogin(user, password) {
-        return Request.post({
-            resolveWithFullResponse : true,
-            followAllRedirects : true,
-            url : NicoUrl.Auth.LOGIN,
-            jar : this.cookie,
-            form : {
-                mail_tel : user,
-                password
-            }
-        })
-        .then(function(res) {
-            if (res.statusCode === 503) {
-                return Promise.reject("Nicovideo has in maintenance.");
-            }
-        });
+    async relogin(user, password) {
+        const res = await APIEndpoints.Auth.login(this.cookie, {user, password});
+
+        if (res.statusCode === 503) {
+            throw new NicoException({
+                message: 'Nicovideo has in maintenance.',
+                code: ErrorCode.NICOVIDEO_MAINTENANCE,
+                response: res,
+            });
+        }
     }
 
 
@@ -105,18 +98,16 @@ class NicoSession {
      * @method logout
      * @return {Promise}
      */
-    logout() {
-        return Request.post({
-            resolveWithFullResponse : true,
-            url : NicoUrl.Auth.LOGOUT,
-            jar : this.cookie
-        })
-        .then(res => {
-            if (res.statusCode === 503) {
-                return Promise.reject("Nicovideo has in maintenance.");
-            }
+    async logout() {
+        const res = await APIEndpoints.Auth.logout(this.cookie);
+
+        if (res.statusCode === 503) {
+            throw new NicoException({
+                message: 'Nicovideo has in maintenance.',
+                code: ErrorCode.NICOVIDEO_MAINTENANCE,
+                response: res,
+            });
         }
-        ); 
     }
 
 
@@ -127,19 +118,11 @@ class NicoSession {
      *   ネットワークエラー時にrejectされます
      * - Resolve: (state: Boolean)
      */
-    isActive() {
+    async isActive() {
         // ログインしてないと使えないAPIを叩く
-        return Request.get({
-            resolveWithFullResponse : true,
-            url : NicoUrl.Auth.LOGINTEST,
-            jar : this.cookie
-        })
-        .then(function(res) {
-            let $res = cheerio(res.body);
-            let $err = $res.find("error code");
-
-            return Promise.resolve($err.length === 0);
-        });
+        const res = await APIEndpoints.Auth.activityCheck(this.cookie);
+        const $err = cheerio(res.body).find('error code');
+        return $err.length === 0;
     }
 
     toJSON() {
@@ -147,87 +130,78 @@ class NicoSession {
     }
 }
 
-
-    /**
-     * このインスタンスを破棄します。
-     * @method dispose
-     */
-
 export default {
     /**
      * @return {Promise}
      */
-    fromJSON(object, user = null, password = null) {
-        let defer = new Deferred();
-
-        let store = new SerializeCookieStore();
+    async fromJSON(object, user = null, password = null) {
+        const session = new NicoSession();
+        const store = new SerializeCookieStore();
         store.fromString(JSON.stringify(object));
-        let cookie = Request.jar(store);
 
-        let session = new NicoSession();
-        (password != null) && Store.set(session, password);
+        const cookie = Request.jar(store);
 
-        (user != null) && Object.defineProperty(session, "_user", {value : user});
-        Object.defineProperty(session, "cookie", {value : cookie});
-
-        store.findCookie("nicovideo.jp", "/", "user_session", function(err, cookie) {
-            if ((err != null) || ((cookie == null))) {
-                return defer.reject(new NicoException({
-                    message : "Cookie 'user_session' not found."})
-                );
-            }
-
-            session._sessionId = cookie.value;
-            return defer.resolve(session);
+        if (user != null) {
+            Object.defineProperty(session, '_user', {value : user});
         }
-        );
 
-        return defer.promise;
+        Object.defineProperty(session, 'cookie', {value : cookie});
+
+        await new Promise((resolve, reject) => {
+            store.findCookie('nicovideo.jp', '/', 'user_session', function(err, cookie) {
+                if (err || cookie == null) {
+                    reject(new NicoException({
+                        message : `Cookie 'user_session' not found.`,
+                    }));
+                }
+
+                session._sessionId = cookie.value;
+                resolve();
+            });
+        });
+
+        return session;
     },
 
     /**
      * @method restoreFromSessionId
      * @param {String} sessionId
      */
-    fromSessionId(sessionId) {
-        let defer = new Deferred();
+    async fromSessionId(sessionId) {
+        const session = new NicoSession();
+        const store = new SerializeCookieStore();
+        const cookieJar = Request.jar(store);
 
-        let session = new NicoSession();
-        let store = new SerializeCookieStore();
-        let cookieJar = Request.jar(store);
-
-        let nicoCookie = new ToughCookie.Cookie({
-            key : "user_session",
+        const nicoCookie = new ToughCookie.Cookie({
+            key : 'user_session',
             value : sessionId,
-            domain : "nicovideo.jp",
-            path : "/",
-            httpOnly : false
+            domain : '.nicovideo.jp',
+            path : '/',
+            httpOnly : false,
         });
 
-        store.putCookie(nicoCookie, function() {
-            session.sessionId = sessionId;
+        await new Promise(resolve => {
+            store.putCookie(nicoCookie, function() {
+                session.sessionId = sessionId;
 
-            Object.defineProperties(session, {
-                _user : {
-                    value : null
-                },
+                Object.defineProperties(session, {
+                    _user : {
+                        value : null
+                    },
+                    cookie : {
+                        value : cookieJar
+                    },
+                    sessionId : {
+                        configurable : true,
+                        value : sessionId
+                    }
+                });
 
-                cookie : {
-                    value : cookieJar
-                },
+                resolve(session);
+            });
+        });
 
-                sessionId : {
-                    configurable : true,
-                    value : sessionId
-                }
-            }
-            );
-
-            return defer.resolve(session);
-        }
-        );
-
-        return defer.promise;
+        return session;
     },
 
     /**
@@ -236,63 +210,44 @@ export default {
      * @param {String}   password    ログインパスワード
      * @return {Promise}
      */
-    login(user, password) {
-        let cookie = Request.jar(new SerializeCookieStore());
+    async login(user, password) {
+        const cookie = Request.jar(new SerializeCookieStore());
+        const res = await APIEndpoints.Auth.login(cookie, {user, password});
 
-        return Request.post({
-            resolveWithFullResponse : true,
-            followAllRedirects      : true,
-            url     : NicoUrl.Auth.LOGIN,
-            jar     : cookie,
-            form    : {
-                mail_tel : user,
-                password
-            }
-        })
-        .then(res => {
-            let defer = new Deferred();
-
-            if (res.statusCode === 503) {
-                defer.reject("Nicovideo has in maintenance.");
-                return;
-            }
-
-            // try get cookie
-            // console.log self._cookie
-            cookie._jar.store
-            .findCookie("nicovideo.jp", "/", "user_session", function(err, cookie) {
-                if (cookie != null) {
-                    defer.resolve(cookie.value);
-                } else if (err != null) {
-                    defer.reject("Authorize failed");
-                } else {
-                    defer.reject("Authorize failed (reason unknown)");
-                }
-
-            }
-            );
-
-            return defer.promise;
+        if (res.statusCode === 503) {
+            throw new NicoException({
+                message: 'Nicovideo has in maintenance.',
+                code: ErrorCode.NICOVIDEO_MAINTENANCE,
+                response: res,
+            });
         }
-        )
 
-        .then(function(sessionId) {
-            let session = new NicoSession();
-            session.sessionId = sessionId;
+        const sessionId = await new Promise((resolve, reject) => {
+            cookie._jar.store
+            .findCookie('nicovideo.jp', '/', 'user_session', (err, cookie) => {
+                if (cookie != null) {
+                    resolve(cookie.value);
+                } else if (err != null) {
+                    reject('Authorize failed');
+                } else {
+                    reject('Authorize failed (reason unknown)');                }
 
-            Object.defineProperties(session, {
-                cookie : {
-                    value : cookie
-                },
+            });
+        })
 
-                sessionId : {
-                    configurable : true,
-                    value : sessionId
-                }
+        let session = new NicoSession();
+        session.sessionId = sessionId;
+
+        Object.defineProperties(session, {
+            cookie : {
+                value : cookie
+            },
+            sessionId : {
+                configurable : true,
+                value : sessionId
             }
-            );
-
-            return Promise.resolve(session);
         });
+
+        return session;
     }
 };

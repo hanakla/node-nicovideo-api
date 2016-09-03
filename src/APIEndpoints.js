@@ -1,18 +1,46 @@
-import Request from "request-promise";
+import Request from 'request-promise';
+import {sprintf} from 'sprintf';
 
-import NicoURL from "./NicoURL";
+import NicoURL from './NicoURL';
 
-let get = function(options) {
+const get = options => {
     options.resolveWithFullResponse = true;
     return Request.get(options);
 };
 
-let post = function(options) {
+const post = options => {
     options.resolveWithFullResponse = true;
     return Request.post(options);
 };
 
 export default {
+    Auth : {
+        login(cookie, {user, password}) {
+            return post({
+                followAllRedirects : true,
+                url : NicoURL.Auth.LOGIN,
+                jar : cookie,
+                form : {
+                    mail_tel : user,
+                    password,
+                },
+            });
+        },
+        logout(cookie) {
+            return post({
+                followAllRedirects : true,
+                url : NicoURL.Auth.LOGOUT,
+                jar : cookie,
+            });
+        },
+        activityCheck(cookie) {
+            return get({
+                url : NicoURL.Auth.LOGINTEST,
+                jar : cookie,
+            });
+        },
+    },
+
     video : {
         /**
          * @param {NicoSession} session
@@ -52,7 +80,7 @@ export default {
         }
     },
 
-    nsen : {
+    Nsen : {
         /**
          * @param {NicoSession} session
          * @param {String} options.liveId     LiveID
@@ -82,7 +110,7 @@ export default {
         },
                 // form :
                 //     v : liveId
-                //     mode : "cancel"
+                //     mode : 'cancel'
 
         /**
          * @param {NicoSession} session
@@ -97,7 +125,7 @@ export default {
         },
                 // form :
                 //     v : liveId
-                //     mode : "requesting"
+                //     mode : 'requesting'
 
         /**
          * @param {NicoSession} session
@@ -128,7 +156,39 @@ export default {
                 // form :
                 //     v: liveId
 
-    user : {
+    MyList: {
+        fetchDefaultListItems(session) {
+            return get({
+                url: NicoURL.MyList.DefaultList.LIST,
+                jar: session.cookie,
+            });
+        },
+
+        fetchItems(session, mylistId) {
+            return get({
+                url: sprintf(NicoURL.MyList.Normal.LIST, mylistId),
+                jar: session.cookie,
+            });
+        },
+
+        addItem(session, payload) {
+            return post({
+                url : NicoURL.MyList.Normal.ADD,
+                jar : session.cookie,
+                form : payload,
+            });
+        },
+
+        deleteItem(session, payload) {
+            return post({
+                url: NicoURL.MyList.Normal.DELETE,
+                jar: session.cookie,
+                form: payload,
+            });
+        },
+    },
+
+    User : {
         info(session, {userId}) {
             return get({
                 url : NicoURL.User.INFO + `?__format=json&user_id=${userId}`,

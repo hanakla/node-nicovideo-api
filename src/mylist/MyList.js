@@ -13,16 +13,34 @@
  *  - createTime     : Date      -- マイリストの作成日
  *  - updateTime     : Date      -- マイリストの更新日
  */
-import _ from "lodash";
-import { Emitter } from "event-kit";
-import Request from "request-promise";
-import { sprintf } from "sprintf";
-import QueryString from "querystring";
-import Deferred from "promise-native-deferred";
+import _ from 'lodash';
+import { Emitter } from 'event-kit';
+import Request from 'request-promise';
 
-import NicoUrl from "../NicoURL";
-import NicoException from "../NicoException";
-import MyListItem from "./MyListItem";
+import APIEndpoints from '../APIEndpoints';
+import MyListItem from './MyListItem';
+import MyListItemType from '../const/MyListItemType';
+
+import {
+    NicoException,
+    JSONParseError,
+} from '../errors/';
+
+class NormalListAPIEndpoints {
+    static fetchItems(session, mylistId) {
+        return APIEndpoints.MyList.fetchItems(session, mylistId);
+    }
+
+    static addItem(session, payload) {
+        return APIEndpoints.MyList.addItem(session, payload);
+    }
+}
+
+class DefaultListAPIEndpoints {
+    static fetchItems(session) {
+        return APIEndpoints.MyList.fetchDefaultListItems(session);
+    }
+}
 
 export default class MyList extends Emitter {
     static _cache  = {};
@@ -78,12 +96,6 @@ export default class MyList extends Emitter {
 
     /**
      * @private
-     * @property {Object} _urlSet MyList APIのurl
-     */
-    _urlSet  = null;
-
-    /**
-     * @private
      * @property {Object} _attr マイリスト情報
      */
     _attr  = null;
@@ -106,13 +118,12 @@ export default class MyList extends Emitter {
 
         Object.defineProperties(this, {
             id : {
-                get() { return metaInfo.get("id"); }
+                get() { return metaInfo.get("id"); },
             },
-            _urlSet : {
-                value : metaInfo.get("id") === "home" ? NicoUrl.MyList.DefList : NicoUrl.MyList.Normal
+            api : {
+                value : metaInfo.get("id") === "home" ? DefaultListAPIEndpoints : NormalListAPIEndpoints,
             }
-        }
-        );
+        });
     }
 
     /**
@@ -129,51 +140,41 @@ export default class MyList extends Emitter {
      * @fires MyList#refreshed
      * @return {Promise}
      */
-    fetch(options) {
-        return Request.get({
-            resolveWithFullResponse : true,
-            url     : sprintf(this._urlSet.LIST, this.id),
-            jar     : this._session.cookie
-        })
+    async fetch() {
+        let response, json;
 
-        .catch(e =>
-            Promise.reject(new NicoException({
+        try {
+            response = await this.api.fetchItems(this._session, this.id)
+        } catch (e) {
+            throw new NicoException({
                 message     : `Failed to fetch items (Connection error: ${e.message})`,
                 previous    : e
-            })
-            )
-        )
-
-        .then(res => {
-            try {
-                var json = JSON.parse(res.body);
-            } catch (e) {
-                return Promise.reject(new NicoException({
-                    message     : "Failed to parse response",
-                    response    : res.body,
-                    previous    : e
-                })
-                );
-            }
-
-            return json.status !== "ok" ?
-                Promise.reject(new NicoException({
-                    message     : "Failed to fetch contents (unknown)",
-                    response    : res.body
-                })
-                ) : undefined;
-
-            this.items = [];
-            _.each(json.mylistitem.reverse(), item => {
-                let m = MyListItem.fromApiResponse(item, this);
-                return this.items.push(m);
-            }
-            );
-
-            this.emit("did-refresh", {list: this});
-
+            });
         }
-        );
+
+        try {
+            json = JSON.parse(response.body);
+        } catch (e) {
+            throw new JSONParseError({
+                response    : response,
+                previous    : e
+            });
+        }
+
+        if (json.status !== "ok") {
+            throw new NicoException({
+                message     : "Failed to fetch contents (invalid status)",
+                response    : response
+            });
+        }
+
+        this.items = [];
+        _.each(json.mylistitem.reverse(), item => {
+            let m = MyListItem.fromApiResponse(item, this);
+            return this.items.push(m);
+        });
+
+        this.emit("did-refresh", {list: this});
     }
 
     /**
@@ -189,11 +190,11 @@ export default class MyList extends Emitter {
      * @param {MyListItem|Array.<MyListItem>}    items
      */
     _pickHavingItemIds(items) {
-        let havingItemIds;
         if (!Array.isArray(items)) { items = [items]; }
+
         let validItems = _.select(items, item => item instanceof MyListItem);
-        let havingItems = _.select(items, "list", this);
-        return havingItemIds = _.pluck(havingItems, 'id');
+        let havingItems = _.select(validItems, "list", this);
+        return _.pluck(havingItems, 'id');
     }
 
     /**
@@ -202,57 +203,42 @@ export default class MyList extends Emitter {
      * @param {string?}              desc    マイリストの動画メモの内容
      * @return {Promise}
      */
-    addMovie(movie, desc = "") {
-        let id      = null;
+    async addMovie(movie, desc = "") {
+        let movieId, responseJson;
 
         // movieが文字列じゃない上に、オブジェクトじゃないとか、idプロパティがない場合
         if (!typeof movie !== "string" && (movie.id == null)) {
-            return Promise.reject(new TypeError("Invalid type for argument 1(movie)"));
+            throw new TypeError("Invalid type for argument 1(movie)");
         } else {
-            id = _.isString(movie) ? movie : movie.id;
+            movieId = _.isString(movie) ? movie : movie.id;
         }
 
-        let req = {
-            item_type   : 0,
-            item_id     : id,
-            token       : null,
+        const response = this.api.addItem({
+            item_type   : MyListItemType.MOVIE,
+            item_id     : movieId,
+            token       : await this._session.mylist.fetchToken(),
             description : desc,
             group_id    : this.id
-        };
+        });
 
-        this.isDefaultList() && (delete req.group_id);
 
-        //-- APIと通信
-        // アクセストークンを取得
-        return this._session.mylist.fetchToken()
-        .then(token => {
-            req.token = token;
-
-            return Request.post({
-                resolveWithFullResponse : true,
-                url : this._urlSet.ADD,
-                jar : this._session.cookie,
-                form : req
+        try {
+            responseJson = JSON.parse(response.body);
+        } catch (e) {
+            throw new JSONParseError({
+                message: `MyList[${this.id}]: Failed to add item (JSON parse error)`,
+                response: response,
+                tryToParse: response.body,
+                previous: e,
             });
         }
-        )
 
-        .then(res => {
-            try {
-                var result = JSON.parse(res.body);
-            } catch (e) {
-                return Promise.reject("Mylist[%s]: Failed to add item (JSON parse error)");
-            }
-
-            return result.status !== "ok" ?
-                Promise.reject(new NicoException({
-                    message     : result.error.description,
-                    response    : result
-                })
-                ) : undefined;
-
-            return Promise.resolve({response: result});
-        });
+        if (responseJson.status !== "ok") {
+            throw new NicoException({
+                message     : `MyList[${this.id}]: Failed to add item (reason: ${responseJson.error.description})`,
+                response    : response,
+            });
+        }
     }
 
 
@@ -264,44 +250,37 @@ export default class MyList extends Emitter {
      * @param {MyListItem|Array.<MyListItem>}    items   削除する項目の配列
      * @return {Promise} 成功した時に削除された項目数でresolveします。
      */
-    deleteItem(items) {
-        let itemIds = this._pickHavingItemIds(items);
-        if (itemIds.length === 0) { return Promise.resolve({response: null}); }
+    async deleteItem(items) {
+        const itemIds = this._pickHavingItemIds(items);
 
-        return this._session.mylist.fetchToken()
-        .then(token => {
-            let req = {
-                group_id : this.id,
-                "id_list[0]" : itemIds,
-                token
-            };
+        if (itemIds.length === 0) {
+            return;
+        }
 
-            if (this.isDefaultList()) { delete req.group_id; }
+        const response = await this.api.deleteItem({
+            group_id : this.id,
+            "id_list[0]" : itemIds,
+            token: await this._session.mylist.fetchToken(),
+        });
 
-            return Request.post({
-                resolveWithFullResponse : true,
-                url : this._urlSet.DELETE,
-                jar : this._session.cookie,
-                form : req
+        let responseJson;
+        try {
+            responseJson = JSON.parse(response.body);
+        } catch (e) {
+            throw new JSONParseError({
+                message: `MyList[${this.id}]: Failed to delete item`,
+                response: response,
+                tryToParse: response.body,
+                previous: e,
             });
         }
-        )
 
-        .then(function(res) {
-            try {
-                var result = JSON.parse(res.body);
-            } catch (e) {
-                return Promise.reject(new Error("Mylist[%s]: Failed to delete item (JSON parse error)"));
-            }
-
-            if (result.status === "ok") {
-                return Promise.resolve({response: json});
-            } else {
-                let e = new Error(sprintf("MyList[%s]: Failed to delete item (reason: %s)", this.id, result.error.description));
-                e.response = json;
-                return Promise.reject(e);
-            }
-        });
+        if (responseJson.status !== "ok") {
+            throw new NicoException({
+                message     : `MyList[${this.id}]: Failed to delete item (reason: ${responseJson.error.description})`,
+                response    : response,
+            });
+        }
     }
 
     /**
@@ -310,52 +289,44 @@ export default class MyList extends Emitter {
      * 渡された項目内のこのリストの項目でないものは無視されます。
      *
      * @param {MyListItem|Array.<MyListItem>}    items   移動する項目の配列
-     * @param　{MyList}   targetMyList    移動先のマイリスト
+     * @param {MyList}   targetMyList    移動先のマイリスト
      * @return {Promise}
      */
-    moveItem(items, targetMyList) {
+    async moveItem(items, targetMyList) {
         if (!(targetMyList instanceof MyList)) {
             throw new TypeError("targetMyList must be instance of MyList");
         }
 
         let itemIds = this._pickHavingItemIds(items);
-        if (itemIds.length === 0) { return Promise.resolve({response: null}); }
+        if (itemIds.length === 0) {
+            return;
+        }
 
-        return this._session.mylist.fetchToken()
-        .then(token => {
-            let req = {
+        const response = await Request.post({
+            resolveWithFullResponse : true,
+            url : this._urlSet.MOVE,
+            jar : this._session.cookie,
+            form : {
                 group_id : this.id,
                 target_group_id : targetMyList.id,
                 "id_list[0]" : itemIds,
-                token
-            };
+                token: await this._session.mylist.fetchToken(),
+            },
+        });
 
-            if (this.isDefaultList()) { delete req.group_id; }
+        let responseJson;
+        try {
+            responseJson = JSON.parse(response.body);
+        } catch (e) {
+            return Promise.reject("Mylist[%s]: Failed to move item (JSON parse error)");
+        }
 
-            return Request.post({
-                resolveWithFullResponse : true,
-                url : this._urlSet.MOVE,
-                jar : this._session.cookie,
-                form : req
+        if (responseJson.status !== "ok") {
+            throw new NicoException({
+                message     : `MyList[${this.id}]: Failed to delete item (reason: ${responseJson.error.description})`,
+                response    : response,
             });
         }
-        )
-
-        .then(function(res) {
-            try {
-                var result = JSON.parse(res.body);
-            } catch (e) {
-                return Promise.reject("Mylist[%s]: Failed to delete item (JSON parse error)");
-            }
-
-            if (result.status === "ok") {
-                return Promise.resolve({response: json});
-            } else {
-                let e = new Error(sprintf("MyList[%s]: Failed to delete item (reason: %s)", this.id, result.error.description));
-                e.response = result;
-                return Promise.reject(e);
-            }
-        });
     }
     //
     // Event Handlers
@@ -367,4 +338,4 @@ export default class MyList extends Emitter {
     onDidDeleteItem(listener) {
         return this.on("did-delete-item", listener);
     }
-};
+}

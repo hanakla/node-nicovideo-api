@@ -6,15 +6,17 @@ import _ from "lodash";
 import Emitter from "disposable-emitter";
 import Cheerio from "cheerio";
 import deepFreeze from "deep-freeze";
-import Request from "request-promise";
-import { sprintf } from "sprintf";
 import { CompositeDisposable, Disposable } from "event-kit";
 import QueryString from "querystring";
 
 import APIEndpoints from "../APIEndpoints";
-import NicoException from "../NicoException";
 import NicoLiveInfo from "./NicoLiveInfo";
 import NsenChannels from "./NsenChannels";
+
+import {
+    NicoException,
+    NsenSkipRequestDuplecation,
+} from "../errors/";
 
 export default class NsenChannel extends Emitter {
 
@@ -139,8 +141,6 @@ export default class NsenChannel extends Emitter {
             throw new TypeError("This live is not Nsen live streaming.");
         }
 
-        super(...arguments);
-
         Object.defineProperties(this, {
             id  : {
                 get() { return this.getChannelType(); }
@@ -236,33 +236,45 @@ export default class NsenChannel extends Emitter {
      */
     _processLiveCommands(command, params = [], options = {}) {
         switch (command) {
-            case "/prepare":
+            case "/prepare": (() => {
                 let [videoId] = params;
-                return this._willMovieChange(videoId);
+                this._willMovieChange(videoId);
+            })();
+            break;
 
-            case "/play":
-                if (options.ignoreVideoChanged) { break; }
-
-                let [source, view, title] = params;
-                videoId = /smile:((?:sm|nm)[1-9][0-9]*)/.exec(source);
-
-                if (__guard__(videoId, x => x[1]) != null) {
-                    return this._didDetectMovieChange(videoId[1]);
+            case "/play": (() => {
+                if (options.ignoreVideoChanged) {
+                    return;
                 }
-                    // @emit "did-change-movie", videoId[1]
 
-            case "/reset":
+                let [source, /* view, title */] = params;
+                let videoId = /smile:((?:sm|nm)[1-9][0-9]*)/.exec(source);
+
+                // TODO: remove __guard__
+                if (__guard__(videoId, x => x[1]) != null) {
+                    this._didDetectMovieChange(videoId[1]);
+                }
+            })();
+            break;
+
+            case "/reset": (() => {
                 let [nextLiveId] = params;
                 this._nextLiveId = nextLiveId;
-                return this.emit("will-close", nextLiveId);
+                this.emit("will-close", nextLiveId);
+            })();
+            break;
 
-            case "/nspanel":
+            case "/nspanel": (() => {
                 let [operation, entity] = params;
-                return this._processNspanelCommand(operation, entity);
+                this._processNspanelCommand(operation, entity);
+            })();
+            break;
 
-            case "/nsenrequest":
+            case "/nsenrequest": (() => {
                 let [state] = params; // "on", "lot"
-                return this.emit("did-receive-request-state", state);
+                this.emit("did-receive-request-state", state);
+            })();
+            break;
         }
     }
 
@@ -282,12 +294,10 @@ export default class NsenChannel extends Emitter {
             case (panelState.goodClick != null):
                 this.emit("did-receive-good");
                 return;
-                break;
 
             case (panelState.mylistClick != null):
                 this.emit("did-receive-add-mylist");
                 return;
-                break;
         }
 
         if (panelState.dj != null) {
@@ -309,7 +319,6 @@ export default class NsenChannel extends Emitter {
             gage        : panelState.gage | 0,
             tv          : panelState.tv | 0
         });
-
     }
 
 
@@ -317,73 +326,67 @@ export default class NsenChannel extends Emitter {
      * サーバー側の情報とインスタンスの情報を同期します。
      * @return {Promise}
      */
-    fetch() {
-        return (this._live != null) ?
-            Promise.reject(new NicoException({
-                message: "LiveInfo not attached."})
-            ) : undefined;
+    async fetch() {
+        if (this._live == null) {
+            throw new NicoException({
+                message: "LiveInfo not attached."
+            });
+        }
 
         // リクエストした動画の情報を取得
-        let { liveId } = this._live.get("stream");
+        let {liveId} = this._live.get("stream");
 
-        return this._live.fetch()
-        .then(() => {
-            return APIEndpoints.nsen.syncRequest(this._session, {liveId});
-        }
-        )
-
-        .catch(e => {
-            return Promise.reject(new NicoException({
+        let response;
+        try {
+            await this._live.fetch()
+            response = await APIEndpoints.Nsen.syncRequest(this._session, {liveId});
+        } catch (e) {
+            throw new NicoException({
                 message     : `Failed to fetch Nsen request status. (${e.message})`,
                 previous    : e
-            })
-            );
+            });
         }
-        )
 
-        .then(res => {
-            let $res = Cheerio.load(res.body)(":root");
+        const $res = Cheerio.load(response.body)(":root");
+        const status = $res.attr("status");
+        const errorCode = $res.find("error code").text();
 
-            let status = $res.attr("status");
-            let errorCode = $res.find("error code").text();
-
-            // It's correctry.
-            // NsenRequest API returns `[status="fail]"` and `error>code="unknown"`
-            // When nothing is requested.
-            return status !== "ok" && errorCode !== "unknown" ?
-                Promise.reject(new NicoException({
-                    message     : `Failed to fetch Nsen request status. (${errorCode})`,
-                    code        : errorCode,
-                    response    : res.body
-                })
-                ) : undefined;
-
-            return errorCode === "unknown" && (this._requestedMovie != null) ?
-                (this._requestedMovie = null,
-                this.emit("did-cancel-request"),
-                Promise.resolve()) : undefined;
-
-            // リクエストの取得に成功したら動画情報を同期
-            let videoId = $res.find("id").text();
-            if (videoId.length === 0) { return Promise.resolve(); }
-
-            // 直前にリクエストした動画と内容が異なれば
-            // 新しい動画に更新
-            if ((this._requestedMovie != null) && this._requestedMovie.id === videoId) { return; }
-
-            return this._session.video.getVideoInfo(videoId);
+        // It's correctry.
+        // NsenRequest API returns `[status="fail]"` and `error>code="unknown"`
+        // When nothing is requested.
+        if (status !== "ok" && errorCode !== "unknown") {
+            throw new NicoException({
+                message     : `Failed to fetch Nsen request status. (${errorCode})`,
+                code        : errorCode,
+                response    : response.body
+            });
         }
-        )
 
-        .then(movie => {
-            if (movie == null) { return; }
-
-            this._requestedMovie = movie;
-            this.emit("did-send-request", movie);
-
-            return Promise.resolve();
+        if (errorCode === "unknown" && this._requestedMovie != null) {
+            this._requestedMovie = null;
+            this.emit("did-cancel-request");
+            return ;
         }
-        );
+
+        // リクエストの取得に成功したら動画情報を同期
+        const videoId = $res.find("id").text();
+        if (videoId.length === 0) {
+            return;
+        }
+
+        // 直前にリクエストした動画と内容が異なれば
+        // 新しい動画に更新
+        if (this._requestedMovie != null && this._requestedMovie.id === videoId) {
+            return;
+        }
+
+        const movie = await this._session.video.getVideoInfo(videoId);
+        if (movie == null) {
+            return;
+        }
+
+        this._requestedMovie = movie;
+        this.emit("did-send-request", movie);
     }
 
     /**
@@ -394,46 +397,23 @@ export default class NsenChannel extends Emitter {
      * @param {Number} [options.timeoutMs] タイムアウトまでのミリ秒
      * @return {Promise}
      */
-    connect(options = {}) {
+    async connect(options = {}) {
         _.assign(options, {connect: false});
 
-        return this._live.commentProvider(options)
-        .then(provider => {
-            this._commentProvider = provider;
+        const provider = this._commentProvider = await this._live.commentProvider(options);
 
-            let sub = this._channelSubscriptions;
-            sub.add(provider.onDidProcessFirstResponse(comments => {
-                this.lockAutoEmit("did-process-first-response", comments);
+        const sub = this._channelSubscriptions;
+        sub.add(provider.onDidProcessFirstResponse(comments => {
+            this.lockAutoEmit("did-process-first-response", comments);
+            comments.forEach(comment => this._didCommentReceived(comment));
 
-                comments.forEach(comment => {
-                    return this._didCommentReceived(comment);
-                }
-                );
+            sub.add(new Disposable(() => this.unlockAutoEmit("did-process-first-response")));
+            sub.add(provider.onDidReceiveComment(comment => this._didCommentReceived(comment)));
+        }));
 
-                sub.add(new Disposable(() => {
-                    return this.unlockAutoEmit("did-process-first-response");
-                }
-                )
-                );
+        sub.add(provider.onDidEndLive(() => this._onLiveClosed()));
 
-                return sub.add(provider.onDidReceiveComment(comment => {
-                    return this._didCommentReceived(comment);
-                }
-                )
-                );
-            }
-            )
-            );
-
-            sub.add(provider.onDidEndLive(() => {
-                return this._onLiveClosed();
-            }
-            )
-            );
-
-            return provider.connect(options);
-        }
-        );
+        return await provider.connect(options);
     }
 
 
@@ -441,8 +421,8 @@ export default class NsenChannel extends Emitter {
     /**
      * コメントサーバーに再接続します。
      */
-    reconnect() {
-        return this._commentProvider.reconnect();
+    async reconnect() {
+        return await this._commentProvider.reconnect();
     }
 
 
@@ -451,7 +431,7 @@ export default class NsenChannel extends Emitter {
         this._live = null;
         this._commentProvider = null;
         this._channelSubscriptions.dispose();
-        return super.dispose(...arguments);
+        super.dispose();
     }
 
 
@@ -465,36 +445,30 @@ export default class NsenChannel extends Emitter {
      * @param {NicoVideoInfo|String} movie リクエストする動画の動画IDかNicoVideoInfoオブジェクト
      * @return {Promise}
      */
-    pushRequest(movie) {
-        let promise = typeof movie === "string" ?
-            this._session.video.getVideoInfo(movie)
-        :
-            Promise.resolve(movie);
+    async pushRequest(movie) {
+        const requestingMovie = typeof movie === 'string'
+            ? await this._session.video.getVideoInfo(movie)
+            : movie;
 
-        return promise.then(movie => {
-            let movieId = movie.id;
-            let liveId = this._live.get("stream.liveId");
+        const movieId = requestingMovie.id;
+        const liveId = this._live.get('stream.liveId');
+        const [res, requestedMovie] = await Promise.all([
+            APIEndpoints.Nsen.request(this._session, {liveId, movieId}),
+            requestingMovie
+        ]);
 
-            return Promise.all([APIEndpoints.nsen.request(this._session, {liveId, movieId}), movie]);
+        const $res = Cheerio.load(res.body)(':root');
+
+        if ($res.attr('status') !== 'ok') {
+            throw new NicoException({
+                message     : 'Failed to push request',
+                code        : $res.find('error code').text(),
+                response    : res
+            });
         }
-        )
 
-        .then(([res, movie]) => {
-            let $res = Cheerio.load(res.body)(":root");
-
-            return $res.attr("status") === "ok" ?
-                Promise.reject(new NicoException({
-                    message     : "Failed to push request",
-                    code        : $res.find("error code").text(),
-                    response    : res
-                })
-                ) : undefined;
-
-            this._requestedMovie = movie;
-            this.emit("did-send-request", movie);
-            return Promise.resolve();
-        }
-        );
+        this._requestedMovie = requestedMovie;
+        this.emit('did-send-request', requestedMovie);
     }
 
 
@@ -505,30 +479,26 @@ export default class NsenChannel extends Emitter {
      *   (事前にリクエストが送信されていない場合もresolveされます。）
      *   リクエストに失敗した時、エラーメッセージつきでrejectされます。
      */
-    cancelRequest() {
+    async cancelRequest() {
         if (!this._requestedMovie) {
             return Promise.resolve();
         }
 
-        let { liveId }  = this._live.get("stream");
+        const {liveId} = this._live.get("stream");
 
-        return APIEndpoints.nsen.cancelRequest(this._session, {liveId})
-        .then(res => {
-            let $res = Cheerio.load(res.body)(":root");
+        const response = await APIEndpoints.Nsen.cancelRequest(this._session, {liveId});
+        const $res = Cheerio.load(response.body)(":root");
 
-            return $res.attr("status") !== "ok" ?
-                Promise.reject(new NicoException({
-                    message     : "Failed to cancel request",
-                    code        : $res.find("error code").text(),
-                    response    : res.body
-                })
-                ) : undefined;
-
-            this.emit("did-cancel-request", this._requestedMovie);
-            this._requestedMovie = null;
-            return Promise.resolve();
+        if ($res.attr("status") !== "ok") {
+            throw new NicoException({
+                message     : "Failed to cancel request",
+                code        : $res.find("error code").text(),
+                response    : response,
+            });
         }
-        );
+
+        this.emit("did-cancel-request", this._requestedMovie);
+        this._requestedMovie = null;
     }
 
 
@@ -538,25 +508,21 @@ export default class NsenChannel extends Emitter {
      *   成功したらresolveされます。
      *   失敗した時、エラーメッセージつきでrejectされます。
      */
-    pushGood() {
-        let { liveId }  = this._live.get("stream");
+    async pushGood() {
+        const {liveId} = this._live.get("stream");
 
-        return APIEndpoints.nsen.sendGood(this._session, {liveId})
-        .then(res => {
-            let $res = Cheerio.load(res.body)(":root");
+        const response = await APIEndpoints.Nsen.sendGood(this._session, {liveId})
+        let $res = Cheerio.load(response.body)(":root");
 
-            return $res.attr("status") !== "ok" ?
-                Promise.reject(new NicoException({
-                    message     : "Failed to push good",
-                    code        : $res.find("error code").text(),
-                    response    : res.body
-                })
-                ) : undefined;
-
-            this.emit("did-push-good");
-            return Promise.resolve();
+        if ($res.attr("status") !== "ok") {
+            throw new NicoException({
+                message     : "Failed to push good",
+                code        : $res.find("error code").text(),
+                response    : response,
+            });
         }
-        );
+
+        this.emit("did-push-good");
     }
 
 
@@ -567,32 +533,30 @@ export default class NsenChannel extends Emitter {
      *   成功したらresolveされます。
      *   失敗した時、エラーメッセージつきでrejectされます。
      */
-    pushSkip() {
-        let { liveId }  = this._live.get("stream");
-        let movieId = (__guard__(this.getCurrentVideo(), x => x.id) != null);
+    async pushSkip() {
+        const {liveId} = this._live.get('stream');
+        const movie = this.getCurrentVideo();
+        const movieId = movie ? movie.id : undefined;
 
         if (!this.isSkipRequestable()) {
-            return Promise.reject("Skip request already sended.");
+            throw new NsenSkipRequestDuplecation({
+                message: 'Skip request already sended.',
+            });
         }
 
-        return APIEndpoints.nsen.sendSkip(this._session, {liveId})
-        .then(res => {
-            let $res = Cheerio.load(res.body).find(":root");
+        const res = await APIEndpoints.Nsen.sendSkip(this._session, {liveId})
+        const $res = Cheerio.load(res.body).find(':root');
 
-            // 通信に失敗
-            return $res.attr("status") !== "ok" ?
-                Promise.reject(new NicoException({
-                    message     : "Failed to push skip",
-                    code        : $res.find("error code").text(),
-                    response    : res.body
-                })
-                ) : undefined;
-
-            this._lastSkippedMovieId = movieId;
-            this.emit("did-push-skip");
-            return Promise.resolve();
+        if ($res.attr('status') !== 'ok') {
+            throw new NicoException({
+                message     : 'Failed to push skip',
+                code        : $res.find('error code').text(),
+                response    : res.body
+            });
         }
-        );
+
+        this._lastSkippedMovieId = movieId;
+        this.emit('did-push-skip');
     }
 
 
@@ -616,19 +580,16 @@ export default class NsenChannel extends Emitter {
      * @return {Promise}
      *   移動に成功すればresolveされ、それ以外の時にはrejectされます。
      */
-    moveToNextLive(options = {}) {
+    async moveToNextLive(options = {}) {
         if (this._nextLiveId == null) { return Promise.reject(); }
 
         _.defaults(options, {connect: true});
 
         // 放送情報を取得
-        return this._session.live.getLiveInfo(this._nextLiveId)
-        .then(liveInfo => {
-            this._attachLive(liveInfo, options);
-            this.emit("did-change-stream", liveInfo);
-            return this.fetch();
-        }
-        );
+        const liveInfo = await this._session.live.getLiveInfo(this._nextLiveId)
+        this._attachLive(liveInfo, options);
+        this.emit("did-change-stream", liveInfo);
+        return await this.fetch();
     }
 
 
@@ -892,7 +853,7 @@ export default class NsenChannel extends Emitter {
     onWillDispose(listener) {
         return this.on("will-dispose", listener);
     }
-};
+}
 
 function __guard__(value, transform) {
   return (typeof value !== 'undefined' && value !== null) ? transform(value) : undefined;

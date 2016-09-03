@@ -1,45 +1,43 @@
-import __ from "lodash-deep";
-import deepFreeze from "deep-freeze";
+import _ from 'lodash';
+import deepFreeze from 'deep-freeze';
 
-import APIEndpoints from "../APIEndpoints";
-import NicoException from "../NicoException";
+import APIEndpoints from '../APIEndpoints';
+import NicoException from '../NicoException';
 
 export default class NicoUser {
     /**
      * @return {Promise}
      */
-    static instance(userId, session) {
-        return userId === 0 ?
-            Promise.resolve(this.makeAnonymousUser()) : undefined;
-
-        return APIEndpoints.user.info(session, {userId})
-        .then(res => {
-            try {
-                var result = JSON.parse(res.body);
-                var data = result.nicovideo_user_response;
-            } catch (e) {
-                Promise.reject(new NicoException({
-                    message  : "Failed to parse user info response.",
-                    response : res,
-                    previous : e
-                })
-                );
-            }
-
-            return data["@status"] !== "ok" ?
-                Promise.reject(new NicoException({
-                    message     : data.error.description,
-                    code        : data.error.code,
-                    response    : result
-                })
-                ) : undefined;
-
-            let props = deepFreeze(this.parseResponse(result));
-            let user = new NicoUser(props);
-
-            return Promise.resolve(user);
+    static async instance(userId, session) {
+        if (userId === 0 || ! userId) {
+            return this.makeAnonymousUser();
         }
-        );
+
+        const res = await APIEndpoints.User.info(session, {userId});
+        let responseJson, userData;
+
+        try {
+            responseJson = JSON.parse(res.body);
+            userData = responseJson.nicovideo_user_response;
+        } catch (e) {
+            Promise.reject(new NicoException({
+                message  : 'Failed to parse user info response.',
+                response : res,
+                previous : e
+            })
+            );
+        }
+
+        if (userData['@status'] !== 'ok') {
+            throw new NicoException({
+                message     : userData.error.description,
+                // code        : userData.error.code,
+                response    : res
+            });
+        }
+
+        const props = deepFreeze(this.parseResponse(responseJson));
+        return new NicoUser(props);
     }
 
 
@@ -63,18 +61,17 @@ export default class NicoUser {
 
 
     static makeAnonymousUser() {
-        let user;
         let props = deepFreeze({
             id              : 0,
-            name            : "",
-            thumbnailURL    : "http://uni.res.nimg.jp/img/user/thumb/blank.jpg",
-            additionals     : "",
+            name            : '',
+            thumbnailURL    : 'http://uni.res.nimg.jp/img/user/thumb/blank.jpg',
+            additionals     : '',
             vita            : {
                 userSecret      : 0
             }
         });
 
-        return user = new NicoUser(props);
+        return new NicoUser(props);
     }
 
 
@@ -95,6 +92,6 @@ export default class NicoUser {
 
 
     get(key) {
-        return __.deepGet(this._props, key);
+        return _.get(this._props, key);
     }
-};
+}

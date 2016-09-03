@@ -67,14 +67,19 @@ export default class Emitter extends EventEmitter3 {
             return;
         }
 
-        super.off(...arguments);
+        super.off(event, fn, context, once);
     }
 
     removeAllListeners(event) {
         if (this.disposed) { return; }
-        return super.removeAllListeners(...arguments);
+        return super.removeAllListeners(event);
     }
-};
 
-Emitter.prototype.addListener = Emitter.prototype.on;
-Emitter.prototype.removeListener = Emitter.prototype.off;
+    addListener(...args) {
+        return this.on(...args);
+    }
+
+    removeListener(...args) {
+        return this.off(...args);
+    }
+}

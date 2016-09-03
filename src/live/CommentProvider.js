@@ -3,18 +3,22 @@
  * @class CommentProvider
  */
 
-import _ from "lodash";
-import Cheerio from "cheerio";
-import deepFreeze from "deep-freeze";
-import Request from "request-promise";
-import Deferred from "promise-native-deferred";
-import { Socket } from "net";
-import { sprintf } from "sprintf";
+import _ from 'lodash';
+import Cheerio from 'cheerio';
+import deepFreeze from 'deep-freeze';
+import Request from 'request-promise';
+import Deferred from 'promise-native-deferred';
+import { Socket } from 'net';
+import { sprintf } from 'sprintf';
 
-import Emitter from "disposable-emitter";
-import NicoUrl from "../NicoURL";
-import NicoException from "../NicoException";
-import NicoLiveComment from "./NicoLiveComment";
+import Emitter from 'disposable-emitter';
+import NicoUrl from '../NicoURL';
+import NicoLiveComment from './NicoLiveComment';
+
+import {
+    ConnectionError,
+    NicoException,
+} from '../errors';
 
 
 let chatResults = deepFreeze({
@@ -45,12 +49,12 @@ export default class CommentProvider extends Emitter {
      * @param {NicoLiveInfo} liveInfo
      * @return {Promise}
      */
-    static instanceFor(liveInfo) {
+    static async instanceFor(liveInfo) {
         if (liveInfo == null) {
             throw new TypeError("liveInfo must be instance of NicoLiveInfo");
         }
 
-        return Promise.resolve(new CommentProvider(liveInfo));
+        return new CommentProvider(liveInfo);
     }
 
     /**
@@ -87,7 +91,6 @@ export default class CommentProvider extends Emitter {
         super();
 
         this._live = _live;
-        super(...arguments);
 
         this.isFirstResponseProsessed = false;
         this._postInfo  = {
@@ -143,56 +146,42 @@ export default class CommentProvider extends Emitter {
      * @param {Number} [options.timeoutMs=5000] タイムアウトまでのミリ秒
      * @return {Promise}
      */
-    connect(options = {}) {
+    async connect(options = {}) {
         this._canContinue();
 
         if (this._socket != null) { return Promise.resolve(this); }
 
-        let serverInfo  = this._live.get("comment");
+        const serverInfo  = this._live.get('comment');
         options = _.defaults({}, options, {
             firstGetComments: 100,
             timeoutMs : 5000
-        }
-        );
+        });
 
-        return new Promise((resolve, reject) => {
-            let timerId = null;
-            this._socket = new Socket();
 
-            // @once "receive", @_threadInfoDetector
+        let timerId;
+        this._socket = new Socket();
 
-            this._socket
-            .once("connect", () => {
-                this.once("_did-receive-connection-response", () => {
-                    clearTimeout(timerId);
-                    resolve(this);
-                }
-                );
+        this._socket.once('connect', () => {
+            this.once('_did-receive-connection-response', () => clearTimeout(timerId));
 
-                // Send thread information
-                let params = _.assign({}, {firstGetComments: options.firstGetComments}, serverInfo);
-                this._socket.write(COMMANDS.connect(params) + '\0');
+            // Send thread information
+            let params = _.assign({}, {firstGetComments: options.firstGetComments}, serverInfo);
+            this._socket.write(COMMANDS.connect(params) + '\0');
+        })
+        .on('data', this._didReceiveData.bind(this))
+        .on('error', this._didErrorOnSocket.bind(this))
+        .on('close', this._didCloseSocket.bind(this));
 
-            }
-            )
+        this._socket.connect({
+            host : serverInfo.addr,
+            port : serverInfo.port
+        });
 
-            .on("data", this._didReceiveData.bind(this))
-
-            .on("error", this._didErrorOnSocket.bind(this))
-
-            .on("close", this._didCloseSocket.bind(this));
-
-            this._socket.connect({
-                host : serverInfo.addr,
-                port : serverInfo.port
+        timerId = setTimeout(() => {
+            throw new ConnectionError({
+                message: `[CommentProvider: ${this._live.id}] Connection timed out.`
             });
-
-            return timerId = setTimeout(() => {
-                reject(new Error(`[CommentProvider: ${this._live.id}] Connection timed out.`));
-            }
-            , options.timeoutMs);
-        }
-        );
+        }, options.timeoutMs);
     }
 
 
@@ -206,7 +195,7 @@ export default class CommentProvider extends Emitter {
 
         if (this._socket != null) { this._socket.destroy(); }
         this._socket = null;
-        return this.connect();
+        return this.connect(options);
     }
 
 
@@ -402,40 +391,38 @@ export default class CommentProvider extends Emitter {
     _didReceiveData(xml) {
         this.emit("did-receive-data", xml);
 
-        let comments = [];
-
-        let $elements = Cheerio.load(xml)(":root");
+        const comments = [];
+        const $elements = Cheerio.load(xml)(":root");
         $elements.each((i, element) => {
-            let $element = Cheerio(element);
+            const $element = Cheerio(element);
+            let comment, status;
 
             switch (element.name) {
-                case "thread":
+                case 'thread':
                     // Did receive first connection response
-                    this._postInfo.ticket = $element.attr("ticket");
-                    this.emit("_did-receive-connection-response");
+                    this._postInfo.ticket = $element.attr('ticket');
+                    this.emit('_did-receive-connection-response');
                     break;
-                    // console.info "CommentProvider[%s]: Receive thread info", @_live.get("id")
+                    // console.info 'CommentProvider[%s]: Receive thread info', @_live.get('id')
 
-                case "chat":
-                    let comment = NicoLiveComment.fromRawXml($element.toString(), this._live.get("user.id"));
+                case 'chat':
+                    comment = NicoLiveComment.fromRawXml($element.toString(), this._live.get('user.id'));
                     comments.push(comment);
-                    this.emit("did-receive-comment", comment);
+                    this.emit('did-receive-comment', comment);
 
                     // 配信終了通知が来たら切断
-                    if (comment.isPostByDistributor() && comment.comment === "/disconnect") {
-                        this.emit("did-end-live", this._live);
+                    if (comment.isPostByDistributor() && comment.comment === '/disconnect') {
+                        this.emit('did-end-live', this._live);
                         this.disconnect();
                     }
                     break;
 
-                case "chat_result":
+                case 'chat_result':
                     // Did receive post result
-                    let status = $element.attr("status");
-                    status = status | 0;
-
-                    comment = NicoLiveComment.fromRawXml($element.find("chat").toString(), this._live.get("user.id"));
-                    this.emit("did-receive-post-result", {status});
-                    this.emit("did-receive-comment", comment);
+                    status = $element.attr('status') | 0;
+                    comment = NicoLiveComment.fromRawXml($element.find('chat').toString(), this._live.get('user.id'));
+                    this.emit('did-receive-post-result', {status});
+                    this.emit('did-receive-comment', comment);
                     break;
             }
 
@@ -591,4 +578,4 @@ export default class CommentProvider extends Emitter {
     onDidEndLive(listener) {
         return this.on("did-end-live", listener);
     }
-};
+}

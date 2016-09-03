@@ -64,17 +64,14 @@ export default class MyListMeta {
      */
     static parse(metaInfo) {
         if (metaInfo === "home") {
-            var attr = _.defaults({
+            return  _.defaults({
                 id: "home",
                 name: "とりあえずマイリスト",
                 public : false
-            }
-            , MyListMeta.defaults);
-
-            return attr;
+            }, MyListMeta.defaults);
         }
 
-        var attr = _.defaults({
+        return _.defaults({
             id          : metaInfo.id | 0,
             name        : metaInfo.name,
             description : metaInfo.description,
@@ -85,10 +82,7 @@ export default class MyListMeta {
             userId      : metaInfo.user_id | 0,
             createTime  : new Date(metaInfo.create_time * 1000),
             updateTime  : new Date(metaInfo.update_time * 1000)
-        }
-        , MyListMeta.defaults);
-
-        return attr;
+        }, MyListMeta.defaults);
     }
 
     /**
@@ -148,4 +142,4 @@ export default class MyListMeta {
     toJSON() {
         return _.clone(this._attr);
     }
-};
+}

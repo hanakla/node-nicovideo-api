@@ -33,21 +33,20 @@
  */
 
 import _ from "lodash";
-import __ from "lodash-deep";
 import Ent from "ent";
-import Emitter from "../Emitter";
-
-import { sprintf } from "sprintf";
 import deepFreeze from "deep-freeze";
+
+import Emitter from "../Emitter";
 
 export default class MyListItem extends Emitter {
     /**
+     * TODO: Remove it
      * @static
      * @property {Object}    ItemTypes           アイテムの種類のリスト
      * @property {Number}    ItemTypes.movie     動画
      * @property {Number}    ItemTypes.seiga     静画
      */
-    static ItemTypes       = deepFreeze({
+    static ItemTypes = deepFreeze({
         MOVIE : 0,
         SEIGA : 5,
         BOOK : 6,
@@ -137,7 +136,7 @@ export default class MyListItem extends Emitter {
      * @return
      */
     get(path) {
-        return __.deepGet(this._attr, path);
+        return _.get(this._attr, path);
     }
 
     /**
@@ -174,4 +173,4 @@ export default class MyListItem extends Emitter {
     isBlomaga() {
         return this.get("type") === MyListItem.ItemTypes.BLOMAGA;
     }
-};
+}

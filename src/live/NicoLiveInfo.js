@@ -51,17 +51,15 @@
  * @class NicoLiveInfo
  */
 
-import _ from "lodash";
-import __ from "lodash-deep";
-import Cheerio from "cheerio";
-import Request from "request-promise";
-import { sprintf } from "sprintf";
+import _ from 'lodash';
+import __ from 'lodash-deep';
+import Cheerio from 'cheerio';
+import { sprintf } from 'sprintf';
 
-import APIEndpoints from "../APIEndpoints";
-import NicoURL from "../NicoURL";
-import NicoException from "../NicoException";
-import Emitter from "../Emitter";
-import CommentProvider from "./CommentProvider";
+import APIEndpoints from '../APIEndpoints';
+import {NicoException} from '../errors/';
+import Emitter from '../Emitter';
+import CommentProvider from './CommentProvider';
 
 export default class NicoLiveInfo extends Emitter {
 
@@ -175,7 +173,6 @@ export default class NicoLiveInfo extends Emitter {
         super();
 
         this._session = _session;
-        super(...arguments);
 
         Object.defineProperties(this, {
             id : {
@@ -371,10 +368,13 @@ export default class NicoLiveInfo extends Emitter {
      * 現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。
      */
     dispose() {
-        __guard__(this._commentProvider, x => x.dispose());
+        if (this._commentProvider) {
+            this._commentProvider.dispose();
+        }
+
         this._commentProvider = null;
         delete NicoLiveInfo._cache[this.id];
-        return super.dispose(...arguments);
+        super.dispose(...arguments);
     }
 
 
@@ -393,8 +393,4 @@ export default class NicoLiveInfo extends Emitter {
     onDidRefresh(listener) {
         return this.on("did-refresh", listener);
     }
-};
-
-function __guard__(value, transform) {
-  return (typeof value !== 'undefined' && value !== null) ? transform(value) : undefined;
 }

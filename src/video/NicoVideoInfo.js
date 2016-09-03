@@ -1,15 +1,11 @@
-import _ from "lodash";
-import __ from "lodash-deep";
+import _ from 'lodash';
 
-import Request from "request-promise";
-import cheerio from "cheerio";
-import { sprintf } from "sprintf";
-import deepFreeze from "deep-freeze";
-import Ent from "ent";
-import Deferred from "promise-native-deferred";
+import cheerio from 'cheerio';
+import deepFreeze from 'deep-freeze';
+import Ent from 'ent';
 
-import APIEndpoints from "../APIEndpoints";
-import NicoException from "../NicoException";
+import APIEndpoints from '../APIEndpoints';
+import {NicoException} from '../errors/';
 
 
 /**
@@ -24,24 +20,23 @@ import NicoException from "../NicoException";
  * @extends EventEmitter2
  */
 export default class NicoVideoInfo {
-    static fetch(movieId, session) {
-        let defer = new Deferred();
-        if (movieId == null) { return defer.reject("Fetch failed. Movie id not specified."); }
+    static async fetch(movieId, session) {
+        if (movieId == null) {
+            throw new Error('Fetch failed. Movie id not specified.');
+        }
 
         // getThumbInfoの結果を取得
-        APIEndpoints.video.getMovieInfo(session, {movieId})
-        .then(function(res) {
-            if (res.statusCode === 503) {
-                defer.reject("Nicovideo has in maintenance.");
-            }
+        const response = await APIEndpoints.video.getMovieInfo(session, {movieId});
+        if (response.statusCode === 503) {
+            throw new NicoException({
+                message: 'Nicovideo has in maintenance.'
+            });
+        }
 
-            let info = new NicoVideoInfo(movieId, session);
-            info._attr = deepFreeze(NicoVideoInfo.parseResponse(res.body, movieId));
+        let info = new NicoVideoInfo(movieId, session);
+        info._attr = deepFreeze(NicoVideoInfo.parseResponse(response.body, movieId));
 
-            return defer.resolve(info);
-        });
-
-        return defer.promise;
+        return info;
     }
 
     /**
@@ -216,6 +211,6 @@ export default class NicoVideoInfo {
      * @param {String}       path        属性名(Ex. "id", "title", "user.id")
      */
     get(path) {
-        return __.deepGet(this._attr, path);
+        return _.get(this._attr, path);
     }
-};
+}
