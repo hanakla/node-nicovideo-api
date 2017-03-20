@@ -17,6 +17,9 @@
     "nicovideo"
   ],
   "devDependencies": {
+    "@types/event-kit": "^1.2.30",
+    "@types/eventemitter3": "^1.2.0",
+    "@types/lodash": "^4.14.55",
     "@types/request-promise": "^4.1.33",
     "coffee-script": "^1.8.0"
   },
@@ -31,7 +34,7 @@
     "event-kit": "^1.3.0",
     "eventemitter2": "^0.4.14",
     "eventemitter3": "^1.1.1",
-    "lodash": "^2.4.1",
+    "lodash": "^4.17.4",
     "lodash-deep": "^1.6.0",
     "promise-native-deferred": "^3.0.0",
     "request-promise": "^0.4.3",
