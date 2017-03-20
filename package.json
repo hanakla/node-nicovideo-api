@@ -17,6 +17,7 @@
     "nicovideo"
   ],
   "devDependencies": {
+    "@types/request-promise": "^4.1.33",
     "coffee-script": "^1.8.0"
   },
   "scripts": {

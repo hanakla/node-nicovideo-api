@@ -1,7 +1,7 @@
-const NicoSession = require("./NicoSession");
-const deepFreeze = require("deep-freeze");
+import NicoSession from './Session'
+import deepFreeze from 'deep-freeze'
 
-module.exports = {
+export default {
     /**
      * @return {Promise}
      */
@@ -18,7 +18,6 @@ module.exports = {
         return NicoSession.fromSessionId(sessionId);
     },
 
-
     /**
      * ニコニコ動画へログインし、セッションを取得します。
      *
@@ -28,18 +27,18 @@ module.exports = {
      * @param {String}   password    ログインパスワード
      * @return {Promise}
      */
-    login(user, password) {
+    login(user: string , password: string) {
         return NicoSession.login(user, password);
     },
 
 
     Nsen : deepFreeze({
         RequestError  : {
-            NO_LOGIN        : "not_login",
-            CLOSED          : "nsen_close",
-            REQUIRED_TAG    : "nsen_tag",
-            TOO_LONG        : "nsen_long",
-            REQUESTED       : "nsen_requested"
+            NO_LOGIN        : 'not_login',
+            CLOSED          : 'nsen_close',
+            REQUIRED_TAG    : 'nsen_tag',
+            TOO_LONG        : 'nsen_long',
+            REQUESTED       : 'nsen_requested'
         },
 
         Gage : {
