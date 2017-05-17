@@ -28,9 +28,9 @@ export const getVideoInfo = async (session: NicoSession, movieId: string): Promi
     return _parseVideoInfoResponse(res.body, movieId)
 }
 
-const _parseVideoInfoResponse = (resBody: string, movieId: string): VideoMetaData =>
+const _parseVideoInfoResponse = (responseBody: string, movieId: string): VideoMetaData =>
 {
-    const $res = cheerio.load(resBody);
+    const $res = cheerio.load(responseBody);
 
     if ($res(":root").attr("status") !== "ok") {
         const errorMessage = $res("error description").text();
@@ -100,7 +100,7 @@ const _parseVideoInfoResponse = (resBody: string, movieId: string): VideoMetaDat
  * getflv APIの結果を取得します。
  * @param {string} movieId
  */
-export const getFlv = async (session: NicoSession, movieId: string): any =>
+export const getFlv = async (session: NicoSession, movieId: string): Promise<any> =>
 {
     const res = await APIEndpoints.video.getFlv(session, {movieId})
     return QueryString.parse(res.body)

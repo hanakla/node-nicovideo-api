@@ -1,23 +1,12 @@
-// import {Emitter} from 'event-kit'
-// import cheerio from 'cheerio'
 import * as Request from 'request-promise'
 import {CookieJar} from 'request'
-// import ToughCookie from 'tough-cookie'
 import {SerializeCookieStore} from 'tough-cookie-serialize'
 
 import * as NicoUrl from './NicoURL'
 import NicoException from './NicoException'
-import NicoLiveAPI from './live/NicoLiveApi'
-import NicoVideoAPI from './video/NicoVideoApi'
-import NicoMyListAPI from './mylist/NicoMyListApi'
-import NicoUserAPI from './user/NicoUserAPI'
 
 export default class NicoSession {
-
-    /**
-     * @return {Promise}
-     */
-    static async fromJSON(object: object, user?: string, password?: string): Promise<NicoSession>
+    public static async fromJSON(object: object, user?: string, password?: string): Promise<NicoSession>
     {
         if (user == null) { user = null }
         if (password == null) { password = null }
@@ -41,12 +30,7 @@ export default class NicoSession {
         return session
     }
 
-    /**
-     * @method restoreFromSessionId
-     * @param {String} sessionId
-     * @return {Promise}
-     */
-    static async fromSessionId(sessionId: string): Promise<NicoSession>
+    public static async fromSessionId(sessionId: string): Promise<NicoSession>
     {
         const session = new NicoSession
         const store = new SerializeCookieStore
@@ -77,7 +61,7 @@ export default class NicoSession {
      * @param {String}   password    ログインパスワード
      * @return {Promise}
      */
-    static async login(user: string, password: string): Promise<NicoSession>
+    public static async login(user: string, password: string): Promise<NicoSession>
     {
         const cookie = Request.jar(new SerializeCookieStore())
 
@@ -124,42 +108,14 @@ export default class NicoSession {
         return session
     }
 
-    private _liveApi: NicoLiveAPI
-
-    private _videoApi: NicoVideoAPI
-
-    private _mylistApi: NicoMyListAPI
-
-    private _userApi: NicoUserAPI
 
     public sessionId: string
-
-    public cookie: CookieJar
 
     /**
      * @property cookie
      * @type request.CookieJar
      */
-
-    public get live(): NicoLiveAPI
-    {
-        return this._liveApi = this._liveApi || new NicoLiveAPI(this)
-    }
-
-    public get video(): NicoVideoAPI
-    {
-        return this._videoApi = this._videoApi || new NicoVideoAPI(this)
-    }
-
-    public get mylist(): NicoMyListAPI
-    {
-        return this._mylistApi = this._mylistApi || new NicoMyListAPI(this)
-    }
-
-    public get user(): NicoUserAPI
-    {
-        return this._userApi = this._userApi || new NicoUserAPI(this)
-    }
+    public cookie: CookieJar
 
     private constructor() {}
 

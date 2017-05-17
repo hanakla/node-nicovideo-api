@@ -58,13 +58,13 @@ export default class MyList extends Emitter {
      * @private
      * @property {NicoSession} _session セッション
      */
-    private _session: NicoSession
+    private _session;
 
     /**
      * @private
      * @property {Object} _urlSet MyList APIのurl
      */
-    private _urlSet: any
+    private _urlSet;
 
     /**
      * @private

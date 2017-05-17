@@ -133,7 +133,7 @@ export default {
 
 
     user : {
-        info(session: NicoSession, {userId}: {userId: string}) {
+        info(session: NicoSession, {userId}: {userId: number}) {
             return get({
                 url : NicoURL.User.INFO + `?__format=json&user_id=${userId}`,
                 jar : session.cookie

@@ -7,41 +7,13 @@ import NicoSession from '../NicoSession'
 import NicoUrl from "../NicoURL"
 import MyListMeta from "./MyListMeta"
 import MyList from "./MyList"
+import {MylistSummary, HomeListSummary} from '../Entity/MylistSummary'
 
 // 30秒以上経過したらトークンを取得する
 const FETCH_INTERVAL = 30 * 1000;
 
 // トークン抽出用パターン
 const tokenRegexp = /NicoAPI.token = "([0-9a-z\-]*)";/;
-
-export interface MylistSummary {
-    /** マイリストID */
-    id: number|'home'
-    /** マイリストの説明 */
-    description: string
-    /** ユーザー番号 */
-    userId: number
-    /** 標準のソート方法（？） */
-    defaultSort: number
-    /** ソート方式（？） */
-    sortOrder: number
-    /** マイリストのアイコンID */
-    iconId: number
-    /** リスト名 */
-    name: string
-    /** 公開マイリストかどうか */
-    public: boolean
-    /** マイリストの作成日 */
-    createTime: Date
-    /** マイリストの更新日 */
-    updateTime: Date
-}
-
-export interface HomeListSummary {
-    id: 'home',
-    name: string,
-    public : boolean
-}
 
 
 const parseMylistSummary = (groupItem: object): MylistSummary => Object.freeze({
@@ -56,6 +28,48 @@ const parseMylistSummary = (groupItem: object): MylistSummary => Object.freeze({
     createTime  : new Date(groupItem.create_time * 1000),
     updateTime  : new Date(groupItem.update_time * 1000)
 })
+
+/**
+ * マイリストの一覧を取得します。
+ * @method fetchMyListsIndex
+ * @param    {boolean} withoutHome
+ *   trueを指定すると"とりあえずマイリスト"を一覧から除外します。
+ * @return   {Promise}
+ * - resolve : (mylists: Array.<MyListItemIndex>)
+ * - reject : (message: String)
+ */
+export const fetchOwnedListIndex = async (session: NicoSession, withoutHome: boolean = false): Promise<Array<MylistSummary|HomeListSummary>> =>
+{
+    const res = await Request.get({
+        resolveWithFullResponse : true,
+        url   : NicoUrl.MyList.GET_GROUPS,
+        jar   : session.cookie
+    })
+
+    try {
+        const result = JSON.parse(res.body);
+
+        if (result.status !== "ok") {
+            throw new NicoException({message: "Failed to fetch mylist. (reason unknown)"})
+        }
+
+        const lists: Array<MylistSummary|HomeListSummary> = _.map(result.mylistgroup, parseMylistSummary)
+
+        // とりあえずマイリスト
+        if (withoutHome === false) {
+            lists.push({
+                id: "home",
+                name: "とりあえずマイリスト",
+                public : false
+            });
+        }
+
+        return lists
+    } catch (e) {
+        throw new NicoException({message: `Failed to fetch mylist. (${e.message})`});
+    }
+}
+
 
 
 /**
@@ -125,46 +139,7 @@ export default class NicoMyListApi {
     }
 
 
-    /**
-     * マイリストの一覧を取得します。
-     * @method fetchMyListsIndex
-     * @param    {boolean} withoutHome
-     *   trueを指定すると"とりあえずマイリスト"を一覧から除外します。
-     * @return   {Promise}
-     * - resolve : (mylists: Array.<MyListItemIndex>)
-     * - reject : (message: String)
-     */
-    public async fetchOwnedListIndex(withoutHome: boolean = false): Promise<Array<MylistSummary|HomeListSummary>>
-    {
-        const res = await Request.get({
-            resolveWithFullResponse : true,
-            url   : NicoUrl.MyList.GET_GROUPS,
-            jar   : this._session.cookie
-        })
 
-        try {
-            const result = JSON.parse(res.body);
-
-            if (result.status !== "ok") {
-                throw new NicoException({message: "Failed to fetch mylist. (reason unknown)"})
-            }
-
-            const lists: Array<MylistSummary|HomeListSummary> = _.map(result.mylistgroup, parseMylistSummary)
-
-            // とりあえずマイリスト
-            if (withoutHome === false) {
-                lists.push({
-                    id: "home",
-                    name: "とりあえずマイリスト",
-                    public : false
-                });
-            }
-
-            return lists
-        } catch (e) {
-            throw new NicoException({message: `Failed to fetch mylist. (${e.message})`});
-        }
-    }
 
 
     /**

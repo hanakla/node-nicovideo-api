@@ -10,90 +10,9 @@ import {NicoLiveConnectPreference} from './CommentProvider'
 
 import NicoException from '../NicoException'
 import Emitter from '../Emitter'
-import CommentProvider from './CommentProvider'
+import Live from './CommentProvider'
 
-export interface NicoLiveMetadata {
-    /** 配信データ */
-    stream: {
-        /** 放送ID */
-        liveId: string
-        /** 放送タイトル */
-        title: string
-        /** 放送の説明 */
-        description: string
-
-        /** 視聴数 */
-        watchCount: number
-        /** コメント数 */
-        commentCount: number
-
-        /** 生放送の時間の関わる計算の"元になる時間" */
-        baseTime: Date
-        /** 放送の開始時刻 */
-        startTime: Date
-        /** 放送の開場時間 */
-        openTime: Date
-        /** 放送の終了時刻（放送中であれば終了予定時刻） */
-        endTime: Date
-
-        /** 公式配信か */
-        isOfficial: boolean
-
-        /** サブ画面などの配信情報 */
-        contents: {
-            /** メイン画面かサブ画面か */
-            id: string
-            /** 再生開始時間 */
-            startTime: Date
-            /** 音声が無効にされているか */
-            disableAudio: boolean
-            /** 映像が無効にされているか */
-            disableVideo: boolean
-            /** 再生されているコンテンツの長さ（秒数） */
-            duration: number|null
-            /** 再生されているコンテンツのタイトル */
-            title: string|null
-            /** 再生されているコンテンツのアドレス（動画の場合は"smile:動画ID"） */
-            content: string
-        }[]
-    }
-
-    /** 配信者データ */
-    owner: {
-        /** ユーザーID */
-        userId: number
-        /** ユーザー名 */
-        name: string
-    }
-
-    /** 自分自身の情報 */
-    user: {
-        /** ユーザーID */
-        id: number
-        /** ユーザー名 */
-        name: string
-        /** プレミアムアカウントか */
-        isPremium: boolean
-    }
-
-    /** RTMPサーバに関するデータ */
-    rtmp: {
-        isFms: boolean
-        port: number
-        url:string
-        ticket: string
-    }
-
-    /** コメントサーバーの情報 */
-    comment: {
-        /** サーバーアドレス */
-        addr: string
-        /** サーバーポート */
-        port: number
-        /** この放送と対応するスレッドID */
-        thread: number
-    }
-}
+export
 
 export default class NicoLiveInfo extends Emitter {
     /**
@@ -116,7 +35,7 @@ export default class NicoLiveInfo extends Emitter {
     }
 
     private _isEnded: boolean
-    private _commentProvider: CommentProvider
+    private _commentProvider: Live
     private _session: NicoSession
 
     public id: string
@@ -159,7 +78,7 @@ export default class NicoLiveInfo extends Emitter {
      * @param {Boolean} [options.connect] trueを指定するとコネクション確立後にresolveします
      * @return {Promise}
      */
-    async getCommentProvider(this: NicoLiveInfo, options: Partial<NicoLiveConnectPreference> = {}): Promise<CommentProvider>
+    async getCommentProvider(this: NicoLiveInfo, options: Partial<NicoLiveConnectPreference> = {}): Promise<Live>
     {
         _.defaults(options, {connect: false})
 
@@ -167,7 +86,7 @@ export default class NicoLiveInfo extends Emitter {
             return this._commentProvider
         }
 
-        const provider = CommentProvider.instanceFor(this, options)
+        const provider = Live.instanceFor(this, options)
         this._commentProvider = provider
         provider.onDidEndLive(this._didEndLive.bind(this))
 
@@ -186,85 +105,7 @@ export default class NicoLiveInfo extends Emitter {
      */
     private _parse(this: NicoLiveInfo, res: string)
     {
-        const $res    = Cheerio.load(res)
-        const $root   = $res(":root")
-        const $stream = $res("stream")
-        const $user   = $res("user")
-        const $rtmp   = $res("rtmp")
-        const $ms     = $res("ms")
 
-        if ($root.attr("status") !== "ok") {
-            const errorCode = $res("error code").text()
-            throw new NicoException({
-                message: `Failed to parse live info (${errorCode})`,
-                code : errorCode,
-                response : res
-            })
-        }
-
-        const props: NicoLiveMetadata = deepFreeze({
-            stream  : {
-                liveId      : $stream.find("id").text(),
-                title       : $stream.find("title").text(),
-                description : $stream.find("description").text(),
-
-                watchCount  : $stream.find("watch_count").text()|0,
-                commentCount: $stream.find("comment_count")|0,
-
-                baseTime    : new Date(($stream.find("base_time").text()|0) * 1000),
-                openTime    : new Date(($stream.find("open_time").text()|0) * 1000),
-                startTime   : new Date(($stream.find("start_time").text()|0) * 1000),
-                endTime     : new Date(($stream.find("end_time")|0) * 1000),
-
-                isOfficial  : $stream.find("provider_type").text() === "official",
-                // isNsen      : $res("ns").length > 0,
-
-                contents    : _.map($stream.find("contents_list contents"), function(el) {
-                    let left, left1
-                    const $content = Cheerio(el)
-                    return {
-                        id              : $content.attr("id"),
-                        startTime       : new Date(($content.attr("start_time")|0) * 1000),
-                        disableAudio    : ($content.attr("disableAudio")|0) === 1,
-                        disableVideo    : ($content.attr("disableVideo")|0) === 1,
-                        duration        : (left = $content.attr("duration")|0) != null ? left : null, // ついてない時がある
-                        title           : (left1 = $content.attr("title")) != null ? left1 : null,      // ついてない時がある
-                        content         : $content.text()
-                    }})
-            },
-
-            // 放送者情報
-            owner   : {
-                userId      : $stream.find("owner_id").text()|0,
-                name        : $stream.find("owner_name").text()
-            },
-
-            // ユーザー情報
-            user    : {
-                id          : $user.find("user_id").text()|0,
-                name        : $user.find("nickname").text(),
-                isPremium   : $user.find("is_premium").text() === "1"
-            },
-
-            // RTMP情報
-            rtmp    : {
-                isFms       : $rtmp.attr("is_fms") === "1",
-                port        : $rtmp.attr("rtmpt_port")|0,
-                url         : $rtmp.find("url").text(),
-                ticket      : $rtmp.find("ticket").text()
-            },
-
-            // コメントサーバー情報
-            comment : {
-                addr        : $ms.find("addr").text(),
-                port        : $ms.find("port").text()|0,
-                thread      : $ms.find("thread").text()|0
-            },
-
-            // _hasError: $res("getplayerstatus").attr("status") !== "ok"
-        })
-
-        return props
     }
 
 
