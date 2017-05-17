@@ -2,7 +2,7 @@
 // ニコニコ動画APIのURLを定義しています。
 //
 
-exports.Auth = {
+export const Auth = {
     // POST : mail_tel, password
     LOGIN       : "https://secure.nicovideo.jp/secure/login?site=niconico",
 
@@ -13,7 +13,7 @@ exports.Auth = {
     LOGINTEST   : "http://live.nicovideo.jp/api/getplayerstatus/nsen/vocaloid"
 };
 
-exports.Live = {
+export const Live = {
     //  GET
     // /:liveId
     GET_PLAYER_STATUS: "http://live.nicovideo.jp/api/getplayerstatus/",
@@ -38,7 +38,7 @@ exports.Live = {
 };
 
 
-exports.Video = {
+export const Video = {
     //  GET
     //  /:movieId
     GET_VIDEO_INFO: "http://ext.nicovideo.jp/api/getthumbinfo/",
@@ -48,7 +48,7 @@ exports.Video = {
     GETFLV : "http://flapi.nicovideo.jp/api/getflv/"
 };
 
-exports.MyList = {
+export const MyList = {
     FETCH_TOKEN: "http://www.nicovideo.jp/my/mylist",
     GET_GROUPS: "http://www.nicovideo.jp/api/mylistgroup/list",
 
@@ -99,8 +99,9 @@ exports.MyList = {
     }
 };
 
-exports.User =
+export const User = {
     // GET
     //   user_id     : UserID
     //   __format    : Response format("xml" or "json")
-    {INFO : "http://api.ce.nicovideo.jp/api/v1/user.info"};
+    INFO : "http://api.ce.nicovideo.jp/api/v1/user.info"
+};

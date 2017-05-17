@@ -1,14 +1,13 @@
 import * as _ from 'lodash'
-import Cheerio from 'cheerio'
-import deepFreeze from 'deep-freeze'
-import Request from 'request-promise'
-import Deferred from 'promise-native-deferred'
+import * as Cheerio from 'cheerio'
+import * as deepFreeze from 'deep-freeze'
+import * as Request from 'request-promise'
 import {Socket} from 'net'
 import {sprintf} from 'sprintf'
 
 import Emitter from '../Emitter'
+import NicoSession from '../NicoSession'
 import NicoLiveInfo from './NicoLiveInfo'
-import NicoUrl from '../NicoURL'
 import NicoException from '../NicoException'
 import NicoLiveComment from './NicoLiveComment'
 
@@ -46,45 +45,37 @@ const chatResults = deepFreeze({
  * 放送中の番組のコメントの取得と投稿を行うクラスです。
  * @class CommentProvider
  */
-export class CommentProvider extends Emitter
+export default class CommentProvider extends Emitter
 {
     static CharResult = chatResults
 
-    /**
-     * @param {NicoLiveInfo} liveInfo
-     * @return {Promise}
-     */
-    static instanceFor(liveInfo)
+    public static instanceFor(session: NicoSession, liveInfo: NicoLiveInfo)
     {
         if (liveInfo == null) {
             throw new TypeError("liveInfo must be instance of NicoLiveInfo");
         }
 
-        return new CommentProvider(liveInfo)
+        return new CommentProvider(session, liveInfo)
     }
 
     public disposed: boolean
 
-    private _socket: Socket = null
-
+    private _isFirstResponseProsessed: boolean = false
+    private _socket: Socket|null = null
     private _postInfo: {
-        ticket: string,
-        postKey: string,
-        threadId: string
+        ticket: string|null,
+        postKey: string|null,
+        threadId: string|null
     } = {
         ticket : null,
         postKey : null,
         threadId : null
     }
 
-    private isFirstResponseProsessed: boolean = false
-
-    /**
-     * @constructor
-     * @param {NicoLiveInfo} _live
-     */
-    constructor(private _live: NicoLiveInfo)
-    {
+    constructor(
+        private _session: NicoSession,
+        private _live: NicoLiveInfo
+    ) {
         super()
     }
 
@@ -94,7 +85,7 @@ export class CommentProvider extends Emitter
      * @method getLiveInfo
      * @return {NicoLiveInfo}
      */
-    getLiveInfo() {
+    public getLiveInfo() {
         return this._live;
     }
 
@@ -110,19 +101,6 @@ export class CommentProvider extends Emitter
         }
     }
 
-
-    /**
-     * [Method for testing] Stream given xml data as socket received data.
-     * @private
-     * @method _pourXMLData
-     * @param {String} xml
-     */
-    private _pourXMLData(xml)
-    {
-        return this._didReceiveData(xml);
-    }
-
-
     /**
      * コメントサーバーへ接続します。
      *
@@ -136,7 +114,7 @@ export class CommentProvider extends Emitter
      * @param {Number} [options.timeoutMs=5000] タイムアウトまでのミリ秒
      * @return {Promise}
      */
-    async connect(options: Partial<NicoLiveConnectPreference> = {}): Promise<this>
+    public async connect(options: Partial<NicoLiveConnectPreference> = {}): Promise<this>
     {
         this._canContinue()
 
@@ -157,7 +135,7 @@ export class CommentProvider extends Emitter
         return Promise.race([
             // Connected
             new Promise<this>((resolve, reject) => {
-                this._socket.connect(serverInfo.port, serverInfo.addr, () => {
+                this._socket!.connect(serverInfo.port, serverInfo.addr, () => {
                     this.once('_did-receive-connection-response', () => {
                         // Wait `pong` server response
                         resolve(this)
@@ -165,7 +143,7 @@ export class CommentProvider extends Emitter
 
                     // Send thread information
                     const params = _.assign({}, {firstGetComments: _options.firstGetComments}, serverInfo);
-                    this._socket.write(COMMANDS.connect(params) + '\0');
+                    this._socket!.write(COMMANDS.connect(params) + '\0');
                 })
             }),
 
@@ -184,7 +162,7 @@ export class CommentProvider extends Emitter
      * @param {Object} options 接続設定（connectメソッドと同じ）
      * @return {Promise}
      */
-    async reconnect(options)
+    public async reconnect(options: Partial<NicoLiveConnectPreference>)
     {
         this._canContinue()
 
@@ -202,7 +180,7 @@ export class CommentProvider extends Emitter
      * @method disconnect
      * @fires CommentProvider#did-disconnect
      *///
-    disconnect() {
+    public disconnect() {
         this._canContinue();
 
         if (this._socket == null) { return; }
@@ -231,7 +209,7 @@ export class CommentProvider extends Emitter
         const res = await Request.get({
             resolveWithFullResponse : true,
             url,
-            jar : this._live._session.cookie
+            jar : this._session.cookie
         })
 
         if (res.statusCode === 200) {
@@ -260,7 +238,7 @@ export class CommentProvider extends Emitter
      * @param {Number} [timeoutMs]
      * @return {Promise}
      */
-    async postComment(msg: string, command?: string|string[], timeoutMs?: number)
+    public async postComment(msg: string, command?: string|string[], timeoutMs?: number)
     {
         this._canContinue()
 
@@ -357,7 +335,7 @@ export class CommentProvider extends Emitter
      * インスタンスを破棄します。
      * @method dispose
      */
-    dispose()
+    public dispose()
     {
         this._live = null;
         this._postInfo = null;
@@ -380,7 +358,7 @@ export class CommentProvider extends Emitter
     {
         this.emit("did-receive-data", xml);
 
-        const comments = [];
+        const comments: NicoLiveComment[] = [];
 
         const $elements = Cheerio.load(xml)(":root");
         $elements.each((i, element) => {
@@ -420,8 +398,8 @@ export class CommentProvider extends Emitter
         }
         );
 
-        if (this.isFirstResponseProsessed === false) {
-            this.isFirstResponseProsessed = true;
+        if (this._isFirstResponseProsessed === false) {
+            this._isFirstResponseProsessed = true;
             this.lockAutoEmit("did-process-first-response", comments)
         }
 
@@ -459,7 +437,7 @@ export class CommentProvider extends Emitter
      * @private
      * @method _didRefreshLiveInfo
      */
-    _didRefreshLiveInfo() {
+    private _didRefreshLiveInfo() {
         // 時々threadIdが変わるのでその変化を監視
         this._postInfo.threadId = this._live.get("comment").thread;
     }
@@ -480,7 +458,7 @@ export class CommentProvider extends Emitter
      * @param {Function} listener
      * @return {Disposable}
      */
-    _onDidReceivePostResult(listener: (result: {status: number}) => any)
+    private _onDidReceivePostResult(listener: (result: {status: number}) => any)
     {
         return this.on("did-receive-post-result", listener);
     }
@@ -496,7 +474,7 @@ export class CommentProvider extends Emitter
      * @param {Function} listener
      * @return {Disposable}
      */
-    onDidProcessFirstResponse(listener) {
+    public onDidProcessFirstResponse(listener) {
         return this.on("did-process-first-response", listener);
     }
 
@@ -511,7 +489,7 @@ export class CommentProvider extends Emitter
      * @param {Function} listener
      * @return {Disposable}
      */
-    onDidReceiveData(listener) {
+    public onDidReceiveData(listener) {
         return this.on("did-receive-data", listener);
     }
 
@@ -526,7 +504,7 @@ export class CommentProvider extends Emitter
      * @param {Function} listener
      * @return {Disposable}
      */
-    onDidReceiveComment(listener) {
+    public onDidReceiveComment(listener) {
         return this.on("did-receive-comment", listener);
     }
 
@@ -541,7 +519,7 @@ export class CommentProvider extends Emitter
      * @param {Function} listener
      * @return {Disposable}
      */
-    onDidError(listener) {
+    public onDidError(listener) {
         return this.on("did-error", listener);
     }
 
@@ -555,7 +533,7 @@ export class CommentProvider extends Emitter
      * @param {Function} listener
      * @return {Disposable}
      */
-    onDidCloseConnection(listener) {
+    public onDidCloseConnection(listener) {
         return this.on("did-close-connection", listener);
     }
 
@@ -569,7 +547,7 @@ export class CommentProvider extends Emitter
      * @param {Function} listener
      * @return {Disposable}
      */
-    onDidEndLive(listener) {
+    public onDidEndLive(listener) {
         return this.on("did-end-live", listener);
     }
 }

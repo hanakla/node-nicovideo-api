@@ -17,10 +17,14 @@
     "nicovideo"
   ],
   "devDependencies": {
+    "@types/cheerio": "^0.22.1",
+    "@types/deep-freeze": "^0.0.29",
+    "@types/ent": "^2.2.1",
     "@types/event-kit": "^1.2.30",
     "@types/eventemitter3": "^1.2.0",
     "@types/lodash": "^4.14.55",
     "@types/request-promise": "^4.1.33",
+    "@types/sprintf": "^0.0.28",
     "coffee-script": "^1.8.0"
   },
   "scripts": {

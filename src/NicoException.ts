@@ -1,7 +1,7 @@
 export default class NicoException extends Error {
-    code: number
+    code: number|undefined
     response: any
-    previous: Error
+    previous: Error|undefined
 
     constructor({message, code, response, previous}: {
         message: string,

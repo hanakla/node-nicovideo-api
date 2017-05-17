@@ -1,23 +1,23 @@
 import * as _ from 'lodash'
-import NicoSession from '../Session'
+import NicoSession from '../NicoSession'
 import NicoLiveInfo from './NicoLiveInfo'
-import NsenChannels from './NsenChannels'
-import NsenChannel from './NsenChannel'
+// import NsenChannels from './NsenChannels'
+// import NsenChannel from './NsenChannel'
 import {NicoLiveConnectPreference} from './CommentProvider'
 
-type NsenChannelIds =
-    'nsen/vocaloid'
-    | 'nsen/toho'
-    | 'nsen/nicoindies'
-    | 'nsen/sing'
-    | 'nsen/play'
-    | 'nsen/pv'
-    | 'nsen/hotaru'
-    | 'nsen/allgenre'
+// type NsenChannelIds =
+//     'nsen/vocaloid'
+//     | 'nsen/toho'
+//     | 'nsen/nicoindies'
+//     | 'nsen/sing'
+//     | 'nsen/play'
+//     | 'nsen/pv'
+//     | 'nsen/hotaru'
+//     | 'nsen/allgenre'
 
 
 export default class NicoLiveApi {
-    private _nsenChannelInstances: {[chId: string]: NsenChannel} = {}
+    // private _nsenChannelInstances: {[chId: string]: NsenChannel} = {}
     private _nicoLiveInstances: {[liveId: string]: NicoLiveInfo} = {}
 
     /**
@@ -50,37 +50,37 @@ export default class NicoLiveApi {
     }
 
 
-    /**
-     * NsenChannelのインスタンスを取得します。
-     *
-     * @param {String} channel
-     * @param {Object} [options]
-     * @param {Boolean} [options.connect] NsenChannel生成時にコメントサーバーへ自動接続するか指定します。
-     * @param {Number} [options.firstGetComments] 接続時に取得するコメント数
-     * @param {Number} [options.timeoutMs] タイムアウトまでのミリ秒
-     * @return {Promise}
-     */
-    async getNsenChannelHandlerFor(channel: NsenChannelIds, options: Partial<NicoLiveConnectPreference> = {}): NsenChannel
-    {
-        const isValidChannel = _.select(NsenChannels, {'id': channel}).length > 0;
-        if (!isValidChannel) {
-            throw new RangeError(`Invalid Nsen channel: ${channel}`);
-        }
+    // /**
+    //  * NsenChannelのインスタンスを取得します。
+    //  *
+    //  * @param {String} channel
+    //  * @param {Object} [options]
+    //  * @param {Boolean} [options.connect] NsenChannel生成時にコメントサーバーへ自動接続するか指定します。
+    //  * @param {Number} [options.firstGetComments] 接続時に取得するコメント数
+    //  * @param {Number} [options.timeoutMs] タイムアウトまでのミリ秒
+    //  * @return {Promise}
+    //  */
+    // async getNsenChannelHandlerFor(channel: NsenChannelIds, options: Partial<NicoLiveConnectPreference> = {}): NsenChannel
+    // {
+    //     const isValidChannel = _.select(NsenChannels, {'id': channel}).length > 0;
+    //     if (!isValidChannel) {
+    //         throw new RangeError(`Invalid Nsen channel: ${channel}`);
+    //     }
 
-        if (this._nsenChannelInstances[channel] != null) {
-            return this._nsenChannelInstances[channel]
-        }
+    //     if (this._nsenChannelInstances[channel] != null) {
+    //         return this._nsenChannelInstances[channel]
+    //     }
 
-        const live = await this.getLiveInfo(channel)
-        const nsenChannel =  NsenChannel.instanceFor(live, options, this._session);
+    //     const live = await this.getLiveInfo(channel)
+    //     const nsenChannel =  NsenChannel.instanceFor(live, options, this._session);
 
-        this._nsenChannelInstances[channel] = nsenChannel;
-        nsenChannel.onWillDispose(() => {
-            delete this._nsenChannelInstances[channel];
-        })
+    //     this._nsenChannelInstances[channel] = nsenChannel;
+    //     nsenChannel.onWillDispose(() => {
+    //         delete this._nsenChannelInstances[channel];
+    //     })
 
-        return nsenChannel
-    }
+    //     return nsenChannel
+    // }
 
 
     /**

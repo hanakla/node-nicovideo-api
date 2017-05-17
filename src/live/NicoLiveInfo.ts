@@ -1,69 +1,99 @@
-/*
- * ニコニコ生放送の配信情報
- *
- * Properties
- *   stream:     -- 放送の基礎情報
- *       liveId:         string -- 放送ID
- *       title:          string -- 放送タイトル
- *       description:    string -- 放送の説明
- *
- *       watchCount:     number -- 視聴数
- *       commentCount:   number -- コメント数
- *
- *       baseTime:       Date -- 生放送の時間の関わる計算の"元になる時間"
- *       startTime:      Date -- 放送の開始時刻
- *       openTime:       Date -- 放送の開場時間
- *       endTime:        Date -- 放送の終了時刻（放送中であれば終了予定時刻）
- *
- *       isOfficial:     boolean -- 公式配信か
- *       isNsen:         boolean -- Nsenのチャンネルか
- *       nsenType:       string -- Nsenのチャンネル種別（"nsen/***"の***の部分）
- *
- *       contents:       Array<Object>
- *           id:             string -- メイン画面かサブ画面か
- *           startTime:      number -- 再生開始時間
- *           disableAudio:   boolean -- 音声が無効にされているか
- *           disableVideo:   boolean -- 映像が無効にされているか
- *           duration:       number|null -- 再生されているコンテンツの長さ（秒数）
- *           title:          string|null -- 再生されているコンテンツのタイトル
- *           content:        string -- 再生されているコンテンツのアドレス（動画の場合は"smile:動画ID"）
- *
- *   owner:      -- 配信者の情報
- *       userId:         number -- ユーザーID
- *       name:           string -- ユーザー名
- *
- *   user:       -- 自分自身の情報
- *       id:             number -- ユーザーID
- *       name:           string -- ユーザー名
- *       isPremium:      boolean -- プレミアムアカウントか
- *
- *   rtmp:       -- 配信に関する情報。詳細不明
- *       isFms:          boolean
- *       port:           number
- *       url:            string
- *       ticket:         string
- *
- *   comment:    -- コメントサーバーの情報
- *       addr:           string -- サーバーアドレス
- *       port:           number -- サーバーポート
- *       thread:         number -- この放送と対応するスレッドID
- *
- * @class NicoLiveInfo
- */
-
-import _ from 'lodash'
-import __ from 'lodash-deep'
+import * as _ from 'lodash'
 import Cheerio from 'cheerio'
-import Request from 'request-promise'
 import {sprintf} from 'sprintf'
+import * as deepFreeze from 'deep-freeze'
 
-import APIEndpoints from '../APIEndpoints'
-import NicoSession from '../Session'
+
+import * as APIEndpoints from '../APIEndpoints'
+import NicoSession from '../NicoSession'
 import {NicoLiveConnectPreference} from './CommentProvider'
-import NicoURL from '../NicoURL'
+
 import NicoException from '../NicoException'
 import Emitter from '../Emitter'
 import CommentProvider from './CommentProvider'
+
+export interface NicoLiveMetadata {
+    /** 配信データ */
+    stream: {
+        /** 放送ID */
+        liveId: string
+        /** 放送タイトル */
+        title: string
+        /** 放送の説明 */
+        description: string
+
+        /** 視聴数 */
+        watchCount: number
+        /** コメント数 */
+        commentCount: number
+
+        /** 生放送の時間の関わる計算の"元になる時間" */
+        baseTime: Date
+        /** 放送の開始時刻 */
+        startTime: Date
+        /** 放送の開場時間 */
+        openTime: Date
+        /** 放送の終了時刻（放送中であれば終了予定時刻） */
+        endTime: Date
+
+        /** 公式配信か */
+        isOfficial: boolean
+
+        /** サブ画面などの配信情報 */
+        contents: {
+            /** メイン画面かサブ画面か */
+            id: string
+            /** 再生開始時間 */
+            startTime: Date
+            /** 音声が無効にされているか */
+            disableAudio: boolean
+            /** 映像が無効にされているか */
+            disableVideo: boolean
+            /** 再生されているコンテンツの長さ（秒数） */
+            duration: number|null
+            /** 再生されているコンテンツのタイトル */
+            title: string|null
+            /** 再生されているコンテンツのアドレス（動画の場合は"smile:動画ID"） */
+            content: string
+        }[]
+    }
+
+    /** 配信者データ */
+    owner: {
+        /** ユーザーID */
+        userId: number
+        /** ユーザー名 */
+        name: string
+    }
+
+    /** 自分自身の情報 */
+    user: {
+        /** ユーザーID */
+        id: number
+        /** ユーザー名 */
+        name: string
+        /** プレミアムアカウントか */
+        isPremium: boolean
+    }
+
+    /** RTMPサーバに関するデータ */
+    rtmp: {
+        isFms: boolean
+        port: number
+        url:string
+        ticket: string
+    }
+
+    /** コメントサーバーの情報 */
+    comment: {
+        /** サーバーアドレス */
+        addr: string
+        /** サーバーポート */
+        port: number
+        /** この放送と対応するスレッドID */
+        thread: number
+    }
+}
 
 export default class NicoLiveInfo extends Emitter {
     /**
@@ -85,71 +115,12 @@ export default class NicoLiveInfo extends Emitter {
         return live.fetch().then(() => Promise.resolve(live))
     }
 
-    defaults = {
-        stream      : {
-            liveId      : null,
-            title       : null,
-            description : null,
-
-            watchCount  : -1,
-            commentCount: -1,
-
-            baseTime    : null,
-            openTime    : null,
-            startTime   : null,
-            endTime     : null,
-
-            isOfficial  : false,
-            isNsen      : false,
-            nsenType    : null,
-
-            contents    : {
-                //  id:string,
-                //  startTime:number,
-                //  disableAudio:boolean,
-                //  disableVideo:boolean,
-                //  duration:number|null,
-                //  title:string|null,
-                //  content:string
-            }
-        },
-
-        owner       : {
-            userId      : -1,
-            name        : null
-        },
-
-        user        : {
-            id          : -1,
-            name        : null,
-            isPremium   : null
-        },
-
-        rtmp        : {
-            isFms       : null,
-            port        : null,
-            url         : null,
-            ticket      : null
-        },
-
-        comment     : {
-            addr        : null,
-            port        : -1,
-            thread      : null
-        },
-
-        _hasError   : true
-    }
-
-    id: string
+    private _isEnded: boolean
     private _commentProvider: CommentProvider
     private _session: NicoSession
-    private _attr: any
 
-    /**
-     * @property {String}    id
-     */
-
+    public id: string
+    public metadata: NicoLiveMetadata
 
     /**
      * @param {string}       liveId  放送ID
@@ -162,41 +133,21 @@ export default class NicoLiveInfo extends Emitter {
         this._session = _session
     }
 
-
     /**
      * 公式放送か
      */
-    isOfficialLive(): boolean
+    public isOfficialLive(): boolean
     {
-        return !!this.get("stream").isOfficial
+        return !!this.metadata.stream.isOfficial
     }
-
-
-    /**
-     * Nsenのチャンネルか
-     */
-    isNsenLive(): boolean
-    {
-        return !!this.get("stream").isNsen
-    }
-
 
     /**
      * 放送が終了しているか
      * @return {boolean}
      */
-    isEnded()
+    public isEnded()
     {
-        return this.get("isEnded") === true
-    }
-
-
-    /**
-     * @param {String}   path
-     */
-    get(path): any
-    {
-        return _.get(this._attr, path)
+        return this._isEnded === true
     }
 
 
@@ -208,12 +159,12 @@ export default class NicoLiveInfo extends Emitter {
      * @param {Boolean} [options.connect] trueを指定するとコネクション確立後にresolveします
      * @return {Promise}
      */
-    async commentProvider(options: Partial<NicoLiveConnectPreference> = {})
+    async getCommentProvider(this: NicoLiveInfo, options: Partial<NicoLiveConnectPreference> = {}): Promise<CommentProvider>
     {
         _.defaults(options, {connect: false})
 
         if (this._commentProvider != null) {
-            return Promise.resolve(this._commentProvider)
+            return this._commentProvider
         }
 
         const provider = CommentProvider.instanceFor(this, options)
@@ -233,7 +184,7 @@ export default class NicoLiveInfo extends Emitter {
      * @private
      * @param {String}   res     API受信結果
      */
-    parse(res)
+    private _parse(this: NicoLiveInfo, res: string)
     {
         const $res    = Cheerio.load(res)
         const $root   = $res(":root")
@@ -241,7 +192,6 @@ export default class NicoLiveInfo extends Emitter {
         const $user   = $res("user")
         const $rtmp   = $res("rtmp")
         const $ms     = $res("ms")
-        let props     = null
 
         if ($root.attr("status") !== "ok") {
             const errorCode = $res("error code").text()
@@ -252,7 +202,7 @@ export default class NicoLiveInfo extends Emitter {
             })
         }
 
-        props = {
+        const props: NicoLiveMetadata = deepFreeze({
             stream  : {
                 liveId      : $stream.find("id").text(),
                 title       : $stream.find("title").text(),
@@ -267,8 +217,7 @@ export default class NicoLiveInfo extends Emitter {
                 endTime     : new Date(($stream.find("end_time")|0) * 1000),
 
                 isOfficial  : $stream.find("provider_type").text() === "official",
-                isNsen      : $res("ns").length > 0,
-                nsenType    : $res("ns nstype").text() || null,
+                // isNsen      : $res("ns").length > 0,
 
                 contents    : _.map($stream.find("contents_list contents"), function(el) {
                     let left, left1
@@ -312,8 +261,8 @@ export default class NicoLiveInfo extends Emitter {
                 thread      : $ms.find("thread").text()|0
             },
 
-            _hasError: $res("getplayerstatus").attr("status") !== "ok"
-        }
+            // _hasError: $res("getplayerstatus").attr("status") !== "ok"
+        })
 
         return props
     }
@@ -334,14 +283,14 @@ export default class NicoLiveInfo extends Emitter {
             })
         }
 
-        this._attr = this.parse(res.body)
+        this._attr = this._parse(res.body)
         this.emit("did-refresh", this)
     }
 
     /**
      * 現在のインスタンスおよび、関連するオブジェクトを破棄し、利用不能にします。
      */
-    dispose() {
+    public dispose() {
         if (this._commentProvider != null) {
             this._commentProvider.dispose()
         }
@@ -356,14 +305,14 @@ export default class NicoLiveInfo extends Emitter {
     //
 
     private _didEndLive() {
-        this._attr.isEnded = true
+        this._isEnded = true
     }
 
 
     //
     // Event Handlers
     //
-    onDidRefresh(listener: Function)
+    public onDidRefresh(listener: Function)
     {
         return this.on("did-refresh", listener)
     }

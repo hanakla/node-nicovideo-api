@@ -1,35 +1,32 @@
-import {Emitter} from 'event-kit'
-import cheerio from 'cheerio'
-import {default as Request} from 'request-promise'
+// import {Emitter} from 'event-kit'
+// import cheerio from 'cheerio'
+import * as Request from 'request-promise'
 import {CookieJar} from 'request'
-import ToughCookie from 'tough-cookie'
+// import ToughCookie from 'tough-cookie'
 import {SerializeCookieStore} from 'tough-cookie-serialize'
 
-import NicoUrl from './NicoURL'
+import * as NicoUrl from './NicoURL'
 import NicoException from './NicoException'
 import NicoLiveAPI from './live/NicoLiveApi'
 import NicoVideoAPI from './video/NicoVideoApi'
 import NicoMyListAPI from './mylist/NicoMyListApi'
 import NicoUserAPI from './user/NicoUserAPI'
 
-class NicoSession {
+export default class NicoSession {
 
     /**
      * @return {Promise}
      */
-    static async fromJSON(object: object, user?: string, password?: string)
+    static async fromJSON(object: object, user?: string, password?: string): Promise<NicoSession>
     {
         if (user == null) { user = null }
         if (password == null) { password = null }
 
-        const store: any = new SerializeCookieStore()
+        const store: SerializeCookieStore = new SerializeCookieStore()
         store.fromString(JSON.stringify(object))
 
         const cookie = Request.jar(store)
-
         const session = new NicoSession
-        ;(password != null) && store.set(session, password)
-        (user != null) && (session._userId =  user)
         session.cookie = cookie
         session.sessionId = await new Promise<string>((resolve, reject) => {
             store.findCookie("nicovideo.jp", "/", "user_session", (err, cookie) => {
@@ -49,7 +46,7 @@ class NicoSession {
      * @param {String} sessionId
      * @return {Promise}
      */
-    static async fromSessionId(sessionId)
+    static async fromSessionId(sessionId: string): Promise<NicoSession>
     {
         const session = new NicoSession
         const store = new SerializeCookieStore
@@ -66,7 +63,6 @@ class NicoSession {
         await new Promise(resolve => {
             store.putCookie(nicoCookie, () => {
                 session.sessionId = sessionId
-                session._userId = null
                 session.cookie = cookieJar
                 resolve()
             })
@@ -81,11 +77,11 @@ class NicoSession {
      * @param {String}   password    ログインパスワード
      * @return {Promise}
      */
-    static async login(user, password)
+    static async login(user: string, password: string): Promise<NicoSession>
     {
-        const cookie = Request.jar(new SerializeCookieStore)
+        const cookie = Request.jar(new SerializeCookieStore())
 
-        const res = await  Request.post({
+        const res = await Request.post({
             resolveWithFullResponse : true,
             followAllRedirects      : true,
             url     : NicoUrl.Auth.LOGIN,
@@ -136,61 +132,59 @@ class NicoSession {
 
     private _userApi: NicoUserAPI
 
-    private _userId: string
+    public sessionId: string
 
-    sessionId: string
-
-    cookie: CookieJar
+    public cookie: CookieJar
 
     /**
      * @property cookie
      * @type request.CookieJar
      */
 
-    get live(): NicoLiveAPI
+    public get live(): NicoLiveAPI
     {
         return this._liveApi = this._liveApi || new NicoLiveAPI(this)
     }
 
-    get video(): NicoVideoAPI
+    public get video(): NicoVideoAPI
     {
         return this._videoApi = this._videoApi || new NicoVideoAPI(this)
     }
 
-    get mylist(): NicoMyListAPI
+    public get mylist(): NicoMyListAPI
     {
         return this._mylistApi = this._mylistApi || new NicoMyListAPI(this)
     }
 
-    get user(): NicoUserAPI
+    public get user(): NicoUserAPI
     {
         return this._userApi = this._userApi || new NicoUserAPI(this)
     }
 
-    // private constructor() {}
+    private constructor() {}
 
-    /**
-     * 再ログインします。
-     * @return {Promise}
-     */
-    async relogin(user, password): Promise<void>
-    {
-        const res = await Request.post({
-            resolveWithFullResponse : true,
-            followAllRedirects : true,
-            url : NicoUrl.Auth.LOGIN,
-            jar : this.cookie,
-            form : {
-                mail_tel : user,
-                password
-            }
-        })
+    // /**
+    //  * 再ログインします。
+    //  * @return {Promise}
+    //  */
+    // public async relogin(user: string, password: string): Promise<void>
+    // {
+    //     const res = await Request.post({
+    //         resolveWithFullResponse : true,
+    //         followAllRedirects : true,
+    //         url : NicoUrl.Auth.LOGIN,
+    //         jar : this.cookie,
+    //         form : {
+    //             mail_tel : user,
+    //             password
+    //         }
+    //     })
 
 
-        if (res.statusCode === 503) {
-            throw new NicoException({message: "Nicovideo has in maintenance."})
-        }
-    }
+    //     if (res.statusCode === 503) {
+    //         throw new NicoException({message: "Nicovideo has in maintenance."})
+    //     }
+    // }
 
 
     /**
@@ -198,7 +192,7 @@ class NicoSession {
      * @method logout
      * @return {Promise}
      */
-    async logout(): Promise<void>
+    public async logout(): Promise<void>
     {
         const res = await Request.post({
             resolveWithFullResponse : true,
@@ -219,7 +213,7 @@ class NicoSession {
      *   ネットワークエラー時にrejectされます
      * - Resolve: (state: Boolean)
      */
-    async isActive(): Promise<boolean>
+    public async isActive(): Promise<boolean>
     {
         // ログインしてないと使えないAPIを叩く
         const res = await Request.get({
@@ -234,7 +228,7 @@ class NicoSession {
         return $err.length === 0
     }
 
-    toJSON() {
+    public toJSON(): any {
         return JSON.parse(this.cookie._jar.store.toString())
     }
 }

@@ -6,6 +6,20 @@
   version "3.5.0"
   resolved "https://registry.yarnpkg.com/@types/bluebird/-/bluebird-3.5.0.tgz#2633470a4eabe9a47cd9a45fdb20ed5f93407bca"
 
+"@types/cheerio@^0.22.1":
+  version "0.22.1"
+  resolved "https://registry.yarnpkg.com/@types/cheerio/-/cheerio-0.22.1.tgz#740c4cd8c4d3f3074f83b9ab62e711eac2c764ce"
+
+"@types/deep-freeze@^0.0.29":
+  version "0.0.29"
+  resolved "https://registry.yarnpkg.com/@types/deep-freeze/-/deep-freeze-0.0.29.tgz#c2d4c0bb10fb247a2b2c9da1970bb0902859190a"
+
+"@types/ent@^2.2.1":
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/@types/ent/-/ent-2.2.1.tgz#334a3491a230efd974c93098e304ff7ac56f7525"
+  dependencies:
+    "@types/node" "*"
+
 "@types/event-kit@^1.2.30":
   version "1.2.30"
   resolved "https://registry.yarnpkg.com/@types/event-kit/-/event-kit-1.2.30.tgz#56e70ffe5af991cf76a49c845dd217defd481d4a"
@@ -41,6 +55,10 @@
   dependencies:
     "@types/form-data" "*"
     "@types/node" "*"
+
+"@types/sprintf@^0.0.28":
+  version "0.0.28"
+  resolved "https://registry.yarnpkg.com/@types/sprintf/-/sprintf-0.0.28.tgz#d8492827c13ade9bcb3c50095a828c26d5c95f20"
 
 ajv@^4.9.1:
   version "4.11.5"

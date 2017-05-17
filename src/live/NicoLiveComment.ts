@@ -12,24 +12,23 @@
  *      - isPremium      : boolean       -- プレミアム会員かどうか
  *      - isAnonymous    : boolean       -- 匿名コメントかどうか
  */
-const _ = require("lodash");
-const __ = require("lodash-deep");
-const Cheerio = require("cheerio");
-const deepFreeze = require("deep-freeze");
+
+import * as _ from "lodash"
+import __ from "lodash-deep"
+import Cheerio from "cheerio"
+import deepFreeze from "deep-freeze"
 
 const REGEXP_LT = /</g;
 const REGEXP_GT = />/g;
 
 
-class NicoLiveComment {
-    static initClass() {
-        this.AccountTypes  = deepFreeze({
-            GENERAL : 0,
-            PREMIUM : 1,
-            DISTRIBUTOR : 3,
-            ADMIN : 6
-        });
-    }
+export default class NicoLiveComment {
+    static AccountTypes = deepFreeze({
+        GENERAL : 0,
+        PREMIUM : 1,
+        DISTRIBUTOR : 3,
+        ADMIN : 6
+    });
 
     // @defaults :
     //     threadId: null,

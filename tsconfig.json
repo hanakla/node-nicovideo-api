@@ -10,6 +10,7 @@
         "experimentalDecorators": true,
         "allowJs": true,
         "jsx": "react",
+        "outDir": "lib",
         "target": "es2015",
         "module": "es2015",
         "moduleResolution": "node",
@@ -24,7 +25,7 @@
     },
     "files": [
         "./src/declarations.d.ts",
-        "./src/index.ios.jsx"
+        "./src/index.ts"
     ],
     "awesomeTypescriptLoaderOptions": {
         "ignoreDiagnostics": [8010, 8011]

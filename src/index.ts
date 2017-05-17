@@ -1,11 +1,11 @@
-import NicoSession from './Session'
-import deepFreeze from 'deep-freeze'
+import NicoSession from './NicoSession'
+import * as deepFreeze from 'deep-freeze'
 
 export default {
     /**
      * @return {Promise}
      */
-    restoreSession(json) {
+    restoreSession(json: object) {
         return NicoSession.fromJSON(json);
     },
 
@@ -14,7 +14,7 @@ export default {
      * @param {String} sessionId
      * @return {Promise}
      */
-    restoreFromSessionId(sessionId) {
+    restoreFromSessionId(sessionId: string) {
         return NicoSession.fromSessionId(sessionId);
     },
 
@@ -27,7 +27,7 @@ export default {
      * @param {String}   password    ログインパスワード
      * @return {Promise}
      */
-    login(user: string , password: string) {
+    login(user: string , password: string): Promise<NicoSession> {
         return NicoSession.login(user, password);
     },
 
@@ -50,3 +50,5 @@ export default {
         }
     })
 };
+
+export {default as NicoLive} from './live/NicoLiveApi'
