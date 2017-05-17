@@ -61,7 +61,7 @@ export default class CommentProvider extends Emitter
     public disposed: boolean
 
     private _isFirstResponseProsessed: boolean = false
-    private _socket: Socket|null = null
+    private _socket: Socket
     private _postInfo: {
         ticket: string|null,
         postKey: string|null,
@@ -276,9 +276,9 @@ export default class CommentProvider extends Emitter
 
         await Promise.race([
             new Promise((_, reject) => {
-                setTimeout(() => reject(new Error("Post result response is timed out.")), timeoutMs)
+                setTimeout(() => reject(new NicoException({message: "Post result response is timed out."})), timeoutMs)
                 this._socket.write(COMMANDS.post(postInfo) + "\0")
-            })
+            }),
             new Promise((resolve, reject) => {
                 const disposer = this._onDidReceivePostResult(({status}) => {
                 disposer.dispose()

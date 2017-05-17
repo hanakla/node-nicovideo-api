@@ -13,17 +13,16 @@
  *      - isAnonymous    : boolean       -- 匿名コメントかどうか
  */
 
-import * as _ from "lodash"
-import __ from "lodash-deep"
-import Cheerio from "cheerio"
-import deepFreeze from "deep-freeze"
+import * as _ from 'lodash'
+import * as Cheerio from "cheerio"
+import * as deepFreeze from "deep-freeze"
 
 const REGEXP_LT = /</g;
 const REGEXP_GT = />/g;
 
 
 export default class NicoLiveComment {
-    static AccountTypes = deepFreeze({
+    public static AccountTypes = deepFreeze({
         GENERAL : 0,
         PREMIUM : 1,
         DISTRIBUTOR : 3,
@@ -57,7 +56,7 @@ export default class NicoLiveComment {
      * @param {Number} loggedUserId 現在ログイン中のユーザーのID
      * @return {NicoLiveComment}
      */
-    static fromRawXml(xml, loggedUserId) {
+    public static fromRawXml(xml: string, loggedUserId: string) {
         let ref;
         const $xml    = Cheerio(xml);
         const props     = {
@@ -84,8 +83,10 @@ export default class NicoLiveComment {
     }
 
 
+
     constructor(_attr) {
         this._attr = _attr;
+
         Object.defineProperties(this, {
             command : {
                 value : this.get("command")
@@ -99,7 +100,7 @@ export default class NicoLiveComment {
 
 
     get(path) {
-        return __.deepGet(this._attr, path);
+        return _.get(this._attr, path);
     }
 
 
@@ -135,7 +136,3 @@ export default class NicoLiveComment {
         return this.get("user.isPremium");
     }
 }
-NicoLiveComment.initClass();
-
-
-module.exports = NicoLiveComment;

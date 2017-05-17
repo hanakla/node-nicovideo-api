@@ -1,4 +1,6 @@
 import NicoSession from './NicoSession'
+import * as NicoVideoApi from './video/NicoVideoApi'
+
 import * as deepFreeze from 'deep-freeze'
 
 export default {
@@ -49,6 +51,12 @@ export default {
             RED     : 4
         }
     })
-};
+}
 
+export {default as NicoException} from './NicoException'
+export {default as NicoSession} from './NicoSession'
 export {default as NicoLive} from './live/NicoLiveApi'
+
+export {
+    NicoVideoApi
+}

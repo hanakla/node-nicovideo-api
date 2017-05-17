@@ -12,8 +12,10 @@
         "jsx": "react",
         "outDir": "lib",
         "target": "es2015",
-        "module": "es2015",
+        "module": "commonjs",
         "moduleResolution": "node",
+        "declaration": false,
+        "declarationDir": "typings",
         "lib": [
             "dom",
             "es2015",

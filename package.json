@@ -3,9 +3,10 @@
   "version": "0.6.2",
   "description": "nicovideo api (video, live, etc..) wrapper package for node.js",
   "homepage": "https://github.com/Ragg-/node-nicovideo",
-  "main": "lib/niconico.js",
+  "main": "lib/index.js",
   "author": "Ragg",
   "license": "MIT",
+  "types": "src/index.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/Ragg-/node-nicovideo.git"
