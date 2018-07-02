@@ -23,7 +23,7 @@
     "prepublish": "$(npm bin)/coffee -o lib/ -c src/"
   },
   "dependencies": {
-    "cheerio": "^0.19.0",
+    "cheerio": "^0.20.0",
     "deep-freeze": "0.0.1",
     "disposable-emitter": "^0.1.0",
     "ent": "^2.2.0",
@@ -33,7 +33,7 @@
     "lodash": "^2.4.1",
     "lodash-deep": "^1.6.0",
     "promise-native-deferred": "^3.0.0",
-    "request-promise": "^0.4.3",
+    "request-promise": "^2.0.1",
     "sprintf": "^0.1.5",
     "tough-cookie": "^0.12.1",
     "tough-cookie-serialize": "^1.0.0"
