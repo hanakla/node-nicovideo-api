@@ -20,7 +20,8 @@
     "coffee-script": "^1.8.0"
   },
   "scripts": {
-    "prepublish": "$(npm bin)/coffee -o lib/ -c src/"
+    "prepublish": "npm run snyk-protect; $(npm bin)/coffee -o lib/ -c src/",
+    "snyk-protect": "snyk protect"
   },
   "dependencies": {
     "cheerio": "^0.19.0",
@@ -36,6 +37,8 @@
     "request-promise": "^0.4.3",
     "sprintf": "^0.1.5",
     "tough-cookie": "^0.12.1",
-    "tough-cookie-serialize": "^1.0.0"
-  }
+    "tough-cookie-serialize": "^1.0.0",
+    "snyk": "^1.192.3"
+  },
+  "snyk": true
 }
