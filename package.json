@@ -26,7 +26,8 @@
     "@types/lodash": "^4.14.55",
     "@types/request-promise": "^4.1.33",
     "@types/sprintf": "^0.0.28",
-    "coffee-script": "^1.8.0"
+    "coffee-script": "^1.8.0",
+    "jest": "^26.1.0"
   },
   "scripts": {
     "prepublish": "$(npm bin)/coffee -o lib/ -c src/"
