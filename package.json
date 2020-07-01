@@ -3,9 +3,10 @@
   "version": "0.6.2",
   "description": "nicovideo api (video, live, etc..) wrapper package for node.js",
   "homepage": "https://github.com/Ragg-/node-nicovideo",
-  "main": "lib/niconico.js",
+  "main": "lib/index.js",
   "author": "Ragg",
   "license": "MIT",
+  "types": "src/index.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/Ragg-/node-nicovideo.git"
@@ -17,7 +18,16 @@
     "nicovideo"
   ],
   "devDependencies": {
-    "coffee-script": "^1.8.0"
+    "@types/cheerio": "^0.22.1",
+    "@types/deep-freeze": "^0.0.29",
+    "@types/ent": "^2.2.1",
+    "@types/event-kit": "^1.2.30",
+    "@types/eventemitter3": "^1.2.0",
+    "@types/lodash": "^4.14.55",
+    "@types/request-promise": "^4.1.33",
+    "@types/sprintf": "^0.0.28",
+    "coffee-script": "^1.8.0",
+    "jest": "^26.1.0"
   },
   "scripts": {
     "prepublish": "$(npm bin)/coffee -o lib/ -c src/"
@@ -30,8 +40,9 @@
     "event-kit": "^1.3.0",
     "eventemitter2": "^0.4.14",
     "eventemitter3": "^1.1.1",
-    "lodash": "^2.4.1",
+    "lodash": "^4.17.4",
     "lodash-deep": "^1.6.0",
+    "p-defer": "^3.0.0",
     "promise-native-deferred": "^3.0.0",
     "request-promise": "^0.4.3",
     "sprintf": "^0.1.5",
