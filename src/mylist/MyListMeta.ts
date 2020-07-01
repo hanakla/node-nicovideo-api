@@ -67,7 +67,7 @@ export default class MyListMeta {
     private static _parse(metaInfo: any|string): MyListMetadataData
     {
         if (metaInfo === "home") {
-            const attr = _.defaults(, MyListMeta.defaults);
+            const attr = _.defaults({}, MyListMeta.defaults);
 
             return attr;
         }

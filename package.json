@@ -42,6 +42,7 @@
     "eventemitter3": "^1.1.1",
     "lodash": "^4.17.4",
     "lodash-deep": "^1.6.0",
+    "p-defer": "^3.0.0",
     "promise-native-deferred": "^3.0.0",
     "request-promise": "^0.4.3",
     "sprintf": "^0.1.5",

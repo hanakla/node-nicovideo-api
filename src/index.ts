@@ -1,35 +1,32 @@
 import NicoSession from "./NicoSession";
 
 export * as Entity from "./Entity/index";
-export * as NicoLiveApi from "./live/NicoLiveApi";
-export * as NicoVideoApi from "./video/NicoVideoApi";
-export * as NicoUserApi from "./user/NicoUserApi";
+import * as Live from "./live/index";
+import * as Video from "./video/NicoVideoApi";
+import * as User from "./user/NicoUserApi";
+// import * as MyList from "./mylist/index";
 
 export { default as NicoException } from "./NicoException";
 export { default as NicoSession } from "./NicoSession";
 
-export const restoreSessionFromJSON = (json: any) => {
-  return NicoSession.fromJSON(json);
+export const NicoAPI = {
+  /** ニコニコ動画へログインし、セッションを取得します。 */
+  login(user: string, password: string): Promise<NicoSession> {
+    return NicoSession.login(user, password);
+  },
+
+  restoreSessionFromJSON(json: any) {
+    return NicoSession.fromJSON(json);
+  },
+
+  restoreSessionFromId(sessionId: string) {
+    return NicoSession.fromSessionId(sessionId);
+  },
+
+  Live,
+  Video,
+  User,
+  // MyList,
 };
 
-/**
- * @method restoreFromSessionId
- * @param {String} sessionId
- * @return {Promise}
- */
-export const restoreFromSessionId = (sessionId: string) => {
-  return NicoSession.fromSessionId(sessionId);
-};
-
-/**
- * ニコニコ動画へログインし、セッションを取得します。
- *
- * @static
- * @method login
- * @param {String}   user        ログインユーザーID
- * @param {String}   password    ログインパスワード
- * @return {Promise}
- */
-export const login = (user: string, password: string): Promise<NicoSession> => {
-  return NicoSession.login(user, password);
-};
+export default NicoAPI;

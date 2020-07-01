@@ -1,74 +1,102 @@
 import { CompositeDisposable, Disposable } from "event-kit";
-import * as EventEmitter3 from "eventemitter3";
 
-export default class Emitter extends EventEmitter3 {
+interface EventSet {
+  [eventName: string]: any;
+}
+
+interface ListenerEntry {
+  listener: (...args: any[]) => void;
+  disposer: Disposable;
+  once: boolean;
+}
+
+export type ListenerOf<T extends any[]> = (...args: T[]) => void;
+
+export default class Emitter<T extends EventSet> {
   private _eventObservers: CompositeDisposable | null = new CompositeDisposable();
-  private _events: { [eventName: string]: Function[] } | null = {};
+  private events: { [eventName: string]: ListenerEntry[] } = Object.create(
+    null
+  );
+  private autoEmits: { [eventName: string]: any[] } = Object.create(null);
   public disposed: boolean;
 
   public dispose() {
     this._eventObservers!.dispose();
-    this._events = null;
+    this.events = null as any;
     this._eventObservers = null;
     this.disposed = true;
   }
 
-  /**
-   * @param {String} event     listening event name
-   * @param {Function} fn      listener
-   * @param {Object?} context  binding context to listener
-   */
-  public on(event: string, fn: Function, context?: any): Disposable {
+  public on<K extends keyof T>(
+    event: K,
+    listener: ListenerOf<T[K]>,
+    once: boolean = false
+  ): Disposable {
+    const e = event as string;
+
     if (this.disposed) {
       throw new Error("Emitter has been disposed");
     }
 
-    super.on(event, fn, context);
+    const sets = (this.events[e] = this.events[e] || []);
 
-    const disposer = new Disposable(
-      function () {
-        return this.off(event, fn, context, false);
-      }.bind(this)
-    );
+    const disposer = new Disposable(() => this.off(event, listener, once));
+
+    sets.push({ listener, once, disposer });
     this._eventObservers!.add(disposer);
-    return disposer;
-  }
 
-  /**
-   * @param {String} event     listening event name
-   * @param {Function} fn      listener
-   * @param {Object?} context  binding context to listener
-   */
-  public once(event: string, fn: Function, context?: any) {
-    if (this.disposed) {
-      throw new Error("Emitter has been disposed");
+    if (this.autoEmits[e]) {
+      listener(...this.autoEmits[e]);
     }
 
-    super.once(event, fn, context);
-
-    const disposer = new Disposable(() => this.off(event, fn, context, true));
-    this._eventObservers!.add(disposer);
     return disposer;
   }
 
-  /**
-   * @param {String} event     unlistening event name
-   * @param {Function?} fn      unlistening listener
-   * @param {Object?} context  binded context to listener
-   * @param {Boolean?} once    unlistening once listener
-   */
-  public off(event: string, fn?: Function, context?: any, once?: boolean) {
+  public once<K extends keyof T>(event: K, listener: ListenerOf<T[K]>) {
+    return this.on(event, listener, true);
+  }
+
+  public off<K extends keyof T>(
+    event: K,
+    fn?: ListenerOf<T[K]>,
+    once: boolean = false
+  ) {
+    const _e = event as string;
+
     if (this.disposed) return;
+    if (!this.events[_e]) return;
 
     if (fn == null) {
       this.removeAllListeners();
     }
 
-    super.off(event, fn, context, once);
+    const newListeners = this.events[_e].filter(
+      (entry) => entry.listener !== fn && entry.once !== once
+    );
+
+    this.events[_e] = newListeners;
   }
 
-  removeAllListeners(event?: string) {
+  public emit<K extends keyof T>(event: K, ...args: T[K]) {
+    const e = event as string;
+    if (!this.events[e]) return;
+    this.events[e].forEach((entry) => entry.listener(...args));
+  }
+
+  public lockAutoEmit<K extends keyof T>(event: K, ...args: T[K]) {
+    const e = event as string;
+    if (this.autoEmits[e]) return;
+
+    this.autoEmits[e] = args;
+  }
+
+  public stopAutoEmit<K extends keyof T>(event: K) {
+    delete this.autoEmits[event as string];
+  }
+
+  public removeAllListeners(event?: string) {
     if (this.disposed) return;
-    super.removeAllListeners(event);
+    this.events = {};
+    this._eventObservers = new CompositeDisposable();
   }
 }

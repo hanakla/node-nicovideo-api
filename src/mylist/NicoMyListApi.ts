@@ -1,6 +1,5 @@
 import * as _ from "lodash"
 import * as Request from "request-promise"
-import Deferred from "promise-native-deferred"
 
 import NicoException from '../NicoException'
 import NicoSession from '../NicoSession'
@@ -31,7 +30,7 @@ const parseMylistSummary = (groupItem: object): MylistSummary => Object.freeze({
 
 /**
  * マイリストの一覧を取得します。
- * @method fetchMyListsIndex
+ *
  * @param    {boolean} withoutHome
  *   trueを指定すると"とりあえずマイリスト"を一覧から除外します。
  * @return   {Promise}
@@ -126,7 +125,7 @@ export default class NicoMyListApi {
         // データを取得したらトークンを取り出す
         const token = tokenRegexp.exec(res.body);
 
-        if (token[1] != null) {
+        if (token?.[1]) {
             this._token = {
                 timestamp: Date.now(),
                 token: token[1],
@@ -139,11 +138,9 @@ export default class NicoMyListApi {
     }
 
 
-
-
-
     /**
      * MyListインスタンスを取得します。
+     *
      * @method fetchMyList
      * @param    {MyListItemIndex|number} id
      *   MyListItemIndexかマイリストIDを渡します。
@@ -161,7 +158,7 @@ export default class NicoMyListApi {
             id = +id
         }
 
-        const metaList = await this.fetchOwnedListIndex(false)
+        const metaList = await fetchOwnedListIndex(this._session, false)
         const meta = _.find<MyListMeta>(metaList, {id});
 
         if (!meta) {

@@ -1,35 +1,20 @@
 {
-    "compileOnSave": false,
-    "compilerOptions": {
-        "strictNullChecks": true,
-        "noImplicitAny": true,
-        "noImplicitThis": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": false,
-        "emitDecoratorMetadata": true,
-        "experimentalDecorators": true,
-        "allowJs": true,
-        "jsx": "react",
-        "outDir": "lib",
-        "target": "es2015",
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "declaration": false,
-        "declarationDir": "typings",
-        "lib": [
-            "dom",
-            "es2015",
-            "es2016",
-            "es2017",
-            "es2017.object"
-        ],
-        "baseUrl": "."
-    },
-    "files": [
-        "./src/declarations.d.ts",
-        "./src/index.ts"
-    ],
-    "awesomeTypescriptLoaderOptions": {
-        "ignoreDiagnostics": [8010, 8011]
-    }
+  "compileOnSave": false,
+  "compilerOptions": {
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowJs": true,
+    "outDir": "lib",
+    "target": "es2015",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "lib": ["es2015", "es2016", "es2017", "es2017.object"]
+  }
 }

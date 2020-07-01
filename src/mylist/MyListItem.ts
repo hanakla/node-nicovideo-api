@@ -2,8 +2,6 @@ import _ from "lodash";
 import __ from "lodash-deep";
 import Ent from "ent";
 import Emitter from "../Emitter";
-
-import { sprintf } from "sprintf";
 import deepFreeze from "deep-freeze";
 
 /**
@@ -40,7 +38,7 @@ import deepFreeze from "deep-freeze";
  * @class MyListItem
  */
 
-export class MyListItem extends Emitter {
+export default class MyListItem extends Emitter<Events> {
   /**
    * @static
    * @property {Object}    ItemTypes           アイテムの種類のリスト

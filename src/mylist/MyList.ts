@@ -13,348 +13,308 @@
  *  - createTime     : Date      -- マイリストの作成日
  *  - updateTime     : Date      -- マイリストの更新日
  */
-import * as _  from "lodash"
-import {Emitter} from "event-kit"
-import * as Request from "request-promise"
-import {sprintf} from "sprintf"
+import _ from "lodash";
 
-import * as NicoUrl from "../NicoURL"
-import NicoSession from '../NicoSession'
-import NicoException from "../NicoException"
-import MyListMeta from "./MyListMeta"
-import MyListItem from "./MyListItem"
+import Request from "request-promise";
+import { sprintf } from "sprintf";
 
-export default class MyList extends Emitter {
-    private static _attr = {
-        id          : -1,
-        name        : null,
-        description : null,
-        public      : null,
+import * as NicoUrl from "../NicoURL";
+import NicoSession from "../NicoSession";
+import NicoException from "../NicoException";
+import Emitter, { ListenerOf } from "../Emitter";
+import { MylistSummary } from "../Entity";
+import MyListItem from "./MyListItem";
+import { MyListController } from "./MyListController";
+import { HomeListSummary } from "../Entity/MylistSummary";
 
-        iconId      : -1,
-        defaultSort : -1,
-        sortOrder   : -1,
-        userId      : -1,
+interface Events {
+  "did-refresh": [{ list: MyList }];
+  "did-delete-item": [];
+}
 
-        createTime  : null,
-        updateTime  : null
-    }
+export default class MyList extends Emitter<Events> implements MylistSummary {
+  /**
+   * マイリストから項目が削除された時に発火します
+   * @event MyList#did-delete-item
+   * @property {MyList}        list
+   * @property {MyListItem}    item
+   */
 
+  public items: MyListItem[] = [];
 
-    /**
-     * マイリストが最新の内容に更新された時に発火します
-     * @event MyList#did-refresh
-     * @property {MyList}    list
-     */
+  constructor(
+    private metaInfo: MylistSummary | HomeListSummary,
+    private session: NicoSession,
+    private controller: MyListController
+  ) {
+    super();
 
-    /**
-     * マイリストから項目が削除された時に発火します
-     * @event MyList#did-delete-item
-     * @property {MyList}        list
-     * @property {MyListItem}    item
-     */
+    Object.defineProperties(this, {
+      id: {
+        get() {
+          return metaInfo.get("id");
+        },
+      },
+      _urlSet: {
+        value:
+          metaInfo.get("id") === "home"
+            ? NicoUrl.MyList.DefList
+            : NicoUrl.MyList.Normal,
+      },
+    });
+  }
 
-    /**
-     * @private
-     * @property {NicoSession} _session セッション
-     */
-    private _session;
+  public get id() {
+    return this.metaInfo.id;
+  }
+  public get description() {
+    return (this.metaInfo as MylistSummary).description;
+  }
+  public get userId() {
+    return (this.metaInfo as MylistSummary).userId;
+  }
+  public get defaultSort() {
+    return (this.metaInfo as MylistSummary).defaultSort;
+  }
+  public get sortOrder() {
+    return (this.metaInfo as MylistSummary).sortOrder;
+  }
+  public get iconId() {
+    return (this.metaInfo as MylistSummary).iconId;
+  }
+  public get name() {
+    return this.metaInfo.name;
+  }
+  public get public() {
+    return this.metaInfo.public;
+  }
+  public get createTime() {
+    return (this.metaInfo as MylistSummary).createTime;
+  }
+  public get updateTime() {
+    return (this.metaInfo as MylistSummary).updateTime;
+  }
 
-    /**
-     * @private
-     * @property {Object} _urlSet MyList APIのurl
-     */
-    private _urlSet;
+  /** このマイリストが"とりあえずマイリスト"か */
+  public get isDefaultList() {
+    return this.id === "home";
+  }
 
-    /**
-     * @private
-     * @property {Object} _attr マイリスト情報
-     */
-    private _attr;
-
-    /**
-     * @property {Array.<MyListItem>} items 登録されている動画のリスト
-     */
-    public items;
-
-
-    /**
-     * @param {MyListMeta}   myListMeta
-     * @param {NicoSession}  session
-     * @return Promise
-     */
-    static instanceById(myListMeta: MyListMeta, session: NicoSession) {
-        const { id } = myListMeta;
-        const list = new MyList(myListMeta, session);
-
-        if (MyList._cache[id] != null) { return Promise.resolve(MyList._cache[id]); }
-        return list.fetch().then(() => Promise.resolve(list));
-    }
-
-    /**
-     * @param {MyListMeta}   metaInfo    操作対象の MyListMetaのインスタンス。
-     * @param {NicoSession}  session     セッション
-     */
-    constructor(metaInfo: MyListMeta, _session: NicoSession) {
-    {
-        super()
-
-        this._session = _session;
-        this._attr = metaInfo.toJSON();
-        this.items = [];
-
-        Object.defineProperties(this, {
-            id : {
-                get() { return metaInfo.get("id"); }
-            },
-            _urlSet : {
-                value : metaInfo.get("id") === "home" ? NicoUrl.MyList.DefList : NicoUrl.MyList.Normal
-            }
+  /** マイリストに登録されている動画を取得します。 */
+  public async fetch() {
+    let res: any;
+    try {
+      res = await Request.get({
+        resolveWithFullResponse: true,
+        url: sprintf(this._urlSet.LIST, this.id),
+        jar: this.session.cookie,
+      });
+    } catch (e) {
+      Promise.reject(
+        new NicoException({
+          message: `Failed to fetch items (Connection error: ${e.message})`,
+          previous: e,
         })
+      );
     }
 
-    /**
-     * このマイリストが"とりあえずマイリスト"か調べます。
-     * @return {boolean} とりあえずマイリストならtrueを返します。
-     */
-    isDefaultList() {
-        return this.id === "home";
+    let json: any;
+    try {
+      json = JSON.parse(res.body);
+    } catch (e) {
+      return Promise.reject(
+        new NicoException({
+          message: "Failed to parse response",
+          response: res.body,
+          previous: e,
+        })
+      );
     }
 
-    /**
-     * マイリストに登録されている動画を取得します。
-     *
-     * @fires MyList#refreshed
-     * @return {Promise}
-     */
-    fetch(options) {
-        return Request.get({
-            resolveWithFullResponse : true,
-            url     : sprintf(this._urlSet.LIST, this.id),
-            jar     : this._session.cookie}).catch(e =>
-            Promise.reject(new NicoException({
-                message     : `Failed to fetch items (Connection error: ${e.message})`,
-                previous    : e
-            })
-            )).then(res => {
-            let json;
-            try {
-                json = JSON.parse(res.body);
-            } catch (e) {
-                return Promise.reject(new NicoException({
-                    message     : "Failed to parse response",
-                    response    : res.body,
-                    previous    : e
-                })
-                );
-            }
-
-            return json.status !== "ok" ?
-                Promise.reject(new NicoException({
-                    message     : "Failed to fetch contents (unknown)",
-                    response    : res.body
-                })
-                ) : undefined;
-
-            this.items = [];
-            _.each(json.mylistitem.reverse(), item => {
-                const m = MyListItem.fromApiResponse(item, this);
-                return this.items.push(m);
-            }
-            );
-
-            this.emit("did-refresh", {list: this});
-
-        }
-        );
+    if (json.status !== "ok") {
+      throw new NicoException({
+        message: "Failed to fetch contents (unknown)",
+        response: res.body,
+      });
     }
 
-    /**
-     * マイリストのメタ情報を取得します。
-     * @param {string}   attr    取得する属性名
-     */
-    attr(attr) {
-        return this._attr[attr];
+    this.items = [];
+
+    _.each(json.mylistitem.reverse(), (item) => {
+      const parsedItem = MyListItem.fromApiResponse(item, this);
+      return this.items.push(parsedItem);
+    });
+
+    this.emit("did-refresh", { list: this });
+  }
+
+  /**
+   * @private
+   * @param {MyListItem|Array.<MyListItem>}    items
+   */
+  private _pickHavingItemIds(items) {
+    let havingItemIds;
+
+    if (!Array.isArray(items)) {
+      items = [items];
     }
 
-    /**
-     * @private
-     * @param {MyListItem|Array.<MyListItem>}    items
-     */
-    _pickHavingItemIds(items) {
-        let havingItemIds;
-        if (!Array.isArray(items)) { items = [items]; }
-        const validItems = _.select(items, item => item instanceof MyListItem);
-        const havingItems = _.select(items, "list", this);
-        return havingItemIds = _.pluck(havingItems, 'id');
+    const validItems = _.select(items, (item) => item instanceof MyListItem);
+    const havingItems = _.select(items, "list", this);
+    return (havingItemIds = _.pluck(havingItems, "id"));
+  }
+
+  /** マイリストに動画を追加します。 */
+  public async addMovieItem(movieId: string, memo: string = "") {
+    //-- APIと通信
+    // アクセストークンを取得
+    const token = await this.controller.fetchToken();
+
+    const res = await Request.post({
+      resolveWithFullResponse: true,
+      url: this._urlSet.ADD,
+      jar: this.session.cookie,
+      form: {
+        item_type: 0,
+        item_id: movieId,
+        token,
+        description: memo,
+        ...(this.isDefaultList ? {} : { group_id: this.id }),
+      },
+    });
+
+    let result;
+    try {
+      result = JSON.parse(res.body);
+    } catch (e) {
+      return Promise.reject(
+        "Mylist[%s]: Failed to add item (JSON parse error)"
+      );
     }
 
-    /**
-     * マイリストに動画を追加します。
-     * @param {NicoVideoInfo|string} movie   追加する動画のNicoVideoInfoオブジェクトか動画ID
-     * @param {string?}              desc    マイリストの動画メモの内容
-     * @return {Promise}
-     */
-    addMovie(movie, desc) {
-        if (desc == null) { desc = ""; }
-        let id      = null;
-
-        // movieが文字列じゃない上に、オブジェクトじゃないとか、idプロパティがない場合
-        if ((!typeof movie !== "string") && (movie.id == null)) {
-            return Promise.reject(new TypeError("Invalid type for argument 1(movie)"));
-        } else {
-            id = _.isString(movie) ? movie : movie.id;
-        }
-
-        const req = {
-            item_type   : 0,
-            item_id     : id,
-            token       : null,
-            description : desc,
-            group_id    : this.id
-        };
-
-        this.isDefaultList() && (delete req.group_id);
-
-        //-- APIと通信
-        // アクセストークンを取得
-        return this._session.mylist.fetchToken()
-        .then(token => {
-            req.token = token;
-
-            return Request.post({
-                resolveWithFullResponse : true,
-                url : this._urlSet.ADD,
-                jar : this._session.cookie,
-                form : req
-            });
-        }).then(res => {
-            let result;
-            try {
-                result = JSON.parse(res.body);
-            } catch (e) {
-                return Promise.reject("Mylist[%s]: Failed to add item (JSON parse error)");
-            }
-
-            return result.status !== "ok" ?
-                Promise.reject(new NicoException({
-                    message     : result.error.description,
-                    response    : result
-                })
-                ) : undefined;
-
-            return Promise.resolve({response: result});
-        });
+    if (result.status !== "ok") {
+      throw new NicoException({
+        message: result.error.description,
+        response: result,
+      });
     }
 
+    return { response: result };
+  }
 
-    /**
-     * マイリストから項目を削除します。
-     *
-     * 渡されたアイテム内のこのリストの項目でないものは無視されます。
-     *
-     * @param {MyListItem|Array.<MyListItem>}    items   削除する項目の配列
-     * @return {Promise} 成功した時に削除された項目数でresolveします。
-     */
-    deleteItem(items) {
-        const itemIds = this._pickHavingItemIds(items);
-        if (itemIds.length === 0) { return Promise.resolve({response: null}); }
-
-        return this._session.mylist.fetchToken()
-        .then(token => {
-            const req = {
-                group_id : this.id,
-                "id_list[0]" : itemIds,
-                token
-            };
-
-            if (this.isDefaultList()) { delete req.group_id; }
-
-            return Request.post({
-                resolveWithFullResponse : true,
-                url : this._urlSet.DELETE,
-                jar : this._session.cookie,
-                form : req
-            });
-        }).then(function(res) {
-            let e, result;
-            try {
-                result = JSON.parse(res.body);
-            } catch (error) {
-                e = error;
-                return Promise.reject(new Error("Mylist[%s]: Failed to delete item (JSON parse error)"));
-            }
-
-            if (result.status === "ok") {
-                return Promise.resolve({response: json});
-            } else {
-                e = new Error(sprintf("MyList[%s]: Failed to delete item (reason: %s)", this.id, result.error.description));
-                e.response = json;
-                return Promise.reject(e);
-            }
-        });
+  /**
+   * マイリストから項目を削除します。
+   *
+   * 渡されたアイテム内のこのリストの項目でないものは無視されます。
+   */
+  public async deleteItem(items: MyListItem | Array<MyListItem>) {
+    const itemIds = this._pickHavingItemIds(items);
+    if (itemIds.length === 0) {
+      return Promise.resolve({ response: null });
     }
 
-    /**
-     * マイリストから別のマイリストへ項目を移動します。
-     *
-     * 渡された項目内のこのリストの項目でないものは無視されます。
-     *
-     * @param {MyListItem|Array.<MyListItem>}    items   移動する項目の配列
-     * @param　{MyList}   targetMyList    移動先のマイリスト
-     * @return {Promise}
-     */
-    public async  moveItem(items, targetMyList) {
-        if (!(targetMyList instanceof MyList)) {
-            throw new TypeError("targetMyList must be instance of MyList");
-        }
+    const token = await this.controller.fetchToken();
 
-        const itemIds = this._pickHavingItemIds(items);
-        if (itemIds.length === 0) { return Promise.resolve({response: null}); }
+    const res = await Request.post({
+      resolveWithFullResponse: true,
+      url: this._urlSet.DELETE,
+      jar: this.session.cookie,
+      form: {
+        "id_list[0]": itemIds,
+        token,
+        ...(this.isDefaultList ? {} : { group_id: this.id }),
+      },
+    });
 
-        return this._session.mylist.fetchToken()
-        .then(token => {
-            const req = {
-                group_id : this.id,
-                target_group_id : targetMyList.id,
-                "id_list[0]" : itemIds,
-                token
-            };
-
-            if (this.isDefaultList()) { delete req.group_id; }
-
-            return Request.post({
-                resolveWithFullResponse : true,
-                url : this._urlSet.MOVE,
-                jar : this._session.cookie,
-                form : req
-            });
-        }).then(function(res) {
-            let e, result;
-            try {
-                result = JSON.parse(res.body);
-            } catch (error) {
-                e = error;
-                return Promise.reject("Mylist[%s]: Failed to delete item (JSON parse error)");
-            }
-
-            if (result.status === "ok") {
-                return Promise.resolve({response: json});
-            } else {
-                e = new Error(sprintf("MyList[%s]: Failed to delete item (reason: %s)", this.id, result.error.description));
-                e.response = result;
-                return Promise.reject(e);
-            }
-        });
-    }
-    //
-    // Event Handlers
-    //
-    onDidRefresh(listener) {
-        return this.on("did-refresh", listener);
+    let e, result;
+    try {
+      result = JSON.parse(res.body);
+    } catch (error) {
+      return Promise.reject(
+        new Error("Mylist[%s]: Failed to delete item (JSON parse error)")
+      );
     }
 
-    onDidDeleteItem(listener) {
-        return this.on("did-delete-item", listener);
+    if (result.status === "ok") {
+      return Promise.resolve({ response: result });
+    } else {
+      e = new Error(
+        sprintf(
+          "MyList[%s]: Failed to delete item (reason: %s)",
+          this.id,
+          result.error.description
+        )
+      );
+
+      return Promise.reject(e);
     }
+  }
+
+  /**
+   * マイリストから別のマイリストへ項目を移動します。
+   *
+   * 渡された項目内のこのリストの項目でないものは無視されます。
+   *
+   * @param {MyListItem|Array.<MyListItem>}    items   移動する項目の配列
+   * @param　{MyList}   targetMyList    移動先のマイリスト
+   * @return {Promise}
+   */
+  public async moveItem(
+    items: MyListItem | Array<MyListItem>,
+    targetMyList: MyList
+  ) {
+    if (!(targetMyList instanceof MyList)) {
+      throw new TypeError("targetMyList must be instance of MyList");
+    }
+
+    const itemIds = this._pickHavingItemIds(items);
+    if (itemIds.length === 0) {
+      return Promise.resolve({ response: null });
+    }
+
+    const token = await this.controller.fetchToken();
+
+    const res = await Request.post({
+      resolveWithFullResponse: true,
+      url: this._urlSet.MOVE,
+      jar: this.session.cookie,
+      form: {
+        target_group_id: targetMyList.id,
+        "id_list[0]": itemIds,
+        token,
+        ...(this.isDefaultList ? {} : { group_id: this.id }),
+      },
+    });
+
+    let result;
+    try {
+      result = JSON.parse(res.body);
+    } catch (error) {
+      return Promise.reject(
+        "Mylist[%s]: Failed to delete item (JSON parse error)"
+      );
+    }
+
+    if (result.status === "ok") {
+      return { response: result };
+    } else {
+      throw new Error(
+        sprintf(
+          "MyList[%s]: Failed to delete item (reason: %s)",
+          this.id,
+          result.error.description
+        )
+      );
+    }
+  }
+  //
+  // Event Handlers
+  //
+  public onDidRefresh(listener: ListenerOf<Events["did-refresh"]>) {
+    return this.on("did-refresh", listener);
+  }
+
+  public onDidDeleteItem(listener: ListenerOf<Events["did-delete-item"]>) {
+    return this.on("did-delete-item", listener);
+  }
 }
