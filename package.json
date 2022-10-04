@@ -23,7 +23,7 @@
     "prepublish": "$(npm bin)/coffee -o lib/ -c src/"
   },
   "dependencies": {
-    "cheerio": "^0.19.0",
+    "cheerio": "^0.20.0",
     "deep-freeze": "0.0.1",
     "disposable-emitter": "^0.1.0",
     "ent": "^2.2.0",
